@@ -14,8 +14,12 @@ func (s *Server) routes(middleware ...mux.MiddlewareFunc) {
 	r := router.NewRoute().Subrouter()
 	r.Use(middleware...)
 
+	r.Handle("/", s.Dashboard()).Methods("GET")
+
 	// Authentication
-	r.Handle("/login", s.LoginForm())
+	r.Handle("/login", s.LoginForm()).Methods("GET")
+	r.Handle("/login", s.Login()).Methods("POST")
+	r.Handle("/logout", s.Logout()).Methods("GET")
 
 	s.router = router
 }

@@ -30,7 +30,7 @@ POST /web/session/authenticate
     "jsonrpc": "2.0",
     "result": {
         "company_id": 1,
-        "db": "VSHNProd",
+        "db": "<DB>",
         "session_id": "xxx",
         "uid": 42,
         "user_context": {
@@ -77,7 +77,7 @@ Cookie: session_id=xxx
             [
                 "employee_id.user_id.id",
                 "=",
-                27
+                42
             ]
         ],
         "fields": [
@@ -104,8 +104,8 @@ Cookie: session_id=xxx
                 "action": "sign_out",
                 "action_desc": false,
                 "employee_id": [
-                    32,
-                    "Manuel Hutter"
+                    1337,
+                    "John Doe"
                 ],
                 "id": 151253,
                 "name": "2021-10-15 16:39:06"

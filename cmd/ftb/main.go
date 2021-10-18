@@ -6,12 +6,15 @@ import (
 	"os"
 	"time"
 
+	"github.com/mhutter/vshn-ftb/pkg/odoo"
 	"github.com/mhutter/vshn-ftb/pkg/web"
 	"github.com/mhutter/vshn-ftb/pkg/web/middleware"
 )
 
 func main() {
 	app := web.NewServer(
+		odoo.NewClient(mustGetEnv("ODOO_URL"), mustGetEnv("ODOO_DB")),
+		mustGetEnv("SECRET_KEY"),
 		"templates",
 		middleware.AccessLog,
 	)
@@ -35,4 +38,13 @@ func getEnvOr(name, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+func mustGetEnv(name string) string {
+	if v := os.Getenv(name); v != "" {
+		return v
+	}
+
+	log.Fatalf("Mandatory $%s is not set", name)
+	return ""
 }

@@ -1,8 +1,11 @@
-{{define "title"}}Login - {{end}}
+{{ define "title" }}Login - {{ end }}
 
-{{define "main"}}
+{{ define "main" }}
 <h1>Login</h1>
 <form action="/login" method="POST">
+  {{ with .Error }}
+  <div class="alert alert-warning" role="alert">{{ . }}</div>
+  {{ end }}
   <div>
     <label for="login">VSHN Login</label>
     <input type="text" name="login" id="login">
@@ -15,4 +18,4 @@
     <input type="submit" value="Log in">
   </div>
 </form>
-{{end}}
+{{ end }}

@@ -53,14 +53,17 @@ func (c Client) Login(login, password string) (*Session, error) {
 	// We don't use DecodeResult here because we're interested whether or not unmarshalling the
 	// result failed. If so, this is likely because "uid" is set to `false` which indicates
 	// an authentication failure.
-	var result JsonRpcResponse
-	if err := json.NewDecoder(res.Body).Decode(&result); err != nil {
+	var response JsonRpcResponse
+	if err := json.NewDecoder(res.Body).Decode(&response); err != nil {
 		return nil, fmt.Errorf("Login: decode response: %w", err)
+	}
+	if response.Error != nil {
+		return nil, fmt.Errorf("error from Odoo: %v", response.Error)
 	}
 
 	// Decode session
 	var session Session
-	if err := json.Unmarshal(*result.Result, &session); err != nil {
+	if err := json.Unmarshal(*response.Result, &session); err != nil {
 		// UID is not set, authentication failed
 		return nil, ErrInvalidCredentials
 	}

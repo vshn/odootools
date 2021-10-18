@@ -1,0 +1,69 @@
+package web
+
+import (
+	"errors"
+	"log"
+	"net/http"
+
+	"github.com/mhutter/vshn-ftb/pkg/odoo"
+)
+
+const (
+	CookieSID = "ftb_sid"
+)
+
+// Dashboard GET /
+func (s Server) Dashboard() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
+	})
+}
+
+// LoginForm GET /login
+func (s Server) LoginForm() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		s.html.Render(w, "login", nil)
+	})
+}
+
+// Login POST /login
+func (s Server) Login() http.Handler {
+	type ctx struct {
+		Error string
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		sess, err := s.odoo.Login(r.FormValue("login"), r.FormValue("password"))
+		if errors.Is(err, odoo.ErrInvalidCredentials) {
+			s.html.Render(w, "login", ctx{Error: "Invalid login or password"})
+			return
+		}
+		if err != nil {
+			log.Println(err)
+			http.Error(w, "Got an error from Odoo, check logs", http.StatusBadGateway)
+			return
+		}
+
+		// Set session cookie
+		val, err := s.securecookie.Encode(CookieSID, sess)
+		if err != nil {
+			log.Printf("Login: error encoding session: %v\n", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		http.SetCookie(w, &http.Cookie{
+			Name:     CookieSID,
+			Value:    val,
+			HttpOnly: true,
+			Secure:   true,
+		})
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+	})
+}
+
+// Logout GET /logout
+func (s Server) Logout() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.SetCookie(w, &http.Cookie{Name: CookieSID, MaxAge: -1})
+		http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
+	})
+}

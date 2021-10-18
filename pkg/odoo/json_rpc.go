@@ -57,6 +57,15 @@ type JsonRpcResponse struct {
 	Jsonrpc string `json:"jsonrpc,omitempty"`
 	// Result payload
 	Result *json.RawMessage `json:"result,omitempty"`
+
+	// Optional eror field
+	Error *JsonRpcError `json:"error,omitempty"`
+}
+
+type JsonRpcError struct {
+	Message string                 `json:"message,omitempty"`
+	Code    int                    `json:"code,omitempty"`
+	Data    map[string]interface{} `json:"data,omitempty"`
 }
 
 // DecodeResult takes a buffer, decodes the intermediate JsonRpcResponse and
