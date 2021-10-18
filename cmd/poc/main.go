@@ -10,6 +10,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/mhutter/vshn-ftb/pkg/odoo"
 )
 
 func init() {
@@ -35,8 +37,12 @@ func main() {
 	}
 	password := strings.TrimSpace(string(pwBytes))
 	log.Printf("Connecting to Odoo at '%s' (using DB '%s') as user '%s'", url, db, login)
+	c := odoo.NewClient(url, db)
+	sess, err := c.Login(login, password)
+	if err != nil {
+		log.Fatalf("Authentication failed: %v\n", err)
+	}
 
-	sess := doLogin(url, db, login, password)
 	attendances := readAttendances(url, sess.ID, sess.UID)
 
 	apd := make(map[string]time.Duration)
@@ -76,29 +82,6 @@ type JsonRpcRequest struct {
 
 	// Params includes the actual request payload.
 	Params map[string]interface{} `json:"params,omitempty"`
-}
-
-type AuthenticateResponse struct {
-	// ID that was sent with the request
-	ID string `json:"id,omitempty"`
-	// Jsonrpc is always set to "2.0"
-	Jsonrpc string `json:"jsonrpc,omitempty"`
-	// Result payload
-	Result Session `json:"result,omitempty"`
-}
-
-type Session struct {
-	// ID is the session ID.
-	// Is always set, no matter the authentication outcome.
-	ID string `json:"session_id,omitempty"`
-
-	// UID is the user's ID as an int, or the boolean `false` if authentication
-	// failed.
-	UID int `json:"uid,omitempty"`
-
-	// Username is usually set to the LoginName that was sent in the request.
-	// Is always set, no matter the authentication outcome.
-	Username string `json:"username,omitempty"`
 }
 
 type ReadAttendancesResponse struct {
