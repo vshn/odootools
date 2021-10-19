@@ -18,6 +18,7 @@ import (
 func TestMain(m *testing.M) {
 	rand.Seed(time.Now().UnixNano())
 	log.SetOutput(io.Discard)
+	web.RootDir = ".."
 
 	os.Exit(m.Run())
 }
@@ -40,5 +41,5 @@ func newServer(odooURL string) *web.Server {
 	if odooURL != "" {
 		oc = odoo.NewClient(odooURL, "TestDB")
 	}
-	return web.NewServer(oc, "0000000000000000000000000000000000000000000=", "../templates")
+	return web.NewServer(oc, "0000000000000000000000000000000000000000000=")
 }

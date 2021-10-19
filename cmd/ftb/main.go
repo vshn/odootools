@@ -15,7 +15,6 @@ func main() {
 	app := web.NewServer(
 		odoo.NewClient(mustGetEnv("ODOO_URL"), mustGetEnv("ODOO_DB")),
 		mustGetEnv("SECRET_KEY"),
-		"templates",
 		middleware.AccessLog,
 	)
 
