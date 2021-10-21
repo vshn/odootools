@@ -18,7 +18,7 @@ var RootDir = ""
 
 type Server struct {
 	router       *mux.Router
-	html         *html.View
+	html         *html.Renderer
 	odoo         *odoo.Client
 	securecookie *securecookie.SecureCookie
 }
@@ -36,7 +36,7 @@ func NewServer(
 	templateRoot := path.Join(RootDir, "templates")
 	s := Server{
 		odoo:         odoo,
-		html:         html.NewView(templateRoot),
+		html:         html.NewRenderer(templateRoot),
 		securecookie: securecookie.New(key, key),
 	}
 	s.routes(middleware...)

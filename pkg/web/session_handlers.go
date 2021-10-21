@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/mhutter/vshn-ftb/pkg/odoo"
+	"github.com/mhutter/vshn-ftb/pkg/web/html"
 )
 
 const (
@@ -32,13 +33,10 @@ func (s Server) LoginForm() http.Handler {
 
 // Login POST /login
 func (s Server) Login() http.Handler {
-	type ctx struct {
-		Error string
-	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sess, err := s.odoo.Login(r.FormValue("login"), r.FormValue("password"))
 		if errors.Is(err, odoo.ErrInvalidCredentials) {
-			s.html.Render(w, "login", ctx{Error: "Invalid login or password"})
+			s.html.Render(w, "login", html.Values{"Error": "Invalid login or password"})
 			return
 		}
 		if err != nil {

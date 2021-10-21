@@ -53,6 +53,14 @@ func (at *AttendanceTime) String() string {
 	t := time.Time(*at)
 	return t.Format(AttendanceDateTimeFormat)
 }
+func (at *AttendanceTime) Date() time.Time {
+	t := time.Time(*at)
+	return t.Truncate(24 * time.Hour)
+}
+func (at *AttendanceTime) Time() string {
+	t := time.Time(*at)
+	return t.Format(AttendanceTimeFormat)
+}
 func (at AttendanceTime) MarshalJSON() ([]byte, error) {
 	return []byte(fmt.Sprintf(`"%s"`, at.String())), nil
 }
