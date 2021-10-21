@@ -12,11 +12,15 @@ const (
 	CookieSID = "ftb_sid"
 )
 
-// Dashboard GET /
-func (s Server) Dashboard() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
-	})
+func (s Server) sessionFrom(r *http.Request) *odoo.Session {
+	if c, err := r.Cookie(CookieSID); err == nil {
+		var sess odoo.Session
+		if err = s.securecookie.Decode(CookieSID, c.Value, &sess); err == nil {
+			return &sess
+		}
+	}
+
+	return nil
 }
 
 // LoginForm GET /login
