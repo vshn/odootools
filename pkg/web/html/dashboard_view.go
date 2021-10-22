@@ -20,11 +20,11 @@ func NewDashboardView(renderer *Renderer) *DashboardView {
 	}
 }
 
-func (v *DashboardView) formatEntry(daily timesheet.DailySummary) Values {
+func (v *DashboardView) formatDailySummary(daily *timesheet.DailySummary) Values {
 	basic := Values{
 		"Weekday":       daily.Date.Weekday(),
 		"Date":          daily.Date.Format(odoo.AttendanceDateFormat),
-		"OvertimeHours": strconv.FormatFloat(daily.CalculateOvertime(), 'f', 2, 64),
+		"OvertimeHours": strconv.FormatFloat(daily.CalculateOvertime().Hours(), 'f', 2, 64),
 	}
 	return basic
 }
@@ -50,7 +50,7 @@ func (v *DashboardView) ShowError(w http.ResponseWriter, err error) {
 func (v *DashboardView) prepareValues(report timesheet.Report) Values {
 	formatted := make([]Values, len(report.DailySummaries))
 	for i := range report.DailySummaries {
-		formatted[i] = v.formatEntry(report.DailySummaries[i])
+		formatted[i] = v.formatDailySummary(report.DailySummaries[i])
 	}
 	return Values{
 		"Attendances": formatted,

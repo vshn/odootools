@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 )
@@ -18,9 +19,9 @@ type Attendance struct {
 	// ID is an unique ID for each attendance entry
 	ID int `json:"id,omitempty"`
 
-	// Name is the entry timestamp in UTC
+	// DateTime is the entry timestamp in UTC
 	// Format: '2006-01-02 15:04:05'
-	Name *AttendanceTime `json:"name,omitempty"`
+	DateTime *AttendanceTime `json:"name,omitempty"`
 
 	// Action is either "sign_in" or "sign_out"
 	Action string `json:"action,omitempty"`
@@ -52,14 +53,6 @@ type AttendanceTime time.Time
 func (at *AttendanceTime) String() string {
 	t := time.Time(*at)
 	return t.Format(AttendanceDateTimeFormat)
-}
-func (at *AttendanceTime) Date() time.Time {
-	t := time.Time(*at)
-	return t.Truncate(24 * time.Hour)
-}
-func (at *AttendanceTime) Time() string {
-	t := time.Time(*at)
-	return t.Format(AttendanceTimeFormat)
 }
 func (at AttendanceTime) MarshalJSON() ([]byte, error) {
 	return []byte(fmt.Sprintf(`"%s"`, at.String())), nil
@@ -112,9 +105,16 @@ func (c Client) ReadAllAttendances(sid string, uid int) ([]Attendance, error) {
 		return nil, fmt.Errorf("expected HTTP status 200 OK, got %s", res.Status)
 	}
 
+	b, err := io.ReadAll(res.Body)
+	defer res.Body.Close()
+	if err != nil {
+		return nil, fmt.Errorf("read result: %w", err)
+	}
+
+	buf := bytes.NewBuffer(b)
 	// decode response
 	var result readAttendancesResult
-	if err := DecodeResult(res.Body, &result); err != nil {
+	if err := DecodeResult(buf, &result); err != nil {
 		return nil, fmt.Errorf("decoding result: %w", err)
 	}
 

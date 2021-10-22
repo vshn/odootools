@@ -29,7 +29,7 @@ func (s Server) Dashboard() http.Handler {
 		reporter := timesheet.NewReport()
 		reporter.SetAttendances(attendances)
 
-		report := reporter.CalculateReportForMonth(2021, 7)
+		report := reporter.CalculateReportForMonth(2021, 6)
 		dashboard.ShowAttendanceReport(w, report)
 	})
 }
@@ -40,7 +40,7 @@ func filterAttendancesToCurrentMonth(attendances []odoo.Attendance) []odoo.Atten
 	nextMonth := currentMonth.AddDate(0, 1, 0)
 	filtered := make([]odoo.Attendance, 0)
 	for _, a := range attendances {
-		if a.Name.ToTime().After(currentMonth) && a.Name.ToTime().Before(nextMonth) {
+		if a.DateTime.ToTime().After(currentMonth) && a.DateTime.ToTime().Before(nextMonth) {
 			filtered = append(filtered, a)
 		}
 	}
