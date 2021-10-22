@@ -2,15 +2,15 @@ package web
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
-	"github.com/mhutter/vshn-ftb/pkg/odoo"
 	"github.com/mhutter/vshn-ftb/pkg/timesheet"
 	"github.com/mhutter/vshn-ftb/pkg/web/html"
 )
 
-// Dashboard GET /
-func (s Server) Dashboard() http.Handler {
+// OvertimeReport GET /report
+func (s Server) OvertimeReport() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		session := s.sessionFrom(r)
 		if session == nil {
@@ -18,31 +18,45 @@ func (s Server) Dashboard() http.Handler {
 			http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
 			return
 		}
-		dashboard := html.NewDashboardView(s.html)
+		view := html.NewOvertimeReportView(s.html)
 
 		attendances, err := s.odoo.ReadAllAttendances(session.ID, session.UID)
 		if err != nil {
-			dashboard.ShowError(w, err)
+			view.ShowError(w, err)
 			return
 		}
 
 		reporter := timesheet.NewReport()
 		reporter.SetAttendances(attendances)
 
-		report := reporter.CalculateReportForMonth(2021, 5)
-		dashboard.ShowAttendanceReport(w, report)
+		year := parseOrDefault(r.FormValue("year"), time.Now().Year())
+		month := parseOrDefault(r.FormValue("month"), int(time.Now().Month()))
+
+		report := reporter.CalculateReportForMonth(year, month)
+		view.ShowAttendanceReport(w, report)
 	})
 }
 
-func filterAttendancesToCurrentMonth(attendances []odoo.Attendance) []odoo.Attendance {
-	year, _, _ := time.Now().Date()
-	currentMonth := time.Date(year, 2, 1, 0, 0, 1, 0, time.Now().Location())
-	nextMonth := currentMonth.AddDate(0, 1, 0)
-	filtered := make([]odoo.Attendance, 0)
-	for _, a := range attendances {
-		if a.DateTime.ToTime().After(currentMonth) && a.DateTime.ToTime().Before(nextMonth) {
-			filtered = append(filtered, a)
-		}
+func parseOrDefault(toParse string, def int) int {
+	if toParse == "" {
+		return def
 	}
-	return filtered
+	if v, err := strconv.Atoi(toParse); err == nil {
+		return v
+	}
+	return def
+}
+
+func (s Server) RequestReportForm() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		session := s.sessionFrom(r)
+		if session == nil {
+			// User is unauthenticated
+			http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
+			return
+		}
+
+		view := html.NewRequestReportView(s.html)
+		view.ShowConfigurationForm(w)
+	})
 }

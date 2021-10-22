@@ -3,24 +3,25 @@ package html
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/mhutter/vshn-ftb/pkg/odoo"
 	"github.com/mhutter/vshn-ftb/pkg/timesheet"
 )
 
-type DashboardView struct {
+type OvertimeReportView struct {
 	renderer *Renderer
 	template string
 }
 
-func NewDashboardView(renderer *Renderer) *DashboardView {
-	return &DashboardView{
+func NewOvertimeReportView(renderer *Renderer) *OvertimeReportView {
+	return &OvertimeReportView{
 		renderer: renderer,
-		template: "dashboard",
+		template: "overtimereport",
 	}
 }
 
-func (v *DashboardView) formatDailySummary(daily *timesheet.DailySummary) Values {
+func (v *OvertimeReportView) formatDailySummary(daily *timesheet.DailySummary) Values {
 	basic := Values{
 		"Weekday":       daily.Date.Weekday(),
 		"Date":          daily.Date.Format(odoo.AttendanceDateFormat),
@@ -29,25 +30,25 @@ func (v *DashboardView) formatDailySummary(daily *timesheet.DailySummary) Values
 	return basic
 }
 
-func (v *DashboardView) formatSummary(s timesheet.Summary) Values {
+func (v *OvertimeReportView) formatSummary(s timesheet.Summary) Values {
 	return Values{
-		"TotalOvertime": s.TotalWorkedHours,
+		"TotalOvertime": s.TotalWorkedHours.Truncate(time.Minute),
 	}
 }
 
-func (v *DashboardView) ShowAttendanceReport(w http.ResponseWriter, report timesheet.Report) {
+func (v *OvertimeReportView) ShowAttendanceReport(w http.ResponseWriter, report timesheet.Report) {
 	w.WriteHeader(http.StatusOK)
 	v.renderer.Render(w, v.template, v.prepareValues(report))
 }
 
-func (v *DashboardView) ShowError(w http.ResponseWriter, err error) {
+func (v *OvertimeReportView) ShowError(w http.ResponseWriter, err error) {
 	w.WriteHeader(http.StatusInternalServerError)
 	v.renderer.Render(w, v.template, Values{
 		"Error": err.Error(),
 	})
 }
 
-func (v *DashboardView) prepareValues(report timesheet.Report) Values {
+func (v *OvertimeReportView) prepareValues(report timesheet.Report) Values {
 	formatted := make([]Values, len(report.DailySummaries))
 	for i := range report.DailySummaries {
 		formatted[i] = v.formatDailySummary(report.DailySummaries[i])

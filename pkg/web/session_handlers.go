@@ -58,7 +58,7 @@ func (s Server) Login() http.Handler {
 			HttpOnly: true,
 			Secure:   true,
 		})
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		http.Redirect(w, r, "/report", http.StatusTemporaryRedirect)
 	})
 }
 
