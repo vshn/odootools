@@ -13,11 +13,15 @@
     {{ end }}
     <div>
         <label for="year">Year</label>
-        <input type="number" name="year" id="year" value="2022">
+        <input type="number" name="year" id="year" min="2014" value="2020">
     </div>
     <div>
         <label for="month">Month</label>
-        <input type="number" name="month" id="month" value="10">
+        <input type="number" name="month" id="month" min="1" max="12" value="1">
+    </div>
+    <div>
+        <label for="fte">FTE percentage</label>
+        <input type="number" name="ftepercentage" id="fte" min="1" max="100" value="100">
     </div>
     <div>
         <input type="submit" value="Create Report">

@@ -29,19 +29,30 @@ func (s Server) OvertimeReport() http.Handler {
 		reporter := timesheet.NewReport()
 		reporter.SetAttendances(attendances)
 
-		year := parseOrDefault(r.FormValue("year"), time.Now().Year())
-		month := parseOrDefault(r.FormValue("month"), int(time.Now().Month()))
+		year := parseIntOrDefault(r.FormValue("year"), time.Now().Year())
+		month := parseIntOrDefault(r.FormValue("month"), int(time.Now().Month()))
+		fte := parseFloatOrDefault(r.FormValue("ftepercentage"), 100)
 
-		report := reporter.CalculateReportForMonth(year, month)
+		report := reporter.CalculateReportForMonth(year, month, fte/100)
 		view.ShowAttendanceReport(w, report)
 	})
 }
 
-func parseOrDefault(toParse string, def int) int {
+func parseIntOrDefault(toParse string, def int) int {
 	if toParse == "" {
 		return def
 	}
 	if v, err := strconv.Atoi(toParse); err == nil {
+		return v
+	}
+	return def
+}
+
+func parseFloatOrDefault(toParse string, def float64) float64 {
+	if toParse == "" {
+		return def
+	}
+	if v, err := strconv.ParseFloat(toParse, 64); err == nil {
 		return v
 	}
 	return def

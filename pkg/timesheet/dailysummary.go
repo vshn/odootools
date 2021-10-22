@@ -7,8 +7,9 @@ import (
 )
 
 type DailySummary struct {
-	Date   time.Time
-	Blocks []AttendanceBlock
+	Date     time.Time
+	Blocks   []AttendanceBlock
+	Overtime time.Duration
 }
 
 func (s *DailySummary) addAttendanceBlock(block AttendanceBlock) {
@@ -24,7 +25,7 @@ func (s *DailySummary) addAttendanceBlock(block AttendanceBlock) {
 	s.Blocks = append(s.Blocks, block)
 }
 
-func (s DailySummary) CalculateOvertime() time.Duration {
+func (s *DailySummary) CalculateOvertime(fteRatio float64) time.Duration {
 	workHours := float64(0)
 	for _, block := range s.Blocks {
 		switch block.Reason {
@@ -44,12 +45,13 @@ func (s DailySummary) CalculateOvertime() time.Duration {
 	}
 
 	// TODO: respect FTE percentage
-	overtime := workHours - 8
+	overtime := workHours - (8 * fteRatio)
 
 	duration, err := time.ParseDuration(fmt.Sprintf("%sh", strconv.FormatFloat(overtime, 'f', 2, 64)))
 	if err != nil {
 		panic(err)
 	}
+	s.Overtime = duration
 	return duration
 }
 

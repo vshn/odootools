@@ -47,7 +47,7 @@ func (r *Reporter) SetLeaves(leaves []odoo.Leave) *Reporter {
 	return r
 }
 
-func (r *Reporter) CalculateReportForMonth(year, month int) Report {
+func (r *Reporter) CalculateReportForMonth(year, month int, fteRatio float64) Report {
 	filtered := filterAttendancesInMonth(year, month, r)
 
 	sortedEntries := make([]AttendanceBlock, 0)
@@ -74,7 +74,7 @@ func (r *Reporter) CalculateReportForMonth(year, month int) Report {
 
 	summary := Summary{}
 	for _, dailySummary := range dailySummaries {
-		summary.TotalWorkedHours += dailySummary.CalculateOvertime()
+		summary.TotalWorkedHours += dailySummary.CalculateOvertime(fteRatio)
 	}
 	return Report{
 		DailySummaries: dailySummaries,
