@@ -27,25 +27,29 @@ func (s *DailySummary) addAttendanceBlock(block AttendanceBlock) {
 
 func (s *DailySummary) CalculateOvertime(fteRatio float64) time.Duration {
 	workHours := float64(0)
+	excusedHours := float64(0)
 	for _, block := range s.Blocks {
 		switch block.Reason {
 		case "":
-			workHours += block.End.Sub(block.Start).Hours()
+			diff := block.End.Sub(block.Start).Hours()
+			workHours += diff
+		case ReasonSickLeave, ReasonAuthorities, ReasonPublicService:
+			diff := block.End.Sub(block.Start).Hours()
+			excusedHours += diff
 		case ReasonOutsideOfficeHours:
-			workHours += block.End.Sub(block.Start).Hours() * 1.5
+			diff := block.End.Sub(block.Start).Hours() * 1.5
+			workHours += diff
 		}
-		// TODO: respect sick leave:
-		/* Sick leaves don't get counted if logged hours exceed daily FTE
-		Examples with 8 hrs:
-		- 7 hours logged time + 1h sick leave = 8hrs, 0 overtime
-		- 8 hours logged time + 1h sick leave = 8hrs, 0 overtime
-		- 9 hours logged time + 1h sick leave = 9 hrs, 1h overtime (sick leave doesn't count, it's not 10-8=2h)
-		- 6 hours logged time + 1h sick leave = 7hrs, -1h overtime (1h undertime)
-		*/
 	}
-
-	// TODO: respect FTE percentage
-	overtime := workHours - (8 * fteRatio)
+	dailyMax := 8 * fteRatio
+	if workHours >= dailyMax {
+		// Can't be on sick leave etc. if working overtime.
+		excusedHours = 0
+	} else if workHours+excusedHours > dailyMax {
+		// There is overlap: Not enough workHours, but having excused hours = Cap at daily max, no overtime
+		excusedHours = dailyMax - workHours
+	}
+	overtime := workHours + excusedHours - dailyMax
 
 	duration, err := time.ParseDuration(fmt.Sprintf("%sh", strconv.FormatFloat(overtime, 'f', 2, 64)))
 	if err != nil {

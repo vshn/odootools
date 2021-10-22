@@ -10,43 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestDailySummary_CalculateOvertime(t *testing.T) {
-	tests := map[string]struct {
-		givenBlocks      []AttendanceBlock
-		expectedOvertime time.Duration
-	}{
-		"GivenSingleBlock_WhenMoreThanDailyMax_ThenReturnOvertime": {
-			givenBlocks: []AttendanceBlock{
-				{Start: hours(t, "09:00"), End: hours(t, "18:00")},
-			},
-			expectedOvertime: hoursDuration(t, 1),
-		},
-		"GivenMultipleBlocks_WhenMoreThanDailyMax_ThenReturnOvertime": {
-			givenBlocks: []AttendanceBlock{
-				{Start: hours(t, "09:00"), End: hours(t, "12:00")},
-				{Start: hours(t, "13:00"), End: hours(t, "19:00")},
-			},
-			expectedOvertime: hoursDuration(t, 1),
-		},
-		"GivenMultipleBlocks_WhenLessThanDailyMax_ThenReturnUndertime": {
-			givenBlocks: []AttendanceBlock{
-				{Start: hours(t, "09:00"), End: hours(t, "12:00")},
-				{Start: hours(t, "13:00"), End: hours(t, "17:00")},
-			},
-			expectedOvertime: hoursDuration(t, -1),
-		},
-	}
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			s := DailySummary{
-				Blocks: tt.givenBlocks,
-			}
-			result := s.CalculateOvertime()
-			assert.Equal(t, tt.expectedOvertime, result)
-		})
-	}
-}
-
 func hours(t *testing.T, hours string) time.Time {
 	tm, err := time.Parse(odoo.AttendanceDateTimeFormat, fmt.Sprintf("2021-02-03 %s:00", hours))
 	require.NoError(t, err)

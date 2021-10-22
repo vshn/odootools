@@ -10,6 +10,8 @@ import (
 const (
 	ReasonSickLeave          = "Sick / Medical Consultation"
 	ReasonOutsideOfficeHours = "Outside office hours"
+	ReasonAuthorities        = "Authorities"
+	ReasonPublicService      = "Requested Public Service"
 )
 
 type AttendanceBlock struct {
