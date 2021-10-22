@@ -29,7 +29,7 @@ func (s Server) Dashboard() http.Handler {
 		reporter := timesheet.NewReport()
 		reporter.SetAttendances(attendances)
 
-		report := reporter.CalculateReportForMonth(2021, 6)
+		report := reporter.CalculateReportForMonth(2021, 5)
 		dashboard.ShowAttendanceReport(w, report)
 	})
 }

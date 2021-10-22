@@ -27,13 +27,20 @@ func (s *DailySummary) addAttendanceBlock(block AttendanceBlock) {
 func (s DailySummary) CalculateOvertime() time.Duration {
 	workHours := float64(0)
 	for _, block := range s.Blocks {
-		if block.Reason == "" {
+		switch block.Reason {
+		case "":
 			workHours += block.End.Sub(block.Start).Hours()
-			continue
+		case ReasonOutsideOfficeHours:
+			workHours += block.End.Sub(block.Start).Hours() * 1.5
 		}
-		// TODO: Add 1.5 factor in special cases
-		// TODO: respect attendance reasons (e.g. no overtime in sick leave)
-
+		// TODO: respect sick leave:
+		/* Sick leaves don't get counted if logged hours exceed daily FTE
+		Examples with 8 hrs:
+		- 7 hours logged time + 1h sick leave = 8hrs, 0 overtime
+		- 8 hours logged time + 1h sick leave = 8hrs, 0 overtime
+		- 9 hours logged time + 1h sick leave = 9 hrs, 1h overtime (sick leave doesn't count, it's not 10-8=2h)
+		- 6 hours logged time + 1h sick leave = 7hrs, -1h overtime (1h undertime)
+		*/
 	}
 
 	// TODO: respect FTE percentage

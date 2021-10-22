@@ -26,9 +26,10 @@ type Attendance struct {
 	// Action is either "sign_in" or "sign_out"
 	Action string `json:"action,omitempty"`
 
-	// ActionDesc describes the "action reason" from Odoo.
+	// Reason describes the "action reason" from Odoo.
 	//
-	// Example values:
+	// Example raw values returned from Odoo:
+	// * `false` (if no specific reason given)
 	// * `[1, "Outside office hours"]`
 	// * `[2, "Outside office hours"]`
 	// * `[3, "Sick / Medical Consultation"]`
@@ -38,9 +39,8 @@ type Attendance struct {
 	// * `[27, "Requested Public Service"]`
 	// * `[28, "Requested Public Service"]`
 	//
-	// NOTE: This field has special meaning when calculating the working hours:
-	// * "Outside office hours" - 1.5x bonus
-	ActionDesc *json.RawMessage `json:"action_desc,omitempty"`
+	// NOTE: This field has special meaning when calculating the overtime.
+	Reason *ActionReason `json:"action_desc,omitempty"`
 
 	// WorkedHours is the amount of time Odoo determined.
 	// Will always be "0.0" if "action" is "sign_in". Values DO NOT reflect
@@ -69,6 +69,44 @@ func (at *AttendanceTime) UnmarshalJSON(b []byte) error {
 }
 func (at *AttendanceTime) ToTime() time.Time {
 	return time.Time(*at)
+}
+
+type ActionReason struct {
+	ID   float64
+	Name string
+}
+
+func (reason ActionReason) MarshalJSON() ([]byte, error) {
+	if reason.Name == "" {
+		return []byte("false"), nil
+	}
+	arr := []interface{}{reason.ID, reason.Name}
+	return json.Marshal(arr)
+}
+func (reason *ActionReason) UnmarshalJSON(b []byte) error {
+	var f bool
+	if err := json.Unmarshal(b, &f); err == nil || string(b) == "false" {
+		return nil
+	}
+	var arr []interface{}
+	if err := json.Unmarshal(b, &arr); err != nil {
+		return err
+	}
+	if len(arr) >= 2 {
+		if v, ok := arr[1].(string); ok {
+			*reason = ActionReason{
+				ID:   arr[0].(float64),
+				Name: v,
+			}
+		}
+	}
+	return nil
+}
+func (reason *ActionReason) String() string {
+	if reason == nil {
+		return ""
+	}
+	return reason.Name
 }
 
 type readAttendancesResult struct {

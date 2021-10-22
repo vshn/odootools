@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	ReasonSickLeave          = "sick_leave"
-	ReasonOutsideOfficeHours = "outside_office_hours"
+	ReasonSickLeave          = "Sick / Medical Consultation"
+	ReasonOutsideOfficeHours = "Outside office hours"
 )
 
 type AttendanceBlock struct {
@@ -58,7 +58,8 @@ func (r *Reporter) CalculateReportForMonth(year, month int) Report {
 	for _, attendance := range filtered {
 		if attendance.Action == "sign_in" {
 			entry = AttendanceBlock{
-				Start: attendance.DateTime.ToTime(),
+				Start:  attendance.DateTime.ToTime(),
+				Reason: attendance.Reason.String(),
 			}
 		}
 		if attendance.Action == "sign_out" {
