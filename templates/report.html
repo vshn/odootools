@@ -1,0 +1,30 @@
+{{ define "title" }}Create Report - {{ end }}
+{{ define "main" }}
+<script defer>
+    window.onload = function () {
+        document.getElementById("year").value = new Date().getFullYear();
+        document.getElementById("month").value = new Date().getMonth() + 1;
+    }
+</script>
+<h1>Create Report</h1>
+<form action="/report" method="POST">
+    {{ with .Error }}
+    <div class="alert alert-warning" role="alert">{{ . }}</div>
+    {{ end }}
+    <div>
+        <label for="year">Year</label>
+        <input type="number" name="year" id="year" min="2014" value="2020">
+    </div>
+    <div>
+        <label for="month">Month</label>
+        <input type="number" name="month" id="month" min="1" max="12" value="1">
+    </div>
+    <div>
+        <label for="fte">FTE percentage</label>
+        <input type="number" name="ftepercentage" id="fte" min="1" max="100" value="100">
+    </div>
+    <div>
+        <input type="submit" value="Create Report">
+    </div>
+</form>
+{{ end }}

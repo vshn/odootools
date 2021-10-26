@@ -6,17 +6,22 @@ import (
 	"net/http"
 
 	"github.com/mhutter/vshn-ftb/pkg/odoo"
+	"github.com/mhutter/vshn-ftb/pkg/web/html"
 )
 
 const (
 	CookieSID = "ftb_sid"
 )
 
-// Dashboard GET /
-func (s Server) Dashboard() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
-	})
+func (s Server) sessionFrom(r *http.Request) *odoo.Session {
+	if c, err := r.Cookie(CookieSID); err == nil {
+		var sess odoo.Session
+		if err = s.securecookie.Decode(CookieSID, c.Value, &sess); err == nil {
+			return &sess
+		}
+	}
+
+	return nil
 }
 
 // LoginForm GET /login
@@ -28,13 +33,10 @@ func (s Server) LoginForm() http.Handler {
 
 // Login POST /login
 func (s Server) Login() http.Handler {
-	type ctx struct {
-		Error string
-	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sess, err := s.odoo.Login(r.FormValue("login"), r.FormValue("password"))
 		if errors.Is(err, odoo.ErrInvalidCredentials) {
-			s.html.Render(w, "login", ctx{Error: "Invalid login or password"})
+			s.html.Render(w, "login", html.Values{"Error": "Invalid login or password"})
 			return
 		}
 		if err != nil {
@@ -56,7 +58,7 @@ func (s Server) Login() http.Handler {
 			HttpOnly: true,
 			Secure:   true,
 		})
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		http.Redirect(w, r, "/report", http.StatusTemporaryRedirect)
 	})
 }
 

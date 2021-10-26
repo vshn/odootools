@@ -27,9 +27,10 @@ func main() {
 	}
 
 	log.Printf("Starting odoo at https://%s\n", srv.Addr)
-	log.Println(srv.ListenAndServeTLS(
-		getEnvOr("TLS_CERT", "tls/cert.pem"), getEnvOr("TLS_KEY", "tls/key.pem"),
-	))
+	//log.Println(srv.ListenAndServeTLS(
+	//	getEnvOr("TLS_CERT", "tls/cert.pem"), getEnvOr("TLS_KEY", "tls/key.pem"),
+	//))
+	log.Println(srv.ListenAndServe())
 }
 
 func getEnvOr(name, fallback string) string {

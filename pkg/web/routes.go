@@ -2,7 +2,7 @@ package web
 
 import (
 	"net/http"
-	"path"
+	"path/filepath"
 
 	"github.com/gorilla/mux"
 )
@@ -17,7 +17,9 @@ func (s *Server) routes(middleware ...mux.MiddlewareFunc) {
 	r := router.NewRoute().Subrouter()
 	r.Use(middleware...)
 
-	r.Handle("/", s.Dashboard()).Methods("GET")
+	r.Handle("/", s.RequestReportForm()).Methods("GET")
+	r.Handle("/report", s.RequestReportForm()).Methods("GET")
+	r.Handle("/report", s.OvertimeReport()).Methods("POST")
 
 	// Authentication
 	r.Handle("/login", s.LoginForm()).Methods("GET")
@@ -25,7 +27,7 @@ func (s *Server) routes(middleware ...mux.MiddlewareFunc) {
 	r.Handle("/logout", s.Logout()).Methods("GET")
 
 	// static files
-	publicRoot := path.Join(RootDir, "public")
+	publicRoot := filepath.Join(RootDir, "public")
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir(publicRoot)))
 
 	s.router = router

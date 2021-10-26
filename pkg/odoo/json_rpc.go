@@ -70,9 +70,7 @@ type JsonRpcError struct {
 
 // DecodeResult takes a buffer, decodes the intermediate JsonRpcResponse and
 // then the contained "result" field into "result".
-func DecodeResult(buf io.ReadCloser, result interface{}) error {
-	defer buf.Close()
-
+func DecodeResult(buf io.Reader, result interface{}) error {
 	// Decode intermediate
 	var res JsonRpcResponse
 	if err := json.NewDecoder(buf).Decode(&res); err != nil {

@@ -1,0 +1,29 @@
+{{ define "main" }}
+<h1>Attendance</h1>
+{{ with .Error }}
+<div class="alert alert-warning" role="alert">{{ . }}</div>
+{{ end }}
+<table>
+    <thead>
+    <tr>
+        <td>Weekday</td>
+        <td>Date</td>
+        <td>Overtime hours</td>
+    </tr>
+    </thead>
+    {{ range .Attendances }}
+    <tr>
+        <td>{{ .Weekday }}</td>
+        <td>{{ .Date }}</td>
+        <td>{{ .OvertimeHours }}</td>
+    </tr>
+    {{ end }}
+    <tfoot>
+    <tr>
+        <td></td>
+        <td></td>
+        <td>{{ .Summary.TotalOvertime }}</td>
+    </tr>
+    </tfoot>
+</table>
+{{ end }}
