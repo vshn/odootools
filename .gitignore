@@ -1,3 +1,11 @@
 password
 tls
 .env.sh
+
+# Build
+odootools
+*.out
+
+# Goreleaser
+dist/
+.github/release-notes.md

@@ -4,7 +4,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/mhutter/vshn-ftb/pkg/odoo"
+	"github.com/vshn/odootools/pkg/odoo"
 )
 
 const (

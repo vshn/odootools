@@ -5,8 +5,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/mhutter/vshn-ftb/pkg/odoo"
-	"github.com/mhutter/vshn-ftb/pkg/web/html"
+	"github.com/vshn/odootools/pkg/odoo"
+	"github.com/vshn/odootools/pkg/web/html"
 )
 
 const (

@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/matryer/is"
-	"github.com/mhutter/vshn-ftb/pkg/odoo"
-	"github.com/mhutter/vshn-ftb/pkg/web"
+	"github.com/vshn/odootools/pkg/odoo"
+	"github.com/vshn/odootools/pkg/web"
 )
 
 func TestMain(m *testing.M) {

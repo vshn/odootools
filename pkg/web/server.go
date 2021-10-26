@@ -8,8 +8,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/securecookie"
-	"github.com/mhutter/vshn-ftb/pkg/odoo"
-	"github.com/mhutter/vshn-ftb/pkg/web/html"
+	"github.com/vshn/odootools/pkg/odoo"
+	"github.com/vshn/odootools/pkg/web/html"
 )
 
 // RootDir optionally describes where the root directory with the "templates"
