@@ -35,6 +35,10 @@ func AccessLog(next http.Handler) http.Handler {
 			RequestSize:  r.ContentLength,
 			ResponseSize: wr.size,
 		}
+		if r.RequestURI == "/favicon.png" {
+			// Don't care about those
+			return
+		}
 		if err := encoder.Encode(&msg); err != nil {
 			log.Printf("ERROR encoding access log: %v", err)
 		}
