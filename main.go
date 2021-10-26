@@ -106,8 +106,10 @@ func runServer(context *cli.Context) error {
 	}
 
 	log.Printf("Starting odoo at %s\n", srv.Addr)
-	//return srv.ListenAndServeTLS(
-	//	context.String("tls-cert"), context.String("tls-key"),
-	//)
+	if certPath := context.String("tls-cert"); certPath != "" {
+		return srv.ListenAndServeTLS(
+			certPath, context.String("tls-key"),
+		)
+	}
 	return srv.ListenAndServe()
 }
