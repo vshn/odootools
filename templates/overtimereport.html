@@ -3,14 +3,15 @@
 {{ with .Error }}
 <div class="alert alert-warning" role="alert">{{ . }}</div>
 {{ end }}
-<table>
+<table class="table table-hover table-condensed">
     <thead>
-    <tr>
+    <tr style="font-weight: bold">
         <td>Weekday</td>
         <td>Date</td>
         <td>Overtime hours</td>
     </tr>
     </thead>
+    <tbody>
     {{ range .Attendances }}
     <tr>
         <td>{{ .Weekday }}</td>
@@ -18,6 +19,7 @@
         <td>{{ .OvertimeHours }}</td>
     </tr>
     {{ end }}
+    </tbody>
     <tfoot>
     <tr>
         <td></td>
