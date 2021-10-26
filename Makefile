@@ -39,6 +39,6 @@ vet: ## Run 'go vet' against code
 	go vet ./...
 
 .PHONY: lint
-lint: generate fmt vet ## All-in-one linting
+lint: fmt vet ## All-in-one linting
 	@echo 'Check for uncommitted changes ...'
 	git diff --exit-code
