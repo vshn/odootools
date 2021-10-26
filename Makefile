@@ -20,7 +20,7 @@ build: build.bin build.docker ## All-in-one build
 .PHONY: build.bin
 build.bin: export CGO_ENABLED = 0
 build.bin: fmt vet ## Build binary
-	@go build -o odootools cmd/ftb/main.go
+	@go build -o odootools main.go
 
 .PHONY: build.docker
 build.docker: build.bin ## Build docker image
@@ -42,3 +42,8 @@ vet: ## Run 'go vet' against code
 lint: fmt vet ## All-in-one linting
 	@echo 'Check for uncommitted changes ...'
 	git diff --exit-code
+
+run: export LISTEN_ADDRESS=localhost:4200
+run: export SECRET_KEY=$(LOCAL_SECRET_KEY)
+run: ## Run a local instance
+	go run main.go web
