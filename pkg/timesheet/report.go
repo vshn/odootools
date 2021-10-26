@@ -15,10 +15,9 @@ const (
 )
 
 type AttendanceBlock struct {
-	Start       time.Time
-	End         time.Time
-	Reason      string
-	LoggedHours float64
+	Start  time.Time
+	End    time.Time
+	Reason string
 }
 
 type Summary struct {
@@ -50,7 +49,7 @@ func (r *Reporter) SetLeaves(leaves []odoo.Leave) *Reporter {
 }
 
 func (r *Reporter) CalculateReportForMonth(year, month int, fteRatio float64) Report {
-	filtered := filterAttendancesInMonth(year, month, r)
+	filtered := r.filterAttendancesInMonth(year, month)
 
 	sortedEntries := make([]AttendanceBlock, 0)
 
@@ -66,17 +65,15 @@ func (r *Reporter) CalculateReportForMonth(year, month int, fteRatio float64) Re
 		}
 		if attendance.Action == "sign_out" {
 			entry.End = attendance.DateTime.ToTime()
-			entry.LoggedHours = entry.End.Sub(entry.Start).Hours()
-
 			sortedEntries = append(sortedEntries, entry)
 		}
 	}
 
-	dailySummaries := reduceAttendanceBlocks(sortedEntries)
+	dailySummaries := reduceAttendanceBlocks(sortedEntries, fteRatio)
 
 	summary := Summary{}
 	for _, dailySummary := range dailySummaries {
-		summary.TotalWorkedHours += dailySummary.CalculateOvertime(fteRatio)
+		summary.TotalWorkedHours += dailySummary.CalculateOvertime()
 	}
 	return Report{
 		DailySummaries: dailySummaries,
@@ -84,7 +81,7 @@ func (r *Reporter) CalculateReportForMonth(year, month int, fteRatio float64) Re
 	}
 }
 
-func reduceAttendanceBlocks(blocks []AttendanceBlock) []*DailySummary {
+func reduceAttendanceBlocks(blocks []AttendanceBlock, ratio float64) []*DailySummary {
 	dailySums := make([]*DailySummary, 0)
 
 	for _, block := range blocks {
@@ -93,7 +90,7 @@ func reduceAttendanceBlocks(blocks []AttendanceBlock) []*DailySummary {
 			existing.addAttendanceBlock(block)
 			continue
 		}
-		newDaily := &DailySummary{}
+		newDaily := NewDailySummary(ratio)
 		newDaily.addAttendanceBlock(block)
 		dailySums = append(dailySums, newDaily)
 	}
@@ -106,7 +103,7 @@ func sortAttendances(filtered []odoo.Attendance) {
 	})
 }
 
-func filterAttendancesInMonth(year int, month int, r *Reporter) []odoo.Attendance {
+func (r *Reporter) filterAttendancesInMonth(year int, month int) []odoo.Attendance {
 	filteredAttendances := make([]odoo.Attendance, 0)
 	for _, attendance := range r.attendances {
 		if isInMonth(attendance, year, month) {

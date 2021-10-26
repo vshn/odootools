@@ -73,8 +73,9 @@ func TestDailySummary_CalculateOvertime(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			s := DailySummary{
 				Blocks: tt.givenBlocks,
+				FTERatio: 1,
 			}
-			result := s.CalculateOvertime(1)
+			result := s.CalculateOvertime()
 			assert.Equal(t, tt.expectedOvertime, result)
 		})
 	}

@@ -64,7 +64,7 @@ func TestReduceAttendanceBlocks(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			result := reduceAttendanceBlocks(tt.givenBlocks)
+			result := reduceAttendanceBlocks(tt.givenBlocks, 0)
 			assert.Equal(t, tt.expectedDailySummaries, result)
 		})
 	}
