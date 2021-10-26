@@ -1,4 +1,4 @@
-name: Test
+name: Lint
 
 on:
   pull_request: {}
@@ -7,7 +7,7 @@ on:
     - master
 
 jobs:
-  test:
+  lint:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -26,13 +26,5 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-go-
 
-    - name: Run tests
-      run: make test
-
-    - name: Upload code coverage report to Code Climate
-      uses: paambaati/codeclimate-action@v3.0.0
-      env:
-        CC_TEST_REPORTER_ID: 85a3b401460d30145624e0bcb535031db26526a385112012212110c790509b00
-      with:
-        coverageLocations: cover.out:gocov
-        prefix: github.com/${{ github.repository }}
+    - name: Run linters
+      run: make lint
