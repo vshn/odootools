@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mhutter/vshn-ftb/pkg/odoo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/vshn/odootools/pkg/odoo"
 )
 
 func hours(t *testing.T, hours string) time.Time {

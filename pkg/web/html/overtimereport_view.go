@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/mhutter/vshn-ftb/pkg/odoo"
-	"github.com/mhutter/vshn-ftb/pkg/timesheet"
+	"github.com/vshn/odootools/pkg/odoo"
+	"github.com/vshn/odootools/pkg/timesheet"
 )
 
 type OvertimeReportView struct {

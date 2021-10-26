@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/mhutter/vshn-ftb/pkg/timesheet"
-	"github.com/mhutter/vshn-ftb/pkg/web/html"
+	"github.com/vshn/odootools/pkg/timesheet"
+	"github.com/vshn/odootools/pkg/web/html"
 )
 
 // OvertimeReport GET /report

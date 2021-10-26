@@ -9,16 +9,16 @@ import (
 
 func TestActionReason_MarshalJSON(t *testing.T) {
 	tests := map[string]struct {
-		givenInput ActionReason
+		givenInput     ActionReason
 		expectedOutput string
 	}{
 		"GivenInput_WhenEmpty_ThenReturnFalse": {
-			givenInput: ActionReason{},
+			givenInput:     ActionReason{},
 			expectedOutput: "false",
 		},
 		"GivenInput_WhenInputArray_ThenReturnString": {
 			givenInput: ActionReason{
-				ID: 4,
+				ID:   4,
 				Name: "Sick / Medical Consultation",
 			},
 			expectedOutput: "[4,\"Sick / Medical Consultation\"]",
@@ -36,15 +36,15 @@ func TestActionReason_MarshalJSON(t *testing.T) {
 
 func TestActionReason_UnmarshalJSON(t *testing.T) {
 	tests := map[string]struct {
-		givenInput []byte
+		givenInput     []byte
 		expectedOutput string
 	}{
 		"GivenInput_WhenFalse_ThenReturnEmpty": {
-			givenInput: []byte("false"),
+			givenInput:     []byte("false"),
 			expectedOutput: "",
 		},
 		"GivenInput_WhenInputArray_ThenReturnString": {
-			givenInput: []byte("[4, \"Sick / Medical Consultation\"]"),
+			givenInput:     []byte("[4, \"Sick / Medical Consultation\"]"),
 			expectedOutput: "Sick / Medical Consultation",
 		},
 	}

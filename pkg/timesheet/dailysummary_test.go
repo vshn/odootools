@@ -72,7 +72,7 @@ func TestDailySummary_CalculateOvertime(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			s := DailySummary{
-				Blocks: tt.givenBlocks,
+				Blocks:   tt.givenBlocks,
 				FTERatio: 1,
 			}
 			result := s.CalculateOvertime()

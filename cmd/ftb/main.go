@@ -6,9 +6,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/mhutter/vshn-ftb/pkg/odoo"
-	"github.com/mhutter/vshn-ftb/pkg/web"
-	"github.com/mhutter/vshn-ftb/pkg/web/middleware"
+	"github.com/vshn/odootools/pkg/odoo"
+	"github.com/vshn/odootools/pkg/web"
+	"github.com/vshn/odootools/pkg/web/middleware"
 )
 
 func main() {
