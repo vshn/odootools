@@ -1,11 +1,8 @@
 package odoo
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 )
 
 type Attendance struct {
@@ -92,34 +89,14 @@ func (c Client) ReadAllAttendances(sid string, uid int) ([]Attendance, error) {
 		return nil, fmt.Errorf("encoding request: %w", err)
 	}
 
-	// Create request
-	req, err := http.NewRequest("POST", c.baseURL+"/web/dataset/search_read", body)
+	res, err := c.makeRequest(sid, body)
 	if err != nil {
-		return nil, fmt.Errorf("creating request: %w", err)
-	}
-	req.Header.Set("content-type", "application/json")
-	req.Header.Set("cookie", "session_id="+sid)
-
-	// Send request
-	res, err := c.http.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("sending HTTP request: %w", err)
-	} else if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("expected HTTP status 200 OK, got %s", res.Status)
+		return nil, err
 	}
 
-	b, err := io.ReadAll(res.Body)
-	defer res.Body.Close()
-	if err != nil {
-		return nil, fmt.Errorf("read result: %w", err)
+	result := &readAttendancesResult{}
+	if err := c.unmarshalResponse(res.Body, result); err != nil {
+		return nil, err
 	}
-
-	buf := bytes.NewBuffer(b)
-	// decode response
-	var result readAttendancesResult
-	if err := DecodeResult(buf, &result); err != nil {
-		return nil, fmt.Errorf("decoding result: %w", err)
-	}
-
 	return result.Records, nil
 }
