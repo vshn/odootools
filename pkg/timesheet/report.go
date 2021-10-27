@@ -12,6 +12,12 @@ const (
 	ReasonOutsideOfficeHours = "Outside office hours"
 	ReasonAuthorities        = "Authorities"
 	ReasonPublicService      = "Requested Public Service"
+
+	TypePublicHoliday     = "Public Holiday"
+	TypeMilitaryService   = "Military Service"
+	TypeSpecialOccasions  = "Special Occasions"
+	TypeUnpaid            = "Unpaid"
+	TypeLegalLeavesPrefix = "Legal Leaves"
 )
 
 type AttendanceBlock struct {
@@ -22,7 +28,7 @@ type AttendanceBlock struct {
 
 type Summary struct {
 	TotalWorkedHours time.Duration
-	TotalLeaveDays  time.Duration
+	TotalLeaveDays   time.Duration
 }
 
 type Report struct {
@@ -38,32 +44,16 @@ type Reporter struct {
 func NewReporter(attendances []odoo.Attendance, leaves []odoo.Leave) *Reporter {
 	return &Reporter{
 		attendances: attendances,
-		leaves: leaves,
+		leaves:      leaves,
 	}
 }
 
 func (r *Reporter) CalculateReportForMonth(year, month int, fteRatio float64) Report {
 	filtered := r.filterAttendancesInMonth(year, month)
+	blocks := reduceAttendancesToBlocks(filtered)
+	dailySummaries := reduceAttendanceBlocksToDailies(blocks, fteRatio)
 
-	sortedEntries := make([]AttendanceBlock, 0)
 
-	sortAttendances(filtered)
-
-	var entry AttendanceBlock
-	for _, attendance := range filtered {
-		if attendance.Action == "sign_in" {
-			entry = AttendanceBlock{
-				Start:  attendance.DateTime.ToTime(),
-				Reason: attendance.Reason.String(),
-			}
-		}
-		if attendance.Action == "sign_out" {
-			entry.End = attendance.DateTime.ToTime()
-			sortedEntries = append(sortedEntries, entry)
-		}
-	}
-
-	dailySummaries := reduceAttendanceBlocks(sortedEntries, fteRatio)
 
 	summary := Summary{}
 	for _, dailySummary := range dailySummaries {
@@ -75,7 +65,26 @@ func (r *Reporter) CalculateReportForMonth(year, month int, fteRatio float64) Re
 	}
 }
 
-func reduceAttendanceBlocks(blocks []AttendanceBlock, ratio float64) []*DailySummary {
+func reduceAttendancesToBlocks(attendances []odoo.Attendance) []AttendanceBlock {
+	sortAttendances(attendances)
+	blocks := make([]AttendanceBlock, 0)
+	var tmpBlock AttendanceBlock
+	for _, attendance := range attendances {
+		if attendance.Action == "sign_in" {
+			tmpBlock = AttendanceBlock{
+				Start:  attendance.DateTime.ToTime(),
+				Reason: attendance.Reason.String(),
+			}
+		}
+		if attendance.Action == "sign_out" {
+			tmpBlock.End = attendance.DateTime.ToTime()
+			blocks = append(blocks, tmpBlock)
+		}
+	}
+	return blocks
+}
+
+func reduceAttendanceBlocksToDailies(blocks []AttendanceBlock, ratio float64) []*DailySummary {
 	dailySums := make([]*DailySummary, 0)
 
 	for _, block := range blocks {
@@ -105,4 +114,18 @@ func (r *Reporter) filterAttendancesInMonth(year int, month int) []odoo.Attendan
 		}
 	}
 	return filteredAttendances
+}
+
+func (r *Reporter) filterLeavesInMonth(year int, month int) []odoo.Leave {
+	filteredLeaves := make([]odoo.Leave, 0)
+	for _, leave := range r.leaves {
+		splits := leave.SplitByDay()
+		for _, split := range splits {
+			date := split.DateFrom
+			if date.IsWithinMonth(year, month) && date.ToTime().Weekday() != time.Sunday && date.ToTime().Weekday() != time.Saturday {
+				filteredLeaves = append(filteredLeaves, split)
+			}
+		}
+	}
+	return filteredLeaves
 }
