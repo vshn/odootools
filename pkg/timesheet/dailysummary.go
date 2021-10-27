@@ -14,9 +14,10 @@ type DailySummary struct {
 
 // NewDailySummary creates a new instance.
 // The fteRatio is the percentage (input a value between 0..1) of the employee and is used to calculate the daily maximum hours an employee should work.
-func NewDailySummary(fteRatio float64) *DailySummary {
+func NewDailySummary(fteRatio float64, date time.Time) *DailySummary {
 	return &DailySummary{
 		FTERatio: fteRatio,
+		Date:     date,
 	}
 }
 
@@ -45,11 +46,12 @@ func (s *DailySummary) addAttendanceBlock(block AttendanceBlock) {
 //    However, there's no overtime possible using excused hours
 //  * If the working hours exceed the theoretical daily maximum, then the excused hours are basically ignored.
 //    Example: it's not possible to work 9 hours, have 1 hour sick leave and expect 2 hours overtime for an 8 hours daily maximum, the overtime here is 1 hour.
+//  * Theoretical daily maximum is 0 (zero) hours on weekends.
 func (s *DailySummary) CalculateOvertime() time.Duration {
 	workHours := s.CalculateWorkingHours()
 	excusedHours := s.CalculateExcusedHours()
 
-	dailyMax := 8 * s.FTERatio
+	dailyMax := s.CalculateDailyMaxHours()
 	if workHours >= dailyMax {
 		// Can't be on sick leave etc. if working overtime.
 		excusedHours = 0
@@ -60,6 +62,21 @@ func (s *DailySummary) CalculateOvertime() time.Duration {
 	overtime := workHours + excusedHours - dailyMax
 
 	return toDuration(overtime)
+}
+
+// CalculateDailyMaxHours returns the theoretical amount of hours that an employee should work on this day.
+//  * It returns 0 for weekend days.
+//  * It returns 8.5 hours multiplied by FTE ratio for days in 2020 and earlier.
+//  * It returns 8.0 hours multiplied by FTE ratio for days in 2021 and later.
+func (s *DailySummary) CalculateDailyMaxHours() float64 {
+	if s.Date.Weekday() == time.Saturday || s.Date.Weekday() == time.Sunday {
+		return 0
+	}
+	if s.Date.Year() < 2021 {
+		// VSHN switched from 42h-a-week to 40h-a-week on 1st of January 2021.
+		return 8.5 * s.FTERatio
+	}
+	return 8 * s.FTERatio
 }
 
 // CalculateWorkingHours accumulates all working hours from that day.

@@ -20,6 +20,9 @@ const (
 	TypeLegalLeavesPrefix = "Legal Leaves"
 )
 
+// for testing purposes
+var now = time.Now
+
 type AttendanceBlock struct {
 	Start  time.Time
 	End    time.Time
@@ -39,19 +42,38 @@ type Report struct {
 type Reporter struct {
 	attendances []odoo.Attendance
 	leaves      []odoo.Leave
+	year        int
+	month       int
+	fteRatio    float64
 }
 
 func NewReporter(attendances []odoo.Attendance, leaves []odoo.Leave) *Reporter {
 	return &Reporter{
 		attendances: attendances,
 		leaves:      leaves,
+		year:        now().UTC().Year(),
+		month:       int(now().UTC().Month()),
+		fteRatio:    float64(1),
 	}
 }
 
-func (r *Reporter) CalculateReportForMonth(year, month int, fteRatio float64) Report {
-	filtered := r.filterAttendancesInMonth(year, month)
+func (r *Reporter) SetMonth(year, month int) *Reporter {
+	r.year = year
+	r.month = month
+	return r
+}
+
+func (r *Reporter) SetFteRatio(fteRatio float64) *Reporter {
+	r.fteRatio = fteRatio
+	return r
+}
+
+func (r *Reporter) CalculateReport() Report {
+	filtered := r.filterAttendancesInMonth()
 	blocks := reduceAttendancesToBlocks(filtered)
-	dailySummaries := reduceAttendanceBlocksToDailies(blocks, fteRatio)
+	dailySummaries := r.prepareWorkdays()
+
+	r.addAttendanceBlocksToDailies(blocks, dailySummaries)
 
 	summary := Summary{}
 	for _, dailySummary := range dailySummaries {
@@ -82,20 +104,35 @@ func reduceAttendancesToBlocks(attendances []odoo.Attendance) []AttendanceBlock 
 	return blocks
 }
 
-func reduceAttendanceBlocksToDailies(blocks []AttendanceBlock, ratio float64) []*DailySummary {
-	dailySums := make([]*DailySummary, 0)
+func (r *Reporter) prepareWorkdays() []*DailySummary {
+	days := make([]*DailySummary, 0)
 
+	firstDay := time.Date(r.year, time.Month(r.month), 1, 0, 0, 0, 0, time.UTC)
+	lastDay := firstDay.AddDate(0, 1, 0)
+
+	if lastDay.After(now().UTC()) {
+		lastDay = getDateTomorrow()
+	}
+
+	for currentDay := firstDay; currentDay.Before(lastDay); currentDay = currentDay.AddDate(0, 0, 1) {
+		days = append(days, NewDailySummary(r.fteRatio, currentDay))
+	}
+
+	return days
+}
+
+func getDateTomorrow() time.Time {
+	return now().UTC().Truncate(24*time.Hour).AddDate(0, 0, 1)
+}
+
+func (r *Reporter) addAttendanceBlocksToDailies(blocks []AttendanceBlock, dailySums []*DailySummary) {
 	for _, block := range blocks {
 		existing, found := findDailySummaryByDate(dailySums, block.Start)
 		if found {
 			existing.addAttendanceBlock(block)
 			continue
 		}
-		newDaily := NewDailySummary(ratio)
-		newDaily.addAttendanceBlock(block)
-		dailySums = append(dailySums, newDaily)
 	}
-	return dailySums
 }
 
 func sortAttendances(filtered []odoo.Attendance) {
@@ -104,10 +141,10 @@ func sortAttendances(filtered []odoo.Attendance) {
 	})
 }
 
-func (r *Reporter) filterAttendancesInMonth(year int, month int) []odoo.Attendance {
+func (r *Reporter) filterAttendancesInMonth() []odoo.Attendance {
 	filteredAttendances := make([]odoo.Attendance, 0)
 	for _, attendance := range r.attendances {
-		if attendance.DateTime.IsWithinMonth(year, month) {
+		if attendance.DateTime.IsWithinMonth(r.year, r.month) {
 			filteredAttendances = append(filteredAttendances, attendance)
 		}
 	}

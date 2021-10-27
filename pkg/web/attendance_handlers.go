@@ -32,13 +32,12 @@ func (s Server) OvertimeReport() http.Handler {
 			return
 		}
 
-		reporter := timesheet.NewReporter(attendances, leaves)
-
 		year := parseIntOrDefault(r.FormValue("year"), time.Now().Year())
 		month := parseIntOrDefault(r.FormValue("month"), int(time.Now().Month()))
 		fte := parseFloatOrDefault(r.FormValue("ftepercentage"), 100)
 
-		report := reporter.CalculateReportForMonth(year, month, fte/100)
+		reporter := timesheet.NewReporter(attendances, leaves).SetFteRatio(fte/100).SetMonth(year, month)
+		report := reporter.CalculateReport()
 		view.ShowAttendanceReport(w, report)
 	})
 }
