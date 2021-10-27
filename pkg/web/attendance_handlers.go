@@ -26,8 +26,13 @@ func (s Server) OvertimeReport() http.Handler {
 			return
 		}
 
-		reporter := timesheet.NewReport()
-		reporter.SetAttendances(attendances)
+		leaves, err := s.odoo.ReadAllLeaves(session.ID, session.UID)
+		if err != nil {
+			view.ShowError(w, err)
+			return
+		}
+
+		reporter := timesheet.NewReporter(attendances, leaves)
 
 		year := parseIntOrDefault(r.FormValue("year"), time.Now().Year())
 		month := parseIntOrDefault(r.FormValue("month"), int(time.Now().Month()))

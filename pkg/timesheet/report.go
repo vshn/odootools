@@ -22,6 +22,7 @@ type AttendanceBlock struct {
 
 type Summary struct {
 	TotalWorkedHours time.Duration
+	TotalLeaveDays  time.Duration
 }
 
 type Report struct {
@@ -34,18 +35,11 @@ type Reporter struct {
 	leaves      []odoo.Leave
 }
 
-func NewReport() *Reporter {
-	return &Reporter{}
-}
-
-func (r *Reporter) SetAttendances(attendances []odoo.Attendance) *Reporter {
-	r.attendances = attendances
-	return r
-}
-
-func (r *Reporter) SetLeaves(leaves []odoo.Leave) *Reporter {
-	r.leaves = leaves
-	return r
+func NewReporter(attendances []odoo.Attendance, leaves []odoo.Leave) *Reporter {
+	return &Reporter{
+		attendances: attendances,
+		leaves: leaves,
+	}
 }
 
 func (r *Reporter) CalculateReportForMonth(year, month int, fteRatio float64) Report {

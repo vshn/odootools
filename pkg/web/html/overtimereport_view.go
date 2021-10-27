@@ -33,6 +33,7 @@ func (v *OvertimeReportView) formatDailySummary(daily *timesheet.DailySummary) V
 func (v *OvertimeReportView) formatSummary(s timesheet.Summary) Values {
 	return Values{
 		"TotalOvertime": s.TotalWorkedHours.Truncate(time.Minute),
+		"TotalLeaves":   s.TotalLeaveDays.Truncate(time.Minute),
 	}
 }
 
