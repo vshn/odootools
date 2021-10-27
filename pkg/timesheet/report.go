@@ -106,16 +106,9 @@ func sortAttendances(filtered []odoo.Attendance) {
 func (r *Reporter) filterAttendancesInMonth(year int, month int) []odoo.Attendance {
 	filteredAttendances := make([]odoo.Attendance, 0)
 	for _, attendance := range r.attendances {
-		if isInMonth(attendance, year, month) {
+		if attendance.DateTime.IsWithinMonth(year, month) {
 			filteredAttendances = append(filteredAttendances, attendance)
 		}
 	}
 	return filteredAttendances
-}
-
-func isInMonth(attendance odoo.Attendance, year, month int) bool {
-	firstDayOfMonth := time.Date(year, time.Month(month), 1, 0, 0, 1, 0, time.Now().Location())
-	nextMonth := firstDayOfMonth.AddDate(0, 1, 0)
-	date := attendance.DateTime.ToTime()
-	return date.After(firstDayOfMonth) && date.Before(nextMonth)
 }

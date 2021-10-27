@@ -6,13 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"time"
-)
-
-const (
-	AttendanceDateFormat     = "2006-01-02"
-	AttendanceTimeFormat     = "15:04:05"
-	AttendanceDateTimeFormat = AttendanceDateFormat + " " + AttendanceTimeFormat
 )
 
 type Attendance struct {
@@ -21,7 +14,7 @@ type Attendance struct {
 
 	// DateTime is the entry timestamp in UTC
 	// Format: '2006-01-02 15:04:05'
-	DateTime *AttendanceTime `json:"name,omitempty"`
+	DateTime *Date `json:"name,omitempty"`
 
 	// Action is either "sign_in" or "sign_out"
 	Action string `json:"action,omitempty"`
@@ -29,46 +22,18 @@ type Attendance struct {
 	// Reason describes the "action reason" from Odoo.
 	//
 	// Example raw values returned from Odoo:
-	// * `false` (if no specific reason given)
-	// * `[1, "Outside office hours"]`
-	// * `[2, "Outside office hours"]`
-	// * `[3, "Sick / Medical Consultation"]`
-	// * `[4, "Sick / Medical Consultation"]`
-	// * `[5, "Authorities"]`
-	// * `[6, "Authorities"]`
-	// * `[27, "Requested Public Service"]`
-	// * `[28, "Requested Public Service"]`
+	//  * `false` (if no specific reason given)
+	//  * `[1, "Outside office hours"]`
+	//  * `[2, "Outside office hours"]`
+	//  * `[3, "Sick / Medical Consultation"]`
+	//  * `[4, "Sick / Medical Consultation"]`
+	//  * `[5, "Authorities"]`
+	//  * `[6, "Authorities"]`
+	//  * `[27, "Requested Public Service"]`
+	//  * `[28, "Requested Public Service"]`
 	//
 	// NOTE: This field has special meaning when calculating the overtime.
 	Reason *ActionReason `json:"action_desc,omitempty"`
-
-	// WorkedHours is the amount of time Odoo determined.
-	// Will always be "0.0" if "action" is "sign_in". Values DO NOT reflect
-	// special boni like the 1.5x bonus for "Outside office hours".
-	WorkedHours float64
-}
-
-type AttendanceTime time.Time
-
-func (at *AttendanceTime) String() string {
-	t := time.Time(*at)
-	return t.Format(AttendanceDateTimeFormat)
-}
-func (at AttendanceTime) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf(`"%s"`, at.String())), nil
-}
-func (at *AttendanceTime) UnmarshalJSON(b []byte) error {
-	ts := bytes.Trim(b, `"`)
-	t, err := time.Parse(AttendanceDateTimeFormat, string(ts))
-	if err != nil {
-		return err
-	}
-
-	*at = AttendanceTime(t)
-	return nil
-}
-func (at *AttendanceTime) ToTime() time.Time {
-	return time.Time(*at)
 }
 
 type ActionReason struct {

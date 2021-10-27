@@ -11,7 +11,7 @@ import (
 )
 
 func hours(t *testing.T, hours string) time.Time {
-	tm, err := time.Parse(odoo.AttendanceDateTimeFormat, fmt.Sprintf("2021-02-03 %s:00", hours))
+	tm, err := time.Parse(odoo.DateTimeFormat, fmt.Sprintf("2021-02-03 %s:00", hours))
 	require.NoError(t, err)
 	return tm
 }
@@ -23,13 +23,13 @@ func hoursDuration(t *testing.T, hours float64) time.Duration {
 }
 
 func parse(t *testing.T, pattern string) time.Time {
-	tm, err := time.Parse(odoo.AttendanceDateTimeFormat, fmt.Sprintf("%s:00", pattern))
+	tm, err := time.Parse(odoo.DateTimeFormat, fmt.Sprintf("%s:00", pattern))
 	require.NoError(t, err)
 	return tm
 }
 
 func date(t *testing.T, date string) time.Time {
-	tm, err := time.Parse(odoo.AttendanceDateFormat, date)
+	tm, err := time.Parse(odoo.DateFormat, date)
 	require.NoError(t, err)
 	return tm
 }
