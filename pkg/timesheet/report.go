@@ -53,8 +53,6 @@ func (r *Reporter) CalculateReportForMonth(year, month int, fteRatio float64) Re
 	blocks := reduceAttendancesToBlocks(filtered)
 	dailySummaries := reduceAttendanceBlocksToDailies(blocks, fteRatio)
 
-
-
 	summary := Summary{}
 	for _, dailySummary := range dailySummaries {
 		summary.TotalWorkedHours += dailySummary.CalculateOvertime()
