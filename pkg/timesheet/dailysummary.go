@@ -49,12 +49,11 @@ func (s *DailySummary) addAbsenceBlock(block AbsenceBlock) {
 //    However, there's no overtime possible using excused hours
 //  * If the working hours exceed the theoretical daily maximum, then the excused hours are basically ignored.
 //    Example: it's not possible to work 9 hours, have 1 hour sick leave and expect 2 hours overtime for an 8 hours daily maximum, the overtime here is 1 hour.
-//  * Theoretical daily maximum is 0 (zero) hours on weekends.
 func (s *DailySummary) CalculateOvertime() time.Duration {
 	workHours := s.CalculateWorkingHours()
 	excusedHours := s.CalculateExcusedHours()
 
-	dailyMax := s.CalculateDailyMaxHours()
+	dailyMax := s.CalculateDailyMaxHours() - s.CalculateAbsenceHours().Hours()
 	if workHours >= dailyMax {
 		// Can't be on sick leave etc. if working overtime.
 		excusedHours = 0
@@ -72,18 +71,8 @@ func (s *DailySummary) CalculateOvertime() time.Duration {
 //  * It returns 8.5 hours multiplied by FTE ratio for days in 2020 and earlier.
 //  * It returns 8.0 hours multiplied by FTE ratio for days in 2021 and later.
 func (s *DailySummary) CalculateDailyMaxHours() float64 {
-	if s.Date.Weekday() == time.Saturday || s.Date.Weekday() == time.Sunday {
+	if s.IsWeekend() {
 		return 0
-	}
-	if len(s.Absences) != 0 {
-		for _, absence := range s.Absences {
-			// TODO: Currently, only full-day absences are granted, otherwise it's required to subtract the absence from a daily max
-			if absence.Reason != TypeUnpaid {
-				// VSHN specific: Odoo treats "Unpaid" as normal leave, but for VSHN it's informational-only, meaning one still has to work.
-				// For every other type of absence, we set the max to 0.
-				return 0
-			}
-		}
 	}
 	if s.Date.Year() < 2021 {
 		// VSHN switched from 42h-a-week to 40h-a-week on 1st of January 2021.
@@ -120,6 +109,30 @@ func (s *DailySummary) CalculateExcusedHours() float64 {
 		}
 	}
 	return excusedHours
+}
+
+// CalculateAbsenceHours accumulates all absence hours from that day.
+func (s *DailySummary) CalculateAbsenceHours() time.Duration {
+	hours := float64(0)
+	for _, absence := range s.Absences {
+		if absence.Reason != TypeUnpaid {
+			// VSHN specific: Odoo treats "Unpaid" as normal leave, but for VSHN it's informational-only, meaning one still has to work.
+			// For every other type of absence, we add the daily max equivalent.
+
+			hours += s.CalculateDailyMaxHours()
+		}
+	}
+	return toDuration(hours)
+}
+
+// HasAbsences returns true if there are any absences.
+func (s *DailySummary) HasAbsences() bool {
+	return len(s.Absences) != 0
+}
+
+// IsWeekend returns true if the date falls on a Saturday or Sunday.
+func (s *DailySummary) IsWeekend() bool {
+	return s.Date.Weekday() == time.Saturday || s.Date.Weekday() == time.Sunday
 }
 
 func findDailySummaryByDate(dailies []*DailySummary, date time.Time) (*DailySummary, bool) {

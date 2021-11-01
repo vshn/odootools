@@ -8,6 +8,7 @@
     <tr style="font-weight: bold">
         <td>Weekday</td>
         <td>Date</td>
+        <td>Leaves</td>
         <td>Overtime hours</td>
     </tr>
     </thead>
@@ -16,6 +17,7 @@
     <tr>
         <td>{{ .Weekday }}</td>
         <td>{{ .Date }}</td>
+        <td>{{ .LeaveType }}</td>
         <td>{{ .OvertimeHours }}</td>
     </tr>
     {{ end }}
@@ -23,10 +25,12 @@
     <tfoot>
     <tr style="font-weight: bold">
         <td></td>
+        <td></td>
         <td>Total Leaves</td>
         <td>Total Overtime</td>
     </tr>
     <tr>
+        <td></td>
         <td></td>
         <td>{{ .Summary.TotalLeaves }}</td>
         <td>{{ .Summary.TotalOvertime }}</td>

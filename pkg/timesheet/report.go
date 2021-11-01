@@ -90,6 +90,7 @@ func (r *Reporter) CalculateReport() Report {
 	summary := Summary{}
 	for _, dailySummary := range dailySummaries {
 		summary.TotalOvertime += dailySummary.CalculateOvertime()
+		summary.TotalLeaveDays += dailySummary.CalculateAbsenceHours()
 	}
 	return Report{
 		DailySummaries: dailySummaries,
