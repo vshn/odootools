@@ -9,6 +9,7 @@ import (
 type DailySummary struct {
 	Date     time.Time
 	Blocks   []AttendanceBlock
+	Absences []AbsenceBlock
 	FTERatio float64
 }
 
@@ -18,23 +19,25 @@ func NewDailySummary(fteRatio float64, date time.Time) *DailySummary {
 	return &DailySummary{
 		FTERatio: fteRatio,
 		Date:     date,
+		Absences: []AbsenceBlock{},
+		Blocks:   []AttendanceBlock{},
 	}
 }
 
 // addAttendanceBlock adds the given block to the existing blocks.
-// If the block is first in the list, it will set a truncated date in DailySummary.Date.
-// If the next block is not starting in the same day, it will be silently ignored.
+// If the block is not starting in the same day as DailySummary.Date, it will be silently ignored.
 func (s *DailySummary) addAttendanceBlock(block AttendanceBlock) {
-	if len(s.Blocks) == 0 {
-		s.Blocks = []AttendanceBlock{block}
-		s.Date = block.Start.Truncate(24 * time.Hour)
-		return
-	}
 	if block.Start.Day() != s.Date.Day() {
 		// Block is not on the same day
 		return
 	}
 	s.Blocks = append(s.Blocks, block)
+}
+
+// addAbsenceBlock adds the given block to the existing absences.
+func (s *DailySummary) addAbsenceBlock(block AbsenceBlock) {
+	// At VSHN, currently only full-day absences are possible, so no need to check for starting and ending time.
+	s.Absences = append(s.Absences, block)
 }
 
 // CalculateOvertime returns the duration of overtime.
@@ -71,6 +74,16 @@ func (s *DailySummary) CalculateOvertime() time.Duration {
 func (s *DailySummary) CalculateDailyMaxHours() float64 {
 	if s.Date.Weekday() == time.Saturday || s.Date.Weekday() == time.Sunday {
 		return 0
+	}
+	if len(s.Absences) != 0 {
+		for _, absence := range s.Absences {
+			// TODO: Currently, only full-day absences are granted, otherwise it's required to subtract the absence from a daily max
+			if absence.Reason != TypeUnpaid {
+				// VSHN specific: Odoo treats "Unpaid" as normal leave, but for VSHN it's informational-only, meaning one still has to work.
+				// For every other type of absence, we set the max to 0.
+				return 0
+			}
+		}
 	}
 	if s.Date.Year() < 2021 {
 		// VSHN switched from 42h-a-week to 40h-a-week on 1st of January 2021.

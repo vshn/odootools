@@ -18,6 +18,10 @@ const (
 	TypeSpecialOccasions  = "Special Occasions"
 	TypeUnpaid            = "Unpaid"
 	TypeLegalLeavesPrefix = "Legal Leaves"
+
+	StateApproved  = "validate"
+	StateToApprove = "confirm"
+	StateDraft     = "draft"
 )
 
 // for testing purposes
@@ -29,9 +33,14 @@ type AttendanceBlock struct {
 	Reason string
 }
 
+type AbsenceBlock struct {
+	Date   time.Time
+	Reason string
+}
+
 type Summary struct {
-	TotalWorkedHours time.Duration
-	TotalLeaveDays   time.Duration
+	TotalOvertime  time.Duration
+	TotalLeaveDays time.Duration
 }
 
 type Report struct {
@@ -69,15 +78,18 @@ func (r *Reporter) SetFteRatio(fteRatio float64) *Reporter {
 }
 
 func (r *Reporter) CalculateReport() Report {
-	filtered := r.filterAttendancesInMonth()
-	blocks := reduceAttendancesToBlocks(filtered)
-	dailySummaries := r.prepareWorkdays()
+	filteredAttendances := r.filterAttendancesInMonth()
+	blocks := reduceAttendancesToBlocks(filteredAttendances)
+	filteredLeaves := r.filterLeavesInMonth()
+	absences := reduceLeavesToBlocks(filteredLeaves)
+	dailySummaries := r.prepareDays()
 
 	r.addAttendanceBlocksToDailies(blocks, dailySummaries)
+	r.addAbsencesToDailies(absences, dailySummaries)
 
 	summary := Summary{}
 	for _, dailySummary := range dailySummaries {
-		summary.TotalWorkedHours += dailySummary.CalculateOvertime()
+		summary.TotalOvertime += dailySummary.CalculateOvertime()
 	}
 	return Report{
 		DailySummaries: dailySummaries,
@@ -104,7 +116,21 @@ func reduceAttendancesToBlocks(attendances []odoo.Attendance) []AttendanceBlock 
 	return blocks
 }
 
-func (r *Reporter) prepareWorkdays() []*DailySummary {
+func reduceLeavesToBlocks(leaves []odoo.Leave) []AbsenceBlock {
+	blocks := make([]AbsenceBlock, 0)
+	for _, leave := range leaves {
+		// Only consider approved leaves
+		if leave.State == StateApproved {
+			blocks = append(blocks, AbsenceBlock{
+				Reason: leave.Type.String(),
+				Date:   leave.DateFrom.ToTime().UTC().Truncate(24 * time.Hour),
+			})
+		}
+	}
+	return blocks
+}
+
+func (r *Reporter) prepareDays() []*DailySummary {
 	days := make([]*DailySummary, 0)
 
 	firstDay := time.Date(r.year, time.Month(r.month), 1, 0, 0, 0, 0, time.UTC)
@@ -135,6 +161,16 @@ func (r *Reporter) addAttendanceBlocksToDailies(blocks []AttendanceBlock, dailyS
 	}
 }
 
+func (r *Reporter) addAbsencesToDailies(absences []AbsenceBlock, summaries []*DailySummary) {
+	for _, block := range absences {
+		existing, found := findDailySummaryByDate(summaries, block.Date)
+		if found {
+			existing.addAbsenceBlock(block)
+			continue
+		}
+	}
+}
+
 func sortAttendances(filtered []odoo.Attendance) {
 	sort.Slice(filtered, func(i, j int) bool {
 		return filtered[i].DateTime.ToTime().Unix() < filtered[j].DateTime.ToTime().Unix()
@@ -151,13 +187,13 @@ func (r *Reporter) filterAttendancesInMonth() []odoo.Attendance {
 	return filteredAttendances
 }
 
-func (r *Reporter) filterLeavesInMonth(year int, month int) []odoo.Leave {
+func (r *Reporter) filterLeavesInMonth() []odoo.Leave {
 	filteredLeaves := make([]odoo.Leave, 0)
 	for _, leave := range r.leaves {
 		splits := leave.SplitByDay()
 		for _, split := range splits {
 			date := split.DateFrom
-			if date.IsWithinMonth(year, month) && date.ToTime().Weekday() != time.Sunday && date.ToTime().Weekday() != time.Saturday {
+			if date.IsWithinMonth(r.year, r.month) && date.ToTime().Weekday() != time.Sunday && date.ToTime().Weekday() != time.Saturday {
 				filteredLeaves = append(filteredLeaves, split)
 			}
 		}

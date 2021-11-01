@@ -112,3 +112,56 @@ func TestDailySummary_CalculateOvertime(t *testing.T) {
 		})
 	}
 }
+
+func TestDailySummary_CalculateDailyMaxHours(t *testing.T) {
+	tests := map[string]struct {
+		givenDate     *time.Time
+		givenFteRatio float64
+		givenAbsences []AbsenceBlock
+		expectedHours float64
+	}{
+		"GivenWeekDay_WhenIn2021_ThenReturn8Hours": {
+			givenDate:     date(t, "2021-02-03"),
+			givenFteRatio: float64(1),
+			expectedHours: 8,
+		},
+		"GivenWeekDay_WhenIn2020_ThenReturn8.5Hours": {
+			givenDate:     date(t, "2020-02-03"),
+			givenFteRatio: float64(1),
+			expectedHours: 8.5,
+		},
+		"GivenWeekendDay_ThenReturn0Hours": {
+			givenDate:     date(t, "2021-02-06"),
+			givenFteRatio: float64(1),
+			expectedHours: 0,
+		},
+		"GivenAbsences_WhenTypeIsHoliday_ThenReturn0Hours": {
+			givenDate:     date(t, "2021-02-06"),
+			givenFteRatio: float64(1),
+			givenAbsences: []AbsenceBlock{
+				{Reason: TypePublicHoliday},
+			},
+			expectedHours: 0,
+		},
+		"GivenAbsences_WhenTypeIsUnpaid_ThenReturnNormalHours": {
+			givenDate:     date(t, "2021-02-03"),
+			givenFteRatio: float64(1),
+			givenAbsences: []AbsenceBlock{
+				{Reason: TypeUnpaid},
+			},
+			expectedHours: 8,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			s := DailySummary{
+				Date:     *tt.givenDate,
+				FTERatio: 1,
+				Absences: tt.givenAbsences,
+			}
+			result := s.CalculateDailyMaxHours()
+			assert.Equal(t, tt.expectedHours, result)
+		})
+	}
+}

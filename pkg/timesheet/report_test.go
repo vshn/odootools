@@ -152,8 +152,11 @@ func TestReporter_prepareWorkDays(t *testing.T) {
 				year:  tt.givenYear,
 				month: tt.givenMonth,
 			}
-			result := r.prepareWorkdays()
-			assert.Equal(t, tt.expectedDays, result)
+			result := r.prepareDays()
+			require.Len(t, result, len(tt.expectedDays))
+			for i := range result {
+				assert.Equal(t, tt.expectedDays[i].Date, result[i].Date)
+			}
 		})
 	}
 }

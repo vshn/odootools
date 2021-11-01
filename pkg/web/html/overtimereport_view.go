@@ -32,7 +32,7 @@ func (v *OvertimeReportView) formatDailySummary(daily *timesheet.DailySummary) V
 
 func (v *OvertimeReportView) formatSummary(s timesheet.Summary) Values {
 	return Values{
-		"TotalOvertime": s.TotalWorkedHours.Truncate(time.Minute),
+		"TotalOvertime": s.TotalOvertime.Truncate(time.Minute),
 		"TotalLeaves":   s.TotalLeaveDays.Truncate(time.Minute),
 	}
 }
@@ -50,9 +50,11 @@ func (v *OvertimeReportView) ShowError(w http.ResponseWriter, err error) {
 }
 
 func (v *OvertimeReportView) prepareValues(report timesheet.Report) Values {
-	formatted := make([]Values, len(report.DailySummaries))
-	for i := range report.DailySummaries {
-		formatted[i] = v.formatDailySummary(report.DailySummaries[i])
+	formatted := make([]Values, 0)
+	for _, summary := range report.DailySummaries {
+		if summary.CalculateDailyMaxHours() != 0 && summary.CalculateWorkingHours() != 0 {
+			formatted = append(formatted, v.formatDailySummary(summary))
+		}
 	}
 	return Values{
 		"Attendances": formatted,
