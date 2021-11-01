@@ -9,31 +9,35 @@ import (
 type DailySummary struct {
 	Date     time.Time
 	Blocks   []AttendanceBlock
+	Absences []AbsenceBlock
 	FTERatio float64
 }
 
 // NewDailySummary creates a new instance.
 // The fteRatio is the percentage (input a value between 0..1) of the employee and is used to calculate the daily maximum hours an employee should work.
-func NewDailySummary(fteRatio float64) *DailySummary {
+func NewDailySummary(fteRatio float64, date time.Time) *DailySummary {
 	return &DailySummary{
 		FTERatio: fteRatio,
+		Date:     date,
+		Absences: []AbsenceBlock{},
+		Blocks:   []AttendanceBlock{},
 	}
 }
 
 // addAttendanceBlock adds the given block to the existing blocks.
-// If the block is first in the list, it will set a truncated date in DailySummary.Date.
-// If the next block is not starting in the same day, it will be silently ignored.
+// If the block is not starting in the same day as DailySummary.Date, it will be silently ignored.
 func (s *DailySummary) addAttendanceBlock(block AttendanceBlock) {
-	if len(s.Blocks) == 0 {
-		s.Blocks = []AttendanceBlock{block}
-		s.Date = block.Start.Truncate(24 * time.Hour)
-		return
-	}
 	if block.Start.Day() != s.Date.Day() {
 		// Block is not on the same day
 		return
 	}
 	s.Blocks = append(s.Blocks, block)
+}
+
+// addAbsenceBlock adds the given block to the existing absences.
+func (s *DailySummary) addAbsenceBlock(block AbsenceBlock) {
+	// At VSHN, currently only full-day absences are possible, so no need to check for starting and ending time.
+	s.Absences = append(s.Absences, block)
 }
 
 // CalculateOvertime returns the duration of overtime.
@@ -49,7 +53,7 @@ func (s *DailySummary) CalculateOvertime() time.Duration {
 	workHours := s.CalculateWorkingHours()
 	excusedHours := s.CalculateExcusedHours()
 
-	dailyMax := 8 * s.FTERatio
+	dailyMax := s.CalculateDailyMaxHours() - s.CalculateAbsenceHours().Hours()
 	if workHours >= dailyMax {
 		// Can't be on sick leave etc. if working overtime.
 		excusedHours = 0
@@ -60,6 +64,21 @@ func (s *DailySummary) CalculateOvertime() time.Duration {
 	overtime := workHours + excusedHours - dailyMax
 
 	return toDuration(overtime)
+}
+
+// CalculateDailyMaxHours returns the theoretical amount of hours that an employee should work on this day.
+//  * It returns 0 for weekend days.
+//  * It returns 8.5 hours multiplied by FTE ratio for days in 2020 and earlier.
+//  * It returns 8.0 hours multiplied by FTE ratio for days in 2021 and later.
+func (s *DailySummary) CalculateDailyMaxHours() float64 {
+	if s.IsWeekend() {
+		return 0
+	}
+	if s.Date.Year() < 2021 {
+		// VSHN switched from 42h-a-week to 40h-a-week on 1st of January 2021.
+		return 8.5 * s.FTERatio
+	}
+	return 8 * s.FTERatio
 }
 
 // CalculateWorkingHours accumulates all working hours from that day.
@@ -90,6 +109,30 @@ func (s *DailySummary) CalculateExcusedHours() float64 {
 		}
 	}
 	return excusedHours
+}
+
+// CalculateAbsenceHours accumulates all absence hours from that day.
+func (s *DailySummary) CalculateAbsenceHours() time.Duration {
+	hours := float64(0)
+	for _, absence := range s.Absences {
+		if absence.Reason != TypeUnpaid {
+			// VSHN specific: Odoo treats "Unpaid" as normal leave, but for VSHN it's informational-only, meaning one still has to work.
+			// For every other type of absence, we add the daily max equivalent.
+
+			hours += s.CalculateDailyMaxHours()
+		}
+	}
+	return toDuration(hours)
+}
+
+// HasAbsences returns true if there are any absences.
+func (s *DailySummary) HasAbsences() bool {
+	return len(s.Absences) != 0
+}
+
+// IsWeekend returns true if the date falls on a Saturday or Sunday.
+func (s *DailySummary) IsWeekend() bool {
+	return s.Date.Weekday() == time.Saturday || s.Date.Weekday() == time.Sunday
 }
 
 func findDailySummaryByDate(dailies []*DailySummary, date time.Time) (*DailySummary, bool) {
