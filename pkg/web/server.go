@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"log"
 	"net/http"
-	"path"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/securecookie"
@@ -33,10 +32,9 @@ func NewServer(
 		log.Fatalf("Error decoding secret key. Generate with `openssl rand -base64 32`. %v", err)
 	}
 
-	templateRoot := path.Join(RootDir, "templates")
 	s := Server{
 		odoo:         odoo,
-		html:         html.NewRenderer(templateRoot),
+		html:         html.NewRenderer(),
 		securecookie: securecookie.New(key, key),
 	}
 	s.routes(middleware...)
