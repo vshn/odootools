@@ -2,9 +2,9 @@ package web
 
 import (
 	"net/http"
-	"path/filepath"
 
 	"github.com/gorilla/mux"
+	"github.com/vshn/odootools/templates"
 )
 
 func (s *Server) routes(middleware ...mux.MiddlewareFunc) {
@@ -27,8 +27,7 @@ func (s *Server) routes(middleware ...mux.MiddlewareFunc) {
 	r.Handle("/logout", s.Logout()).Methods("GET")
 
 	// static files
-	publicRoot := filepath.Join(RootDir, "public")
-	r.PathPrefix("/").Handler(http.FileServer(http.Dir(publicRoot)))
+	r.PathPrefix("/").Handler(http.FileServer(http.FS(templates.PublicFS)))
 
 	s.router = router
 }

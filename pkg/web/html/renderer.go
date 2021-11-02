@@ -4,14 +4,13 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"path/filepath"
+
+	"github.com/vshn/odootools/templates"
 )
 
 // Renderer is able to render HTML templates. Templates will be compiled the first
 // time they are requested, and cached thereafter.
 type Renderer struct {
-	root string
-
 	cache map[string]*template.Template
 }
 
@@ -19,9 +18,8 @@ type Renderer struct {
 type Values map[string]interface{}
 
 // NewRenderer returns a new "Renderer" struct
-func NewRenderer(root string) *Renderer {
+func NewRenderer() *Renderer {
 	return &Renderer{
-		root:  root,
 		cache: make(map[string]*template.Template),
 	}
 }
@@ -44,10 +42,7 @@ func (v *Renderer) Render(w http.ResponseWriter, template string, data Values) {
 
 func (v *Renderer) getTemplate(name string) (*template.Template, error) {
 	if v.cache[name] == nil {
-		t, err := template.ParseFiles(
-			filepath.Join(v.root, "layout.html"),
-			filepath.Join(v.root, name+".html"),
-		)
+		t, err := template.ParseFS(templates.TemplateFS, "layout.html", name+".html")
 		if err != nil {
 			return nil, err
 		}

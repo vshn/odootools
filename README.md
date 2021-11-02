@@ -16,10 +16,16 @@ It's currently aimed at Odoo 8.
 
 ### Run the tool
 
+First, you need to export Odoo settings:
+```bash
+export ODOO_URL=https://...
+export ODOO_DB=...
+```
+
 You can run the operator in different ways:
 
-1. as a container image (`ghcr.io/vshn/odootools`)
-2. using `make run`. Export `ODOO_URL` and `ODOO_DB` first.
+1. using `make run` (uses `go run`).
+2. using `make run.docker` (uses `docker run`)
 3. using a configuration of your favorite IDE
 
 [build]: https://github.com/vshn/odootools/actions?query=workflow%3ATest
