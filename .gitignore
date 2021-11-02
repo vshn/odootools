@@ -9,3 +9,6 @@ odootools
 # Goreleaser
 dist/
 .github/release-notes.md
+
+# Kustomize
+kustomize/**/.env

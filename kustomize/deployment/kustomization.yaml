@@ -1,0 +1,12 @@
+resources:
+- deployment.yaml
+- service.yaml
+
+secretGenerator:
+- name: odootools
+  type: Opaque
+  envs:
+  - .env
+
+generatorOptions:
+  disableNameSuffixHash: true
