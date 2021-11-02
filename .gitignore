@@ -5,6 +5,7 @@ tls
 # Build
 odootools
 *.out
+node_modules
 
 # Goreleaser
 dist/

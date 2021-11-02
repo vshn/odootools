@@ -11,18 +11,20 @@
     {{ with .Error }}
     <div class="alert alert-warning" role="alert">{{ . }}</div>
     {{ end }}
-    <div class="form-group">
-        <label for="year">Year</label>
+    <div class="mb-3">
+        <label for="year" class="form-label">Year</label>
         <input type="number" class="form-control" name="year" id="year" min="2014" value="2020">
     </div>
-    <div class="form-group">
-        <label for="month">Month</label>
+    <div class="mb-3">
+        <label for="month"class="form-label">Month</label>
         <input type="number" class="form-control" name="month" id="month" min="1" max="12" value="1">
     </div>
-    <div class="form-group">
-        <label for="fte">FTE percentage</label>
+    <div class="mb-3">
+        <label for="fte"class="form-label">FTE percentage</label>
         <input type="number" class="form-control" name="ftepercentage" id="fte" min="1" max="100" value="100">
     </div>
-    <button type="submit" class="btn btn-primary">Create Report</button>
+    <div class="mb-3">
+        <button type="submit" class="btn btn-primary">Create Report</button>
+    </div>
 </form>
 {{ end }}

@@ -3,13 +3,13 @@
 {{ with .Error }}
 <div class="alert alert-warning" role="alert">{{ . }}</div>
 {{ end }}
-<table class="table table-hover table-condensed">
+<table class="table table-hover table-sm">
     <thead>
-    <tr style="font-weight: bold">
-        <td>Weekday</td>
-        <td>Date</td>
-        <td>Leaves</td>
-        <td>Overtime hours</td>
+    <tr>
+        <th scope="col">Weekday</th>
+        <th scope="col">Date</th>
+        <th scope="col">Leaves</th>
+        <th scope="col">Overtime hours</th>
     </tr>
     </thead>
     <tbody>
@@ -23,11 +23,11 @@
     {{ end }}
     </tbody>
     <tfoot>
-    <tr style="font-weight: bold">
-        <td></td>
-        <td></td>
-        <td>Total Leaves</td>
-        <td>Total Overtime</td>
+    <tr>
+        <th scope="col"></th>
+        <th scope="col"></th>
+        <th scope="col">Total Leaves</th>
+        <th scope="col">Total Overtime</th>
     </tr>
     <tr>
         <td></td>

@@ -35,7 +35,7 @@ func AccessLog(next http.Handler) http.Handler {
 			RequestSize:  r.ContentLength,
 			ResponseSize: wr.size,
 		}
-		if r.RequestURI == "/favicon.png" {
+		if r.RequestURI == "/favicon.png" || r.RequestURI == "/bootstrap.min.css" {
 			// Don't care about those
 			return
 		}
