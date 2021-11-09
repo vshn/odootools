@@ -46,20 +46,23 @@ type Summary struct {
 type Report struct {
 	DailySummaries []*DailySummary
 	Summary        Summary
+	Employee       *odoo.Employee
 }
 
 type Reporter struct {
 	attendances []odoo.Attendance
 	leaves      []odoo.Leave
+	employee    *odoo.Employee
 	year        int
 	month       int
 	fteRatio    float64
 }
 
-func NewReporter(attendances []odoo.Attendance, leaves []odoo.Leave) *Reporter {
+func NewReporter(attendances []odoo.Attendance, leaves []odoo.Leave, employee *odoo.Employee) *Reporter {
 	return &Reporter{
 		attendances: attendances,
 		leaves:      leaves,
+		employee:    employee,
 		year:        now().UTC().Year(),
 		month:       int(now().UTC().Month()),
 		fteRatio:    float64(1),
@@ -95,6 +98,7 @@ func (r *Reporter) CalculateReport() Report {
 	return Report{
 		DailySummaries: dailySummaries,
 		Summary:        summary,
+		Employee:       r.employee,
 	}
 }
 

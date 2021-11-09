@@ -88,5 +88,6 @@ func (v *OvertimeReportView) prepareValues(report timesheet.Report) Values {
 			"LoggedIn":   true,
 			"ActiveView": v.template,
 		},
+		"Username": report.Employee.Name,
 	}
 }

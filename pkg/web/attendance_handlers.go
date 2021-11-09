@@ -1,10 +1,12 @@
 package web
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 
+	"github.com/vshn/odootools/pkg/odoo"
 	"github.com/vshn/odootools/pkg/timesheet"
 	"github.com/vshn/odootools/pkg/web/html"
 )
@@ -20,13 +22,38 @@ func (s Server) OvertimeReport() http.Handler {
 		}
 		view := html.NewOvertimeReportView(s.html)
 
-		attendances, err := s.odoo.ReadAllAttendances(session.ID, session.UID)
+		forAnotherUser := r.FormValue("userscope") == "user-foreign-radio"
+		searchUser := r.FormValue("username")
+
+		userId := session.UID
+		var employee *odoo.Employee
+		if forAnotherUser {
+			e, err := s.odoo.SearchEmployee(searchUser, session.ID)
+			if err != nil {
+				view.ShowError(w, err)
+				return
+			}
+			if e == nil {
+				view.ShowError(w, fmt.Errorf("no user matching '%s' found", searchUser))
+				return
+			}
+			employee = e
+		} else {
+			e, err := s.odoo.FetchEmployee(userId, session.ID)
+			if err != nil {
+				view.ShowError(w, err)
+				return
+			}
+			employee = e
+		}
+
+		attendances, err := s.odoo.ReadAllAttendances(session.ID, userId)
 		if err != nil {
 			view.ShowError(w, err)
 			return
 		}
 
-		leaves, err := s.odoo.ReadAllLeaves(session.ID, session.UID)
+		leaves, err := s.odoo.ReadAllLeaves(session.ID, userId)
 		if err != nil {
 			view.ShowError(w, err)
 			return
@@ -36,7 +63,7 @@ func (s Server) OvertimeReport() http.Handler {
 		month := parseIntOrDefault(r.FormValue("month"), int(time.Now().Month()))
 		fte := parseFloatOrDefault(r.FormValue("ftepercentage"), 100)
 
-		reporter := timesheet.NewReporter(attendances, leaves).SetFteRatio(fte/100).SetMonth(year, month)
+		reporter := timesheet.NewReporter(attendances, leaves, employee).SetFteRatio(fte/100).SetMonth(year, month)
 		report := reporter.CalculateReport()
 		view.ShowAttendanceReport(w, report)
 	})
