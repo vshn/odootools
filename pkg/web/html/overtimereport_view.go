@@ -26,7 +26,7 @@ func (v *OvertimeReportView) formatDailySummary(daily *timesheet.DailySummary) V
 	basic := Values{
 		"Weekday":       daily.Date.Weekday(),
 		"Date":          daily.Date.Format(odoo.DateFormat),
-		"OvertimeHours": strconv.FormatFloat(daily.CalculateOvertime().Hours(), 'f', 2, 64),
+		"OvertimeHours": formatDurationInHours(daily.CalculateOvertime()),
 		"LeaveType":     "",
 	}
 	if daily.HasAbsences() {
@@ -35,9 +35,25 @@ func (v *OvertimeReportView) formatDailySummary(daily *timesheet.DailySummary) V
 	return basic
 }
 
+// formatDurationInHours returns a human friendly "0:00"-formatted duration.
+// Seconds within a minute are rounded up or down to the nearest full minute.
+// A sign ("-") is prefixed if duration is negative.
+func formatDurationInHours(d time.Duration) string {
+	sign := ""
+	if d.Seconds() < 0 {
+		sign = "-"
+		d = time.Duration(d.Nanoseconds() * -1)
+	}
+	d = d.Round(time.Minute)
+	h := d / time.Hour
+	d -= h * time.Hour
+	m := d / time.Minute
+	return fmt.Sprintf("%s%d:%02d", sign, h, m)
+}
+
 func (v *OvertimeReportView) formatSummary(s timesheet.Summary) Values {
 	return Values{
-		"TotalOvertime": s.TotalOvertime.Truncate(time.Minute),
+		"TotalOvertime": formatDurationInHours(s.TotalOvertime.Truncate(time.Minute)),
 		// TODO: Might not be accurate for days before 2021
 		"TotalLeaves": fmt.Sprintf("%sd", strconv.FormatFloat(s.TotalLeaveDays.Hours()/8, 'f', 0, 64)),
 	}
