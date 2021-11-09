@@ -35,7 +35,7 @@ func AccessLog(next http.Handler) http.Handler {
 			RequestSize:  r.ContentLength,
 			ResponseSize: wr.size,
 		}
-		if r.RequestURI == "/favicon.png" || r.RequestURI == "/bootstrap.min.css" {
+		if shouldIgnoreLog(r.RequestURI) {
 			// Don't care about those
 			return
 		}
@@ -60,4 +60,17 @@ func (w *wrapper) Write(b []byte) (int, error) {
 	n, err := w.ResponseWriter.Write(b)
 	w.size += n
 	return n, err
+}
+
+func shouldIgnoreLog(uri string) bool {
+	for _, u := range []string{
+		"/favicon.png",
+		"/bootstrap.min.css",
+		"/bootstrap.min.css.map",
+	} {
+		if u == uri {
+			return true
+		}
+	}
+	return false
 }

@@ -18,6 +18,7 @@ help: ## Show this help
 
 generate: ## Generate code and assets
 	curl -sSLo templates/bootstrap.min.css https://cdn.jsdelivr.net/npm/bootstrap@$(shell jq --raw-output '.packages."node_modules/bootstrap".version' package-lock.json)/dist/css/bootstrap.min.css
+	curl -sSLo templates/bootstrap.min.css.map https://cdn.jsdelivr.net/npm/bootstrap@$(shell jq --raw-output '.packages."node_modules/bootstrap".version' package-lock.json)/dist/css/bootstrap.min.css.map
 
 .PHONY: build
 build: build.bin build.docker ## All-in-one build
