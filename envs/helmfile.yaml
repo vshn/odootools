@@ -1,19 +1,23 @@
 environments:
-  default: {}
   prod: {}
+  preview: {}
 
 helmDefaults:
   historyMax: 3
 
 releases:
-  - name: odootools
-    namespace: odootools-prod
+  - name: {{ env "HELM_RELEASE_NAME" | default "odootools" }}
+    namespace: odootools-{{ .Environment.Name }}
     chart: ../chart
+    createNamespace: false
     missingFileHandler: Warn
     values:
       - {{ .Environment.Name }}.yaml
+      - image:
+          tag: {{ trimPrefix "refs/tags/" (requiredEnv "IMG_TAG") }}
       - odootools:
           secretEnvs:
             ODOO_URL: {{ requiredEnv "ODOO_URL" }}
             ODOO_DB: {{ requiredEnv "ODOO_DB" }}
             SECRET_KEY: {{ requiredEnv "SECRET_KEY" }}
+      - fullnameOverride: {{ env "HELM_RELEASE_NAME" | default "odootools" }}

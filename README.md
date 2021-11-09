@@ -5,6 +5,11 @@
 [![GitHub downloads](https://img.shields.io/github/downloads/vshn/odootools/total)][releases]
 [![License](https://img.shields.io/github/license/vshn/odootools)][license]
 
+[build]: https://github.com/vshn/odootools/actions?query=workflow%3ATest
+[releases]: https://github.com/vshn/odootools/releases
+[license]: https://github.com/vshn/odootools/blob/master/LICENSE
+[codeclimate]: https://codeclimate.com/github/vshn/odootools
+
 # odootools
 
 odootools is a small tool that allows you to calculate overtime based on your attendances.
@@ -22,13 +27,29 @@ export ODOO_URL=https://...
 export ODOO_DB=...
 ```
 
-You can run the operator in different ways:
+You can run the tool in different ways:
 
 1. using `make run` (uses `go run`).
 2. using `make run.docker` (uses `docker run`)
 3. using a configuration of your favorite IDE
 
-[build]: https://github.com/vshn/odootools/actions?query=workflow%3ATest
-[releases]: https://github.com/vshn/odootools/releases
-[license]: https://github.com/vshn/odootools/blob/master/LICENSE
-[codeclimate]: https://codeclimate.com/github/vshn/odootools
+### Deploy to OpenShift
+
+Setup the project and deploy user
+
+```bash
+oc new-project odootools-preview
+oc new-project odootools-prod
+
+ns=odootools-prod
+sa=odootools-deployer
+
+oc -n $ns create sa $sa
+
+# Allow the deployer user to manage deployments in preview namespace
+oc -n $ns policy add-role-to-user admin -z $sa --rolebinding-name admin
+oc -n odootools-preview patch rolebinding admin --type='json' -p='[{"op": "replace", "path": "/subjects/1/namespace", "value":"'$ns'"}]'
+
+# Get SA token
+oc -n $ns sa get-token $sa
+```
