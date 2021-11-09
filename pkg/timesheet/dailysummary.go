@@ -63,7 +63,7 @@ func (s *DailySummary) CalculateOvertime() time.Duration {
 	}
 	overtime := workHours + excusedHours - dailyMax
 
-	return toDuration(overtime)
+	return ToDuration(overtime)
 }
 
 // CalculateDailyMaxHours returns the theoretical amount of hours that an employee should work on this day.
@@ -122,7 +122,7 @@ func (s *DailySummary) CalculateAbsenceHours() time.Duration {
 			hours += s.CalculateDailyMaxHours()
 		}
 	}
-	return toDuration(hours)
+	return ToDuration(hours)
 }
 
 // HasAbsences returns true if there are any absences.
@@ -144,8 +144,9 @@ func findDailySummaryByDate(dailies []*DailySummary, date time.Time) (*DailySumm
 	return nil, false
 }
 
-func toDuration(hours float64) time.Duration {
-	duration, err := time.ParseDuration(fmt.Sprintf("%sh", strconv.FormatFloat(hours, 'f', 2, 64)))
+// ToDuration returns the given hours as time.Duration with 3 decimal precision.
+func ToDuration(hours float64) time.Duration {
+	duration, err := time.ParseDuration(fmt.Sprintf("%sh", strconv.FormatFloat(hours, 'f', 3, 64)))
 	if err != nil {
 		panic(err)
 	}
