@@ -9,6 +9,8 @@
         <th scope="col">Weekday</th>
         <th scope="col">Date</th>
         <th scope="col">Leaves</th>
+        <th scope="col">Excused hours</th>
+        <th scope="col">Worked hours</th>
         <th scope="col">Overtime hours</th>
     </tr>
     </thead>
@@ -18,6 +20,8 @@
         <td>{{ .Weekday }}</td>
         <td>{{ .Date }}</td>
         <td>{{ .LeaveType }}</td>
+        <td>{{ .ExcusedHours }}</td>
+        <td>{{ .WorkedHours }}</td>
         <td>{{ .OvertimeHours }}</td>
     </tr>
     {{ end }}
@@ -27,12 +31,16 @@
         <th scope="col"></th>
         <th scope="col"></th>
         <th scope="col">Total Leaves</th>
+        <th scope="col"></th>
+        <th scope="col"></th>
         <th scope="col">Total Overtime</th>
     </tr>
     <tr>
         <td></td>
         <td></td>
         <td>{{ .Summary.TotalLeaves }}</td>
+        <td></td>
+        <td></td>
         <td>{{ .Summary.TotalOvertime }}</td>
     </tr>
     </tfoot>
