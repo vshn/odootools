@@ -64,6 +64,10 @@ func (c *Client) ReadAllLeaves(sid string, uid int) ([]Leave, error) {
 		return nil, err
 	}
 
+	type readLeavesResult struct {
+		Length  int     `json:"length,omitempty"`
+		Records []Leave `json:"records,omitempty"`
+	}
 	result := &readLeavesResult{}
 	if err := c.unmarshalResponse(res.Body, result); err != nil {
 		return nil, err
@@ -97,11 +101,6 @@ func (l Leave) SplitByDay() []Leave {
 }
 
 ////////////////// Boilerplate
-
-type readLeavesResult struct {
-	Length  int     `json:"length,omitempty"`
-	Records []Leave `json:"records,omitempty"`
-}
 
 func (leaveType LeaveType) MarshalJSON() ([]byte, error) {
 	if leaveType.Name == "" {

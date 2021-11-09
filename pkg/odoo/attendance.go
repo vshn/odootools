@@ -71,11 +71,6 @@ func (reason *ActionReason) String() string {
 	return reason.Name
 }
 
-type readAttendancesResult struct {
-	Length  int          `json:"length,omitempty"`
-	Records []Attendance `json:"records,omitempty"`
-}
-
 func (c Client) ReadAllAttendances(sid string, uid int) ([]Attendance, error) {
 	// Prepare "search attendances" request
 	body, err := NewJsonRpcRequest(&ReadModelRequest{
@@ -94,6 +89,10 @@ func (c Client) ReadAllAttendances(sid string, uid int) ([]Attendance, error) {
 		return nil, err
 	}
 
+	type readAttendancesResult struct {
+		Length  int          `json:"length,omitempty"`
+		Records []Attendance `json:"records,omitempty"`
+	}
 	result := &readAttendancesResult{}
 	if err := c.unmarshalResponse(res.Body, result); err != nil {
 		return nil, err

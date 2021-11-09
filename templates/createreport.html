@@ -16,12 +16,28 @@
         <input type="number" class="form-control" name="year" id="year" min="2014" value="2020">
     </div>
     <div class="mb-3">
-        <label for="month"class="form-label">Month</label>
+        <label for="month" class="form-label">Month</label>
         <input type="number" class="form-control" name="month" id="month" min="1" max="12" value="1">
     </div>
     <div class="mb-3">
-        <label for="fte"class="form-label">FTE percentage</label>
+        <label for="fte" class="form-label">FTE percentage</label>
         <input type="number" class="form-control" name="ftepercentage" id="fte" min="1" max="100" value="100">
+    </div>
+    <div class="mb-3 form-check">
+        <input class="form-check-input" type="radio" id="userselfradio" name="userscope" value="user-self-radio"
+               checked>
+        <label class="form-check-label" for="userselfradio">
+            For myself
+        </label>
+    </div>
+    <div class="mb-3 form-check form-check-inline">
+        <input class="form-check-input" type="radio" id="userforeignradio" name="userscope" value="user-foreign-radio">
+        <label class="form-check-label" for="userforeignradio">
+            For someone else (you'll need appropriate permissions)
+        </label>
+        <span>
+            <input class="form-control" type="text" name="username" id="username" placeholder="Search Username">
+        </span>
     </div>
     <div class="mb-3">
         <button type="submit" class="btn btn-primary">Create Report</button>

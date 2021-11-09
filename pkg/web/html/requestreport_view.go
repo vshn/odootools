@@ -10,7 +10,7 @@ type RequestReportView struct {
 func NewRequestReportView(renderer *Renderer) *RequestReportView {
 	return &RequestReportView{
 		renderer: renderer,
-		template: "report",
+		template: "createreport",
 	}
 }
 
