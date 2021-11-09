@@ -4,8 +4,10 @@ ingress:
     - host: odootools.vshn.net
       paths:
         - path: /
-          pathType: Exact
+          pathType: ImplementationSpecific
   tls:
     - secretName: odootools-tls
       hosts:
         - odootools.vshn.net
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-production
