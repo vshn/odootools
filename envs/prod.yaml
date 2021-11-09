@@ -1,2 +1,11 @@
-image:
-  tag: v0.2.0-rc1
+ingress:
+  enabled: true
+  hosts:
+    - host: odootools.vshn.net
+      paths:
+        - path: /
+          pathType: Exact
+  tls:
+    - secretName: odootools-tls
+      hosts:
+        - odootools.vshn.net

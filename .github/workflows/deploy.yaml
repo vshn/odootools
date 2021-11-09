@@ -1,0 +1,53 @@
+name: Deploy
+
+on:
+  push:
+    tags:
+    - "*"
+
+env:
+  ENVIRONMENT: prod
+  OPENSHIFT_API: https://api.c-appuio-cloudscale-lpg-1.appuio.cloud:6443
+  HELM_RELEASE_NAME: odootools
+
+jobs:
+  helm:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Setup helmfile
+      uses: mamezou-tech/setup-helmfile@v0.8.0
+      with:
+        helm-version: v3.7.1
+        helmfile-version: v0.142.0
+        install-kubectl: false
+
+    - name: Install CLI tools from OpenShift Mirror
+      uses: redhat-actions/openshift-tools-installer@v1
+      with:
+        oc: "4"
+
+    - name: Set environment for release candidates
+      run: |
+        echo "ENVIRONMENT=preview" >> $GITHUB_ENV
+        echo "HELM_RELEASE_NAME=${GITHUB_REF##*-}" >> $GITHUB_ENV
+      if: "${{ contains(github.ref, '-rc') }}"
+
+    - name: Authenticate and set context
+      uses: redhat-actions/oc-login@v1
+      with:
+        openshift_server_url: ${{ env.OPENSHIFT_API }}
+        openshift_token: ${{ secrets.OPENSHIFT_TOKEN }}
+        namespace: odootools-${{ env.ENVIRONMENT }}
+        # We don't have a LE cert yet
+        insecure_skip_tls_verify: true
+
+    - name: Deploy app
+      run: helmfile -f envs/helmfile.yaml -e ${{ env.ENVIRONMENT }} apply
+      env:
+        HELM_RELEASE_NAME: ${{ env.HELM_RELEASE_NAME }}
+        IMG_TAG: ${{ github.ref }}
+        ODOO_DB: ${{ secrets.ODOO_DB }}
+        ODOO_URL: ${{ secrets.ODOO_URL }}
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
