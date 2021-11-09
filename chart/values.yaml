@@ -1,0 +1,87 @@
+# Default values for odootools.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  registry: ghcr.io
+  repository: vshn/odootools
+  tag: "latest"
+  pullPolicy: ""
+
+odootools:
+  # -- Name of an existing secret to use
+  externalSecretName: ""
+  # -- Key/Value secret to include as environment variables.
+  secretEnvs:
+    ODOO_URL: https://replace.me
+    ODOO_DB: replace-me
+    SECRET_KEY: replace me with `openssl rand -base64 32`
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 8080
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: odootools.local
+      paths:
+        - path: /
+          pathType: Exact
+  tls:
+    - secretName: odootools-tls
+      hosts:
+        - odootools.local
+
+route:
+  enabled: false
+  annotations: {}
+  host: ""
+  # -- `metadata.name` of the Route. May be used to generate the `spec.host`. Defaults to fullname.
+  name: ""
+
+resources:
+  limits:
+    cpu: 300m
+    memory: 128Mi
+  requests:
+    cpu: 30m
+    memory: 16Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

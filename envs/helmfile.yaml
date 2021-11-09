@@ -1,0 +1,19 @@
+environments:
+  default: {}
+  prod: {}
+
+helmDefaults:
+  historyMax: 3
+
+releases:
+  - name: odootools
+    namespace: odootools-prod
+    chart: ../chart
+    missingFileHandler: Warn
+    values:
+      - {{ .Environment.Name }}.yaml
+      - odootools:
+          secretEnvs:
+            ODOO_URL: {{ requiredEnv "ODOO_URL" }}
+            ODOO_DB: {{ requiredEnv "ODOO_DB" }}
+            SECRET_KEY: {{ requiredEnv "SECRET_KEY" }}
