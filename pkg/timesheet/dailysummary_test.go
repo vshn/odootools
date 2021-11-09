@@ -151,13 +151,21 @@ func TestDailySummary_CalculateDailyMaxHours(t *testing.T) {
 			},
 			expectedHours: 8,
 		},
+		"GivenAbsencesWithSpecialFte_WhenTypeIsUnpaid_ThenReturnFteAdjustedHours": {
+			givenDate:     date(t, "2021-02-03"),
+			givenFteRatio: 0.6,
+			givenAbsences: []AbsenceBlock{
+				{Reason: TypeUnpaid},
+			},
+			expectedHours: 4.8,
+		},
 	}
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			s := DailySummary{
 				Date:     *tt.givenDate,
-				FTERatio: 1,
+				FTERatio: tt.givenFteRatio,
 				Absences: tt.givenAbsences,
 			}
 			result := s.CalculateDailyMaxHours()
