@@ -42,7 +42,7 @@ func (v *Renderer) Render(w http.ResponseWriter, template string, data Values) {
 
 func (v *Renderer) getTemplate(name string) (*template.Template, error) {
 	if v.cache[name] == nil {
-		t, err := template.ParseFS(templates.TemplateFS, "layout.html", name+".html")
+		t, err := template.ParseFS(templates.TemplateFS, "layout.html", name+".html", "nav.html")
 		if err != nil {
 			return nil, err
 		}
