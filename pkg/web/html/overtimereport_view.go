@@ -66,5 +66,9 @@ func (v *OvertimeReportView) prepareValues(report timesheet.Report) Values {
 	return Values{
 		"Attendances": formatted,
 		"Summary":     v.formatSummary(report.Summary),
+		"Nav": Values{
+			"LoggedIn":   true,
+			"ActiveView": v.template,
+		},
 	}
 }
