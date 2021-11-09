@@ -8,7 +8,7 @@ image:
   registry: ghcr.io
   repository: vshn/odootools
   tag: "latest"
-  pullPolicy: IfNotPresent
+  pullPolicy: ""
 
 odootools:
   # -- Name of an existing secret to use
