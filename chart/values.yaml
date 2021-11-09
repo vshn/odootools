@@ -65,6 +65,13 @@ ingress:
       hosts:
         - odootools.local
 
+route:
+  enabled: false
+  annotations: {}
+  host: ""
+  # -- `metadata.name` of the Route. May be used to generate the `spec.host`. Defaults to fullname.
+  name: ""
+
 resources:
   limits:
     cpu: 300m
