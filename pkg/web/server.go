@@ -8,7 +8,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/securecookie"
 	"github.com/vshn/odootools/pkg/odoo"
-	"github.com/vshn/odootools/pkg/web/html"
+	"github.com/vshn/odootools/pkg/web/views"
 )
 
 // RootDir optionally describes where the root directory with the "templates"
@@ -17,7 +17,7 @@ var RootDir = ""
 
 type Server struct {
 	router       *mux.Router
-	html         *html.Renderer
+	html         *views.Renderer
 	odoo         *odoo.Client
 	securecookie *securecookie.SecureCookie
 }
@@ -34,7 +34,7 @@ func NewServer(
 
 	s := Server{
 		odoo:         odoo,
-		html:         html.NewRenderer(),
+		html:         views.NewRenderer(),
 		securecookie: securecookie.New(key, key),
 	}
 	s.routes(middleware...)
