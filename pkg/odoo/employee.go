@@ -7,8 +7,6 @@ import (
 type Employee struct {
 	ID   int    `json:"id"`
 	Name string `json:"name"`
-	// AttendanceAccess returns true if the requesting user id has access to read attendances of this employee.
-	AttendanceAccess bool `json:"attendance_access"`
 }
 
 // SearchEmployee searches for an Employee with the given searchString in the Employee.Name.
@@ -53,7 +51,7 @@ func (c *Client) FetchEmployee(sid string, userId int) (*Employee, error) {
 	body, err := NewJsonRpcRequest(&ReadModelRequest{
 		Model:  "hr.employee",
 		Domain: []Filter{[]interface{}{"user_id", "=", userId}},
-		Fields: []string{"name", "attendance_access"},
+		Fields: []string{"name"},
 		Limit:  0,
 		Offset: 0,
 	}).Encode()
