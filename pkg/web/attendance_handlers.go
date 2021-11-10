@@ -2,13 +2,14 @@ package web
 
 import (
 	"fmt"
+	"html"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/vshn/odootools/pkg/odoo"
 	"github.com/vshn/odootools/pkg/timesheet"
-	"github.com/vshn/odootools/pkg/web/html"
+	"github.com/vshn/odootools/pkg/web/views"
 )
 
 // OvertimeReport GET /report
@@ -20,10 +21,10 @@ func (s Server) OvertimeReport() http.Handler {
 			http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
 			return
 		}
-		view := html.NewOvertimeReportView(s.html)
+		view := views.NewOvertimeReportView(s.html)
 
 		forAnotherUser := r.FormValue("userscope") == "user-foreign-radio"
-		searchUser := r.FormValue("username")
+		searchUser := html.EscapeString(r.FormValue("username"))
 
 		year := parseIntOrDefault(r.FormValue("year"), time.Now().Year())
 		month := parseIntOrDefault(r.FormValue("month"), int(time.Now().Month()))
@@ -100,7 +101,7 @@ func (s Server) RequestReportForm() http.Handler {
 			return
 		}
 
-		view := html.NewRequestReportView(s.html)
+		view := views.NewRequestReportView(s.html)
 		view.ShowConfigurationForm(w)
 	})
 }

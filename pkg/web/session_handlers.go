@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/vshn/odootools/pkg/odoo"
-	"github.com/vshn/odootools/pkg/web/html"
+	"github.com/vshn/odootools/pkg/web/views"
 )
 
 const (
@@ -36,7 +36,7 @@ func (s Server) Login() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sess, err := s.odoo.Login(r.FormValue("login"), r.FormValue("password"))
 		if errors.Is(err, odoo.ErrInvalidCredentials) {
-			s.html.Render(w, "login", html.Values{"Error": "Invalid login or password"})
+			s.html.Render(w, "login", views.Values{"Error": "Invalid login or password"})
 			return
 		}
 		if err != nil {

@@ -1,4 +1,4 @@
-package html
+package views
 
 import "net/http"
 
