@@ -25,7 +25,6 @@ func (s Server) OvertimeReport() http.Handler {
 		forAnotherUser := r.FormValue("userscope") == "user-foreign-radio"
 		searchUser := r.FormValue("username")
 
-		userId := session.UID
 		var employee *odoo.Employee
 		if forAnotherUser {
 			e, err := s.odoo.SearchEmployee(searchUser, session.ID)
@@ -39,7 +38,7 @@ func (s Server) OvertimeReport() http.Handler {
 			}
 			employee = e
 		} else {
-			e, err := s.odoo.FetchEmployee(userId, session.ID)
+			e, err := s.odoo.FetchEmployee(session.UID, session.ID)
 			if err != nil {
 				view.ShowError(w, err)
 				return
@@ -47,13 +46,13 @@ func (s Server) OvertimeReport() http.Handler {
 			employee = e
 		}
 
-		attendances, err := s.odoo.ReadAllAttendances(session.ID, userId)
+		attendances, err := s.odoo.ReadAllAttendances(session.ID, employee.ID)
 		if err != nil {
 			view.ShowError(w, err)
 			return
 		}
 
-		leaves, err := s.odoo.ReadAllLeaves(session.ID, userId)
+		leaves, err := s.odoo.ReadAllLeaves(session.ID, employee.ID)
 		if err != nil {
 			view.ShowError(w, err)
 			return
