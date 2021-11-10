@@ -43,12 +43,12 @@ type LeaveType struct {
 	Name string
 }
 
-func (c *Client) ReadAllLeaves(sid string, uid int) ([]Leave, error) {
+func (c *Client) ReadAllLeaves(sid string, employeeID int) ([]Leave, error) {
 	// Prepare "search leaves" request
 	body, err := NewJsonRpcRequest(&ReadModelRequest{
 		Model: "hr.holidays",
 		Domain: []Filter{
-			{"employee_id.user_id.id", "=", uid},
+			{"employee_id", "=", employeeID},
 			{"type", "=", "remove"}, // Only return used leaves. With type = "add" we would get leaves that add days to holiday budget
 		},
 		Fields: []string{"employee_id", "date_from", "date_to", "holiday_status_id", "state"},

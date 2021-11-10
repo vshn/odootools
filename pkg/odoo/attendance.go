@@ -1,7 +1,6 @@
 package odoo
 
 import (
-	"encoding/json"
 	"fmt"
 )
 
@@ -17,65 +16,26 @@ type Attendance struct {
 	Action string `json:"action,omitempty"`
 
 	// Reason describes the "action reason" from Odoo.
-	//
-	// Example raw values returned from Odoo:
-	//  * `false` (if no specific reason given)
-	//  * `[1, "Outside office hours"]`
-	//  * `[2, "Outside office hours"]`
-	//  * `[3, "Sick / Medical Consultation"]`
-	//  * `[4, "Sick / Medical Consultation"]`
-	//  * `[5, "Authorities"]`
-	//  * `[6, "Authorities"]`
-	//  * `[27, "Requested Public Service"]`
-	//  * `[28, "Requested Public Service"]`
-	//
 	// NOTE: This field has special meaning when calculating the overtime.
 	Reason *ActionReason `json:"action_desc,omitempty"`
 }
 
-type ActionReason struct {
-	ID   float64
-	Name string
+func (c Client) FetchAllAttendances(sid string, employeeID int) ([]Attendance, error) {
+	return c.fetchAttendances(sid, []Filter{{"employee_id", "=", employeeID}})
 }
 
-func (reason ActionReason) MarshalJSON() ([]byte, error) {
-	if reason.Name == "" {
-		return []byte("false"), nil
-	}
-	arr := []interface{}{reason.ID, reason.Name}
-	return json.Marshal(arr)
-}
-func (reason *ActionReason) UnmarshalJSON(b []byte) error {
-	var f bool
-	if err := json.Unmarshal(b, &f); err == nil || string(b) == "false" {
-		return nil
-	}
-	var arr []interface{}
-	if err := json.Unmarshal(b, &arr); err != nil {
-		return err
-	}
-	if len(arr) >= 2 {
-		if v, ok := arr[1].(string); ok {
-			*reason = ActionReason{
-				ID:   arr[0].(float64),
-				Name: v,
-			}
-		}
-	}
-	return nil
-}
-func (reason *ActionReason) String() string {
-	if reason == nil {
-		return ""
-	}
-	return reason.Name
+func (c Client) FetchAttendancesBetweenDates(sid string, employeeID int, begin, end Date) ([]Attendance, error) {
+	return c.fetchAttendances(sid, []Filter{
+		{"employee_id", "=", employeeID},
+		{"name", ">=", begin.ToTime().Format(DateFormat)},
+		{"name", "<=", end.ToTime().Format(DateFormat)},
+	})
 }
 
-func (c Client) ReadAllAttendances(sid string, uid int) ([]Attendance, error) {
-	// Prepare "search attendances" request
+func (c Client) fetchAttendances(sid string, domainFilters []Filter) ([]Attendance, error) {
 	body, err := NewJsonRpcRequest(&ReadModelRequest{
 		Model:  "hr.attendance",
-		Domain: []Filter{{"employee_id.user_id.id", "=", uid}},
+		Domain: domainFilters,
 		Fields: []string{"employee_id", "name", "action", "action_desc"},
 		Limit:  0,
 		Offset: 0,
@@ -89,11 +49,11 @@ func (c Client) ReadAllAttendances(sid string, uid int) ([]Attendance, error) {
 		return nil, err
 	}
 
-	type readAttendancesResult struct {
+	type readResult struct {
 		Length  int          `json:"length,omitempty"`
 		Records []Attendance `json:"records,omitempty"`
 	}
-	result := &readAttendancesResult{}
+	result := &readResult{}
 	if err := c.unmarshalResponse(res.Body, result); err != nil {
 		return nil, err
 	}
