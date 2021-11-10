@@ -1,6 +1,8 @@
 package odoo
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type Employee struct {
 	ID   int    `json:"id"`
@@ -16,7 +18,7 @@ func (c *Client) SearchEmployee(searchString string, sid string) (*Employee, err
 	// Prepare request
 	body, err := NewJsonRpcRequest(&ReadModelRequest{
 		Model:  "hr.employee",
-		Domain: []Filter{{"name", "ilike", searchString}},
+		Domain: []Filter{[]string{"name", "ilike", searchString}},
 		Fields: []string{"name"},
 		Limit:  0,
 		Offset: 0,
@@ -46,11 +48,11 @@ func (c *Client) SearchEmployee(searchString string, sid string) (*Employee, err
 
 // FetchEmployee fetches an Employee for the given user ID.
 // Returns nil if not found.
-func (c *Client) FetchEmployee(userId int, sid string) (*Employee, error) {
+func (c *Client) FetchEmployee(sid string, userId int) (*Employee, error) {
 	// Prepare request
 	body, err := NewJsonRpcRequest(&ReadModelRequest{
 		Model:  "hr.employee",
-		Domain: []Filter{{"user_id", "=", userId}},
+		Domain: []Filter{[]interface{}{"user_id", "=", userId}},
 		Fields: []string{"name", "attendance_access"},
 		Limit:  0,
 		Offset: 0,

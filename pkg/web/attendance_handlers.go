@@ -46,7 +46,7 @@ func (s Server) OvertimeReport() http.Handler {
 			}
 			employee = e
 		} else {
-			e, err := s.odoo.FetchEmployee(session.UID, session.ID)
+			e, err := s.odoo.FetchEmployee(session.ID, session.UID)
 			if err != nil {
 				view.ShowError(w, err)
 				return
@@ -56,13 +56,14 @@ func (s Server) OvertimeReport() http.Handler {
 
 		begin := odoo.Date(time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC))
 		end := odoo.Date(begin.ToTime().AddDate(0, 1, 0))
+
 		attendances, err := s.odoo.FetchAttendancesBetweenDates(session.ID, employee.ID, begin, end)
 		if err != nil {
 			view.ShowError(w, err)
 			return
 		}
 
-		leaves, err := s.odoo.ReadAllLeaves(session.ID, employee.ID)
+		leaves, err := s.odoo.FetchLeavesBetweenDates(session.ID, employee.ID, begin, end)
 		if err != nil {
 			view.ShowError(w, err)
 			return

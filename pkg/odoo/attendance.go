@@ -21,14 +21,14 @@ type Attendance struct {
 }
 
 func (c Client) FetchAllAttendances(sid string, employeeID int) ([]Attendance, error) {
-	return c.fetchAttendances(sid, []Filter{{"employee_id", "=", employeeID}})
+	return c.fetchAttendances(sid, []Filter{[]interface{}{"employee_id", "=", employeeID}})
 }
 
 func (c Client) FetchAttendancesBetweenDates(sid string, employeeID int, begin, end Date) ([]Attendance, error) {
 	return c.fetchAttendances(sid, []Filter{
-		{"employee_id", "=", employeeID},
-		{"name", ">=", begin.ToTime().Format(DateFormat)},
-		{"name", "<=", end.ToTime().Format(DateFormat)},
+		[]interface{}{"employee_id", "=", employeeID},
+		[]string{"name", ">=", begin.ToTime().Format(DateFormat)},
+		[]string{"name", "<=", end.ToTime().Format(DateFormat)},
 	})
 }
 
