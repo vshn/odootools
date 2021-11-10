@@ -85,8 +85,8 @@ func TestLoginSuccess(t *testing.T) {
 	res := httptest.NewRecorder()
 	newServer(odooMock.URL).ServeHTTP(res, req)
 
-	is.Equal(res.Code, http.StatusTemporaryRedirect) // HTTP status
-	is.Equal(res.Header().Get("Location"), "/")      // Location header
+	is.Equal(res.Code, http.StatusFound)        // HTTP status
+	is.Equal(res.Header().Get("Location"), "/") // Location header
 
 	is.Equal(1, len(res.Result().Cookies())) // number of cookies
 	c := res.Result().Cookies()[0]
