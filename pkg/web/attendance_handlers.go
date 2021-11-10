@@ -40,10 +40,6 @@ func (s Server) OvertimeReport() http.Handler {
 				view.ShowError(w, fmt.Errorf("no user matching '%s' found", searchUser))
 				return
 			}
-			if !e.AttendanceAccess {
-				view.ShowError(w, fmt.Errorf("you don't have access to read attendances of '%s'", e.Name))
-				return
-			}
 			employee = e
 		} else {
 			e, err := s.odoo.FetchEmployee(session.ID, session.UID)
