@@ -19,9 +19,11 @@ func (d *Date) String() string {
 	t := time.Time(*d)
 	return t.Format(DateTimeFormat)
 }
+
 func (d Date) MarshalJSON() ([]byte, error) {
 	return []byte(fmt.Sprintf(`"%s"`, d.String())), nil
 }
+
 func (d *Date) UnmarshalJSON(b []byte) error {
 	ts := bytes.Trim(b, `"`)
 	t, err := time.Parse(DateTimeFormat, string(ts))
@@ -32,6 +34,7 @@ func (d *Date) UnmarshalJSON(b []byte) error {
 	*d = Date(t)
 	return nil
 }
+
 func (d *Date) ToTime() time.Time {
 	return time.Time(*d)
 }

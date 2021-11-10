@@ -25,6 +25,10 @@ func (s Server) OvertimeReport() http.Handler {
 		forAnotherUser := r.FormValue("userscope") == "user-foreign-radio"
 		searchUser := r.FormValue("username")
 
+		year := parseIntOrDefault(r.FormValue("year"), time.Now().Year())
+		month := parseIntOrDefault(r.FormValue("month"), int(time.Now().Month()))
+		fte := parseFloatOrDefault(r.FormValue("ftepercentage"), 100)
+
 		var employee *odoo.Employee
 		if forAnotherUser {
 			e, err := s.odoo.SearchEmployee(searchUser, session.ID)
@@ -36,9 +40,13 @@ func (s Server) OvertimeReport() http.Handler {
 				view.ShowError(w, fmt.Errorf("no user matching '%s' found", searchUser))
 				return
 			}
+			if !e.AttendanceAccess {
+				view.ShowError(w, fmt.Errorf("you don't have access to read attendances of '%s'", e.Name))
+				return
+			}
 			employee = e
 		} else {
-			e, err := s.odoo.FetchEmployee(session.UID, session.ID)
+			e, err := s.odoo.FetchEmployee(session.ID, session.UID)
 			if err != nil {
 				view.ShowError(w, err)
 				return
@@ -46,21 +54,20 @@ func (s Server) OvertimeReport() http.Handler {
 			employee = e
 		}
 
-		attendances, err := s.odoo.ReadAllAttendances(session.ID, employee.ID)
+		begin := odoo.Date(time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC))
+		end := odoo.Date(begin.ToTime().AddDate(0, 1, 0))
+
+		attendances, err := s.odoo.FetchAttendancesBetweenDates(session.ID, employee.ID, begin, end)
 		if err != nil {
 			view.ShowError(w, err)
 			return
 		}
 
-		leaves, err := s.odoo.ReadAllLeaves(session.ID, employee.ID)
+		leaves, err := s.odoo.FetchLeavesBetweenDates(session.ID, employee.ID, begin, end)
 		if err != nil {
 			view.ShowError(w, err)
 			return
 		}
-
-		year := parseIntOrDefault(r.FormValue("year"), time.Now().Year())
-		month := parseIntOrDefault(r.FormValue("month"), int(time.Now().Month()))
-		fte := parseFloatOrDefault(r.FormValue("ftepercentage"), 100)
 
 		reporter := timesheet.NewReporter(attendances, leaves, employee).SetFteRatio(fte/100).SetMonth(year, month)
 		report := reporter.CalculateReport()
