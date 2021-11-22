@@ -16,6 +16,11 @@ In the end it doesn't matter:
 - Not using a leave day, but only work half day results in undertime, but still having an additional holiday.
 At the end of the year, excess holidays are transformed into overtime.
 
+## Workload ratio
+
+The workload ratio can be retrieved from Odoo via the "Contracts" model.
+However, special read access needs to be granted so that they can be queried for their own user.
+
 ## FAQs
 
 ### Why not an SPA and offload all work into the user's browser?
@@ -26,11 +31,6 @@ CORS. Browsers won't connect to Odoo from somewhere else (which is fine).
 
 Payslips can be queried and updated - just not with the normal VSHNeer access levels.
 Easiest solution would be to enable at least read access so that odootools can accumulate the delta.
-
-### Get FTE ratio instead of manually entering it?
-
-FTE ratio can also be queried, but not with current VSHNeer access levels.
-The contracts and the ratio are available as fields - one just needs access to it.
 
 # Backlog
 
