@@ -173,3 +173,33 @@ func TestDailySummary_CalculateDailyMaxHours(t *testing.T) {
 		})
 	}
 }
+
+func Test_findDailySummaryByDate(t *testing.T) {
+	tests := map[string]struct {
+		givenDailies    []*DailySummary
+		givenDate       time.Time
+		expectedSummary *DailySummary
+	}{
+		"GivenDailies_WhenDateMatches_ThenReturnDaily": {
+			givenDailies: []*DailySummary{
+				NewDailySummary(1, *date(t, "2021-02-03")),
+			},
+			givenDate:       *date(t, "2021-02-03"),
+			expectedSummary: NewDailySummary(1, *date(t, "2021-02-03")),
+		},
+		"GivenDailies_WhenDateMatchesInUTC_ThenReturnDaily": {
+			givenDailies: []*DailySummary{
+				NewDailySummary(1, date(t, "2021-02-04").UTC()),
+				NewDailySummary(1, date(t, "2021-02-03").UTC()),
+			},
+			givenDate:       newDateTime(t, "2021-02-03 23:30").ToTime(),
+			expectedSummary: NewDailySummary(1, date(t, "2021-02-03").UTC()),
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			result, _ := findDailySummaryByDate(tt.givenDailies, tt.givenDate)
+			assert.Equal(t, tt.expectedSummary, result)
+		})
+	}
+}

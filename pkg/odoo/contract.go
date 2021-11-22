@@ -8,12 +8,17 @@ import (
 type ContractList []Contract
 
 type Contract struct {
-	ID              float64          `json:"id"`
-	Start           *Date            `json:"date_start"`
+	ID float64 `json:"id"`
+	// Start is the first day of the contract in UTC.
+	Start *Date `json:"date_start"`
+	// Start is the last day of the contract in UTC.
+	// It is nil or Zero if the contract hasn't ended yet.
 	End             *Date            `json:"date_end"`
 	WorkingSchedule *WorkingSchedule `json:"working_hours"`
 }
 
+// GetFTERatioForDay returns the workload ratio that is active for the given day.
+// All involved dates are expected to be in UTC.
 func (l ContractList) GetFTERatioForDay(day Date) (float64, error) {
 	date := day.ToTime()
 	for _, contract := range l {

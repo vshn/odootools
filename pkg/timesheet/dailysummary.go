@@ -7,6 +7,7 @@ import (
 )
 
 type DailySummary struct {
+	// Date is the localized date of the summary.
 	Date     time.Time
 	Blocks   []AttendanceBlock
 	Absences []AbsenceBlock
@@ -15,6 +16,7 @@ type DailySummary struct {
 
 // NewDailySummary creates a new instance.
 // The fteRatio is the percentage (input a value between 0..1) of the employee and is used to calculate the daily maximum hours an employee should work.
+// Date is expected to be in a localized timezone.
 func NewDailySummary(fteRatio float64, date time.Time) *DailySummary {
 	return &DailySummary{
 		FTERatio: fteRatio,
