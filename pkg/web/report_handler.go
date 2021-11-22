@@ -12,6 +12,21 @@ import (
 	"github.com/vshn/odootools/pkg/web/views"
 )
 
+type OvertimeInput struct {
+	Year              int
+	Month             int
+	SearchUser        string
+	SearchUserEnabled bool
+}
+
+func (i *OvertimeInput) FromForm(r *http.Request) {
+	i.SearchUserEnabled = r.FormValue("userscope") == "user-foreign-radio"
+	i.SearchUser = html.EscapeString(r.FormValue("username"))
+
+	i.Year = parseIntOrDefault(r.FormValue("year"), time.Now().Year())
+	i.Month = parseIntOrDefault(r.FormValue("month"), int(time.Now().Month()))
+}
+
 // OvertimeReport GET /report
 func (s Server) OvertimeReport() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -23,36 +38,23 @@ func (s Server) OvertimeReport() http.Handler {
 		}
 		view := views.NewOvertimeReportView(s.html)
 
-		forAnotherUser := r.FormValue("userscope") == "user-foreign-radio"
-		searchUser := html.EscapeString(r.FormValue("username"))
+		input := OvertimeInput{}
+		input.FromForm(r)
 
-		year := parseIntOrDefault(r.FormValue("year"), time.Now().Year())
-		month := parseIntOrDefault(r.FormValue("month"), int(time.Now().Month()))
-		fte := parseFloatOrDefault(r.FormValue("ftepercentage"), 100)
-
-		var employee *odoo.Employee
-		if forAnotherUser {
-			e, err := s.odoo.SearchEmployee(searchUser, session.ID)
-			if err != nil {
-				view.ShowError(w, err)
-				return
-			}
-			if e == nil {
-				view.ShowError(w, fmt.Errorf("no user matching '%s' found", searchUser))
-				return
-			}
-			employee = e
-		} else {
-			e, err := s.odoo.FetchEmployee(session.ID, session.UID)
-			if err != nil {
-				view.ShowError(w, err)
-				return
-			}
-			employee = e
+		employee := getEmployee(w, input, s, session, view)
+		if employee == nil {
+			// error already shown in view
+			return
 		}
 
-		begin := odoo.Date(time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC))
+		begin := odoo.Date(time.Date(input.Year, time.Month(input.Month), 1, 0, 0, 0, 0, time.UTC))
 		end := odoo.Date(begin.ToTime().AddDate(0, 1, 0))
+
+		contracts, err := s.odoo.FetchAllContracts(session.ID, employee.ID)
+		if err != nil {
+			view.ShowError(w, err)
+			return
+		}
 
 		attendances, err := s.odoo.FetchAttendancesBetweenDates(session.ID, employee.ID, begin, end)
 		if err != nil {
@@ -66,10 +68,34 @@ func (s Server) OvertimeReport() http.Handler {
 			return
 		}
 
-		reporter := timesheet.NewReporter(attendances, leaves, employee).SetFteRatio(fte/100).SetMonth(year, month)
+		reporter := timesheet.NewReporter(attendances, leaves, employee, contracts).SetMonth(input.Year, input.Month)
 		report := reporter.CalculateReport()
 		view.ShowAttendanceReport(w, report)
 	})
+}
+
+func getEmployee(w http.ResponseWriter, input OvertimeInput, s Server, session *odoo.Session, view *views.OvertimeReportView) *odoo.Employee {
+	var employee *odoo.Employee
+	if input.SearchUserEnabled {
+		e, err := s.odoo.SearchEmployee(input.SearchUser, session.ID)
+		if err != nil {
+			view.ShowError(w, err)
+			return nil
+		}
+		if e == nil {
+			view.ShowError(w, fmt.Errorf("no user matching '%s' found", input.SearchUser))
+			return nil
+		}
+		employee = e
+		return employee
+	}
+	e, err := s.odoo.FetchEmployee(session.ID, session.UID)
+	if err != nil {
+		view.ShowError(w, err)
+		return nil
+	}
+	employee = e
+	return employee
 }
 
 func parseIntOrDefault(toParse string, def int) int {

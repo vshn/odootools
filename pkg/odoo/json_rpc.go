@@ -76,6 +76,9 @@ func DecodeResult(buf io.Reader, result interface{}) error {
 	if err := json.NewDecoder(buf).Decode(&res); err != nil {
 		return fmt.Errorf("decode intermediate: %w", err)
 	}
+	if res.Error != nil {
+		return fmt.Errorf("%s: %s", res.Error.Message, res.Error.Data["message"])
+	}
 
 	return json.Unmarshal(*res.Result, result)
 }

@@ -1,6 +1,7 @@
 package timesheet
 
 import (
+	"fmt"
 	"sort"
 	"time"
 
@@ -55,28 +56,23 @@ type Reporter struct {
 	employee    *odoo.Employee
 	year        int
 	month       int
-	fteRatio    float64
+	contracts   odoo.ContractList
 }
 
-func NewReporter(attendances []odoo.Attendance, leaves []odoo.Leave, employee *odoo.Employee) *Reporter {
+func NewReporter(attendances []odoo.Attendance, leaves []odoo.Leave, employee *odoo.Employee, contracts []odoo.Contract) *Reporter {
 	return &Reporter{
 		attendances: attendances,
 		leaves:      leaves,
 		employee:    employee,
 		year:        now().UTC().Year(),
 		month:       int(now().UTC().Month()),
-		fteRatio:    float64(1),
+		contracts:   contracts,
 	}
 }
 
 func (r *Reporter) SetMonth(year, month int) *Reporter {
 	r.year = year
 	r.month = month
-	return r
-}
-
-func (r *Reporter) SetFteRatio(fteRatio float64) *Reporter {
-	r.fteRatio = fteRatio
 	return r
 }
 
@@ -146,7 +142,12 @@ func (r *Reporter) prepareDays() []*DailySummary {
 	}
 
 	for currentDay := firstDay; currentDay.Before(lastDay); currentDay = currentDay.AddDate(0, 0, 1) {
-		days = append(days, NewDailySummary(r.fteRatio, currentDay))
+		currentRatio, err := r.contracts.GetFTERatioForDay(odoo.Date(currentDay))
+		if err != nil {
+			fmt.Println(err)
+			currentRatio = 0
+		}
+		days = append(days, NewDailySummary(currentRatio, currentDay))
 	}
 
 	return days
