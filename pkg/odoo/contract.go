@@ -17,14 +17,14 @@ type Contract struct {
 func (l ContractList) GetFTERatioForDay(day Date) (float64, error) {
 	date := day.ToTime()
 	for _, contract := range l {
+		start := contract.Start.ToTime().Add(-1 * time.Second)
 		if contract.End.IsZero() {
 			// current contract
-			if contract.Start.ToTime().Add(-1 * time.Second).Before(date) {
+			if start.Before(date) {
 				return contract.WorkingSchedule.GetFTERatio()
 			}
 			continue
 		}
-		start := contract.Start.ToTime().Add(-1 * time.Second)
 		end := contract.End.ToTime().Add(1 * time.Second)
 		if start.Before(date) && end.After(date) {
 			return contract.WorkingSchedule.GetFTERatio()

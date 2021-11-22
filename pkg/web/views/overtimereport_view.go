@@ -26,6 +26,7 @@ func (v *OvertimeReportView) formatDailySummary(daily *timesheet.DailySummary) V
 	basic := Values{
 		"Weekday":       daily.Date.Weekday(),
 		"Date":          daily.Date.Format(odoo.DateFormat),
+		"Workload":      daily.FTERatio * 100,
 		"ExcusedHours":  formatDurationInHours(timesheet.ToDuration(daily.CalculateExcusedHours())),
 		"WorkedHours":   formatDurationInHours(timesheet.ToDuration(daily.CalculateWorkingHours())),
 		"OvertimeHours": formatDurationInHours(daily.CalculateOvertime()),

@@ -17,7 +17,6 @@ type OvertimeInput struct {
 	Month             int
 	SearchUser        string
 	SearchUserEnabled bool
-	FTERatio          float64
 }
 
 func (i *OvertimeInput) FromForm(r *http.Request) {
@@ -26,7 +25,6 @@ func (i *OvertimeInput) FromForm(r *http.Request) {
 
 	i.Year = parseIntOrDefault(r.FormValue("year"), time.Now().Year())
 	i.Month = parseIntOrDefault(r.FormValue("month"), int(time.Now().Month()))
-	i.FTERatio = parseFloatOrDefault(r.FormValue("ftepercentage"), 100)
 }
 
 // OvertimeReport GET /report
@@ -70,7 +68,7 @@ func (s Server) OvertimeReport() http.Handler {
 			return
 		}
 
-		reporter := timesheet.NewReporter(attendances, leaves, employee, contracts).SetFteRatio(input.FTERatio/100).SetMonth(input.Year, input.Month)
+		reporter := timesheet.NewReporter(attendances, leaves, employee, contracts).SetMonth(input.Year, input.Month)
 		report := reporter.CalculateReport()
 		view.ShowAttendanceReport(w, report)
 	})
