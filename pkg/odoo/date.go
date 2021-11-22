@@ -2,6 +2,7 @@ package odoo
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -26,13 +27,27 @@ func (d Date) MarshalJSON() ([]byte, error) {
 
 func (d *Date) UnmarshalJSON(b []byte) error {
 	ts := bytes.Trim(b, `"`)
-	t, err := time.Parse(DateTimeFormat, string(ts))
-	if err != nil {
-		return err
+	var f bool
+	if err := json.Unmarshal(b, &f); err == nil || string(b) == "false" {
+		return nil
+	}
+	// try parsing date + time
+	t, dateTimeErr := time.Parse(DateTimeFormat, string(ts))
+	if dateTimeErr != nil {
+		// second attempt parsing date only
+		t, dateTimeErr = time.Parse(DateFormat, string(ts))
+		if dateTimeErr != nil {
+			return dateTimeErr
+		}
 	}
 
 	*d = Date(t)
 	return nil
+}
+
+// IsZero returns true if Date is nil or Time.IsZero()
+func (d *Date) IsZero() bool {
+	return d == nil || d.ToTime().IsZero()
 }
 
 func (d *Date) ToTime() time.Time {

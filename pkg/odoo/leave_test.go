@@ -11,8 +11,8 @@ func TestLeave_SplitByDay(t *testing.T) {
 	t.Run("GivenLeaveWithSingleDate_ThenExpectSameLeave", func(t *testing.T) {
 		givenLeave := Leave{
 			ID:       1,
-			DateFrom: newDate(t, "2021-02-03 07:00"),
-			DateTo:   newDate(t, "2021-02-03 19:00"),
+			DateFrom: newDateTime(t, "2021-02-03 07:00"),
+			DateTo:   newDateTime(t, "2021-02-03 19:00"),
 			Type:     &LeaveType{ID: 1, Name: "SomeType"},
 			State:    "validated",
 		}
@@ -27,11 +27,11 @@ func TestLeave_SplitByDay(t *testing.T) {
 	}{
 		"GivenLeave_WhenDurationGoesIntoNextDay_ThenExpectSplit": {
 			givenLeave: Leave{
-				DateFrom: newDate(t, "2021-02-03 07:00"), DateTo: newDate(t, "2021-02-04 19:00"),
+				DateFrom: newDateTime(t, "2021-02-03 07:00"), DateTo: newDateTime(t, "2021-02-04 19:00"),
 			},
 			expectedLeaves: []Leave{
-				{DateFrom: newDate(t, "2021-02-03 07:00"), DateTo: newDate(t, "2021-02-03 15:00")},
-				{DateFrom: newDate(t, "2021-02-04 07:00"), DateTo: newDate(t, "2021-02-04 15:00")},
+				{DateFrom: newDateTime(t, "2021-02-03 07:00"), DateTo: newDateTime(t, "2021-02-03 15:00")},
+				{DateFrom: newDateTime(t, "2021-02-04 07:00"), DateTo: newDateTime(t, "2021-02-04 15:00")},
 			},
 		},
 	}
