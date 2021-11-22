@@ -68,7 +68,9 @@ func (s Server) OvertimeReport() http.Handler {
 			return
 		}
 
-		reporter := timesheet.NewReporter(attendances, leaves, employee, contracts).SetMonth(input.Year, input.Month)
+		reporter := timesheet.NewReporter(attendances, leaves, employee, contracts).
+			SetMonth(input.Year, input.Month).
+			SetTimeZone("Europe/Zurich") // hardcoded for now
 		report := reporter.CalculateReport()
 		view.ShowAttendanceReport(w, report)
 	})

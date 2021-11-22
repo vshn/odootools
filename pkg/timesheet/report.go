@@ -28,8 +28,15 @@ const (
 // for testing purposes
 var now = time.Now
 
+const (
+	ActionSignIn  = "sign_in"
+	ActionSignOut = "sign_out"
+)
+
 type AttendanceBlock struct {
-	Start  time.Time
+	// Start is the localized beginning time of the attendance
+	Start time.Time
+	// End is the localized finish time of the attendance
 	End    time.Time
 	Reason string
 }
@@ -57,6 +64,7 @@ type Reporter struct {
 	year        int
 	month       int
 	contracts   odoo.ContractList
+	timezone    *time.Location
 }
 
 func NewReporter(attendances []odoo.Attendance, leaves []odoo.Leave, employee *odoo.Employee, contracts []odoo.Contract) *Reporter {
@@ -67,6 +75,7 @@ func NewReporter(attendances []odoo.Attendance, leaves []odoo.Leave, employee *o
 		year:        now().UTC().Year(),
 		month:       int(now().UTC().Month()),
 		contracts:   contracts,
+		timezone:    time.Local,
 	}
 }
 
@@ -76,11 +85,19 @@ func (r *Reporter) SetMonth(year, month int) *Reporter {
 	return r
 }
 
+func (r *Reporter) SetTimeZone(zone string) *Reporter {
+	loc, err := time.LoadLocation(zone)
+	if err == nil {
+		r.timezone = loc
+	}
+	return r
+}
+
 func (r *Reporter) CalculateReport() Report {
 	filteredAttendances := r.filterAttendancesInMonth()
-	blocks := reduceAttendancesToBlocks(filteredAttendances)
+	blocks := r.reduceAttendancesToBlocks(filteredAttendances)
 	filteredLeaves := r.filterLeavesInMonth()
-	absences := reduceLeavesToBlocks(filteredLeaves)
+	absences := r.reduceLeavesToBlocks(filteredLeaves)
 	dailySummaries := r.prepareDays()
 
 	r.addAttendanceBlocksToDailies(blocks, dailySummaries)
@@ -98,33 +115,33 @@ func (r *Reporter) CalculateReport() Report {
 	}
 }
 
-func reduceAttendancesToBlocks(attendances []odoo.Attendance) []AttendanceBlock {
+func (r *Reporter) reduceAttendancesToBlocks(attendances []odoo.Attendance) []AttendanceBlock {
 	sortAttendances(attendances)
 	blocks := make([]AttendanceBlock, 0)
 	var tmpBlock AttendanceBlock
 	for _, attendance := range attendances {
-		if attendance.Action == "sign_in" {
+		if attendance.Action == ActionSignIn {
 			tmpBlock = AttendanceBlock{
-				Start:  attendance.DateTime.ToTime(),
+				Start:  attendance.DateTime.ToTime().In(r.timezone),
 				Reason: attendance.Reason.String(),
 			}
 		}
-		if attendance.Action == "sign_out" {
-			tmpBlock.End = attendance.DateTime.ToTime()
+		if attendance.Action == ActionSignOut {
+			tmpBlock.End = attendance.DateTime.ToTime().In(r.timezone)
 			blocks = append(blocks, tmpBlock)
 		}
 	}
 	return blocks
 }
 
-func reduceLeavesToBlocks(leaves []odoo.Leave) []AbsenceBlock {
+func (r *Reporter) reduceLeavesToBlocks(leaves []odoo.Leave) []AbsenceBlock {
 	blocks := make([]AbsenceBlock, 0)
 	for _, leave := range leaves {
 		// Only consider approved leaves
 		if leave.State == StateApproved {
 			blocks = append(blocks, AbsenceBlock{
 				Reason: leave.Type.String(),
-				Date:   leave.DateFrom.ToTime().UTC().Truncate(24 * time.Hour),
+				Date:   leave.DateFrom.ToTime().In(r.timezone).Truncate(24 * time.Hour),
 			})
 		}
 	}
@@ -137,8 +154,8 @@ func (r *Reporter) prepareDays() []*DailySummary {
 	firstDay := time.Date(r.year, time.Month(r.month), 1, 0, 0, 0, 0, time.UTC)
 	lastDay := firstDay.AddDate(0, 1, 0)
 
-	if lastDay.After(now().UTC()) {
-		lastDay = getDateTomorrow()
+	if lastDay.After(now().In(r.timezone)) {
+		lastDay = r.getDateTomorrow()
 	}
 
 	for currentDay := firstDay; currentDay.Before(lastDay); currentDay = currentDay.AddDate(0, 0, 1) {
@@ -147,14 +164,14 @@ func (r *Reporter) prepareDays() []*DailySummary {
 			fmt.Println(err)
 			currentRatio = 0
 		}
-		days = append(days, NewDailySummary(currentRatio, currentDay))
+		days = append(days, NewDailySummary(currentRatio, currentDay.In(r.timezone)))
 	}
 
 	return days
 }
 
-func getDateTomorrow() time.Time {
-	return now().UTC().Truncate(24*time.Hour).AddDate(0, 0, 1)
+func (r *Reporter) getDateTomorrow() time.Time {
+	return now().In(r.timezone).Truncate(24*time.Hour).AddDate(0, 0, 1)
 }
 
 func (r *Reporter) addAttendanceBlocksToDailies(blocks []AttendanceBlock, dailySums []*DailySummary) {

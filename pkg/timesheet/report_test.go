@@ -29,12 +29,28 @@ func parse(t *testing.T, pattern string) time.Time {
 }
 
 func date(t *testing.T, date string) *time.Time {
+	zone, err := time.LoadLocation("Europe/Zurich")
+	require.NoError(t, err)
 	tm, err := time.Parse(odoo.DateFormat, date)
 	require.NoError(t, err)
-	return &tm
+	tmzone := tm.In(zone)
+	return &tmzone
 }
 
-func TestReduceAttendanceBlocks(t *testing.T) {
+func newDateTime(t *testing.T, value string) *odoo.Date {
+	tm, err := time.Parse(odoo.DateTimeFormat, fmt.Sprintf("%s:00", value))
+	require.NoError(t, err)
+	ptr := odoo.Date(tm)
+	return &ptr
+}
+
+func localzone(t *testing.T) *time.Location {
+	zone, err := time.LoadLocation("Europe/Zurich")
+	require.NoError(t, err)
+	return zone
+}
+
+func TestReporter_AddAttendanceBlocksToDailies(t *testing.T) {
 	tests := map[string]struct {
 		givenDailySummaries    []*DailySummary
 		givenBlocks            []AttendanceBlock
@@ -76,6 +92,55 @@ func TestReduceAttendanceBlocks(t *testing.T) {
 			r.addAttendanceBlocksToDailies(tt.givenBlocks, tt.givenDailySummaries)
 
 			assert.Equal(t, tt.expectedDailySummaries, tt.givenDailySummaries)
+		})
+	}
+}
+
+func TestReporter_ReduceAttendancesToBlocks(t *testing.T) {
+	tests := map[string]struct {
+		givenAttendances []odoo.Attendance
+		expectedBlocks   []AttendanceBlock
+	}{
+		"GivenAttendancesInUTC_WhenReducing_ThenApplyLocalZone": {
+			givenAttendances: []odoo.Attendance{
+				{DateTime: newDateTime(t, "2021-02-03 19:00"), Action: ActionSignIn}, // these times are UTC
+				{DateTime: newDateTime(t, "2021-02-03 22:59"), Action: ActionSignOut},
+			},
+			expectedBlocks: []AttendanceBlock{
+				{Start: newDateTime(t, "2021-02-03 19:00").ToTime().In(localzone(t)),
+					End: newDateTime(t, "2021-02-03 22:59").ToTime().In(localzone(t)),
+				},
+			},
+		},
+		"GivenAttendancesInUTC_WhenSplitOverMidnight_ThenSplitInTwoDays": {
+			givenAttendances: []odoo.Attendance{
+				{DateTime: newDateTime(t, "2021-02-03 19:00"), Action: ActionSignIn}, // these times are UTC
+				{DateTime: newDateTime(t, "2021-02-03 22:59"), Action: ActionSignOut},
+				{DateTime: newDateTime(t, "2021-02-03 23:00"), Action: ActionSignIn},
+				{DateTime: newDateTime(t, "2021-02-04 00:00"), Action: ActionSignOut},
+			},
+			expectedBlocks: []AttendanceBlock{
+				{
+					Start: newDateTime(t, "2021-02-03 19:00").ToTime().In(localzone(t)),
+					End:   newDateTime(t, "2021-02-03 22:59").ToTime().In(localzone(t)),
+				},
+				{
+					Start: newDateTime(t, "2021-02-03 23:00").ToTime().In(localzone(t)),
+					End:   newDateTime(t, "2021-02-04 00:00").ToTime().In(localzone(t)),
+				},
+			},
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			r := Reporter{
+				year:     2021,
+				month:    2,
+				timezone: localzone(t),
+			}
+			result := r.reduceAttendancesToBlocks(tt.givenAttendances)
+
+			assert.Equal(t, tt.expectedBlocks, result)
 		})
 	}
 }
@@ -125,7 +190,7 @@ func TestReporter_prepareWorkDays(t *testing.T) {
 			},
 		},
 		"GivenCurrentMonth_ThenReturnNoMoreThanToday": {
-			givenYear:  time.Now().Year(),
+			givenYear:  2021,
 			givenMonth: 3,
 			expectedDays: []*DailySummary{
 				{Date: *date(t, "2021-03-01")},
@@ -149,8 +214,9 @@ func TestReporter_prepareWorkDays(t *testing.T) {
 			}
 
 			r := &Reporter{
-				year:  tt.givenYear,
-				month: tt.givenMonth,
+				year:     tt.givenYear,
+				month:    tt.givenMonth,
+				timezone: localzone(t),
 			}
 			result := r.prepareDays()
 			require.Len(t, result, len(tt.expectedDays))
