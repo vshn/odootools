@@ -67,13 +67,6 @@ func (v *OvertimeReportView) ShowAttendanceReport(w http.ResponseWriter, report 
 	v.renderer.Render(w, v.template, v.prepareValues(report))
 }
 
-func (v *OvertimeReportView) ShowError(w http.ResponseWriter, err error) {
-	w.WriteHeader(http.StatusInternalServerError)
-	v.renderer.Render(w, v.template, Values{
-		"Error": err.Error(),
-	})
-}
-
 func (v *OvertimeReportView) prepareValues(report timesheet.Report) Values {
 	formatted := make([]Values, 0)
 	for _, summary := range report.DailySummaries {
