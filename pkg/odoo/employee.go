@@ -33,7 +33,7 @@ func (c *Client) readEmployee(sid string, filters []Filter) (*Employee, error) {
 	body, err := NewJsonRpcRequest(&ReadModelRequest{
 		Model:  "hr.employee",
 		Domain: filters,
-		//Fields: []string{"name"},
+		Fields: []string{"name"},
 		Limit:  0,
 		Offset: 0,
 	}).Encode()
