@@ -13,45 +13,27 @@ type Employee struct {
 // If multiple employees are found, the first is returned.
 // Returns nil if none found.
 func (c *Client) SearchEmployee(searchString string, sid string) (*Employee, error) {
-	// Prepare request
-	body, err := NewJsonRpcRequest(&ReadModelRequest{
-		Model:  "hr.employee",
-		Domain: []Filter{[]string{"name", "ilike", searchString}},
-		Fields: []string{"name"},
-		Limit:  0,
-		Offset: 0,
-	}).Encode()
-	if err != nil {
-		return nil, fmt.Errorf("encoding request: %w", err)
-	}
-
-	res, err := c.makeRequest(sid, body)
-	if err != nil {
-		return nil, err
-	}
-	type readResults struct {
-		Length  int        `json:"length,omitempty"`
-		Records []Employee `json:"records,omitempty"`
-	}
-
-	result := &readResults{}
-	if err := c.unmarshalResponse(res.Body, result); err != nil {
-		return nil, err
-	}
-	if len(result.Records) >= 1 {
-		return &result.Records[0], nil
-	}
-	return nil, nil
+	return c.readEmployee(sid, []Filter{[]string{"name", "ilike", searchString}})
 }
 
-// FetchEmployee fetches an Employee for the given user ID.
+// FetchEmployeeByID fetches an Employee for the given employee ID.
 // Returns nil if not found.
-func (c *Client) FetchEmployee(sid string, userId int) (*Employee, error) {
+func (c *Client) FetchEmployeeByID(sid string, employeeID int) (*Employee, error) {
+	return c.readEmployee(sid, []Filter{[]interface{}{"resource_id", "=", employeeID}})
+}
+
+// FetchEmployeeBySession fetches the Employee for the given session.
+// Returns nil if not found.
+func (c *Client) FetchEmployeeBySession(session *Session) (*Employee, error) {
+	return c.readEmployee(session.ID, []Filter{[]interface{}{"user_id", "=", session.UID}})
+}
+
+func (c *Client) readEmployee(sid string, filters []Filter) (*Employee, error) {
 	// Prepare request
 	body, err := NewJsonRpcRequest(&ReadModelRequest{
 		Model:  "hr.employee",
-		Domain: []Filter{[]interface{}{"user_id", "=", userId}},
-		Fields: []string{"name"},
+		Domain: filters,
+		//Fields: []string{"name"},
 		Limit:  0,
 		Offset: 0,
 	}).Encode()

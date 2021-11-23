@@ -19,7 +19,8 @@ func (s *Server) routes(middleware ...mux.MiddlewareFunc) {
 
 	r.Handle("/", s.RequestReportForm()).Methods("GET")
 	r.Handle("/report", s.RequestReportForm()).Methods("GET")
-	r.Handle("/report", s.OvertimeReport()).Methods("POST")
+	r.Handle("/report", s.RedirectReport()).Methods("POST")
+	r.Handle("/report/{employee:[0-9]+}/{year:[0-9]+}/{month:[0-9]+}", s.OvertimeReport()).Methods("GET")
 
 	// Authentication
 	r.Handle("/login", s.LoginForm()).Methods("GET")
