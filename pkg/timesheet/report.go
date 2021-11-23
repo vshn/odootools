@@ -55,6 +55,8 @@ type Report struct {
 	DailySummaries []*DailySummary
 	Summary        Summary
 	Employee       *odoo.Employee
+	Year           int
+	Month          int
 }
 
 type Reporter struct {
@@ -112,6 +114,8 @@ func (r *Reporter) CalculateReport() Report {
 		DailySummaries: dailySummaries,
 		Summary:        summary,
 		Employee:       r.employee,
+		Year:           r.year,
+		Month:          r.month,
 	}
 }
 
