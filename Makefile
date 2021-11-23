@@ -58,3 +58,18 @@ run.docker: build.docker ## Run in docker on port 8080
 	docker run --rm -it --env "SECRET_KEY=$(LOCAL_SECRET_KEY)" --env ODOO_DB --env ODOO_URL --env "LISTEN_ADDRESS=:8080" --publish "8080:8080" $(CONTAINER_IMG) web
 
 templates/bootstrap.min.css: generate
+
+.helmfile:
+	helmfile -e preview -f envs/helmfile.yaml $(helm_cmd)
+
+preview.template: helm_cmd = template
+preview.template: export IMG_TAG = latest
+preview.template: .helmfile
+
+preview.push: export CONTAINER_IMG = registry.cloudscale-lpg-1.appuio.cloud/odootools-preview/odootools
+preview.push: build.docker
+	docker push $(CONTAINER_IMG)
+
+preview.deploy: export IMG_TAG = latest
+preview.deploy: helm_cmd = apply
+preview.deploy: preview.push .helmfile

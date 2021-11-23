@@ -5,7 +5,8 @@ ENTRYPOINT ["odootools"]
 RUN apk add --update --no-cache \
     bash \
     ca-certificates \
-    curl
+    curl \
+    tzdata
 
 COPY odootools /usr/local/bin/
 
