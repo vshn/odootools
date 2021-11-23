@@ -3,6 +3,11 @@
 {{ with .Error }}
 <div class="alert alert-warning" role="alert">{{ . }}</div>
 {{ end }}
+<p>
+    <a href="{{ .Nav.PreviousMonthLink }}" class="btn btn-secondary">Previous</a>
+    <a href="{{ .Nav.CurrentMonthLink }}" class="btn btn-primary">Current</a>
+    <a href="{{ .Nav.NextMonthLink }}" class="btn btn-secondary">Next</a>
+</p>
 <table class="table table-hover table-sm">
     <thead>
     <tr>

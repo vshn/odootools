@@ -75,13 +75,32 @@ func (v *OvertimeReportView) prepareValues(report timesheet.Report) Values {
 		}
 		formatted = append(formatted, v.formatDailySummary(summary))
 	}
+	nextYear, nextMonth := getNextMonth(report)
+	prevYear, prevMonth := getPreviousMonth(report)
 	return Values{
 		"Attendances": formatted,
 		"Summary":     v.formatSummary(report.Summary),
 		"Nav": Values{
-			"LoggedIn":   true,
-			"ActiveView": v.template,
+			"LoggedIn":          true,
+			"ActiveView":        v.template,
+			"CurrentMonthLink":  fmt.Sprintf("/report/%d/%d/%02d", report.Employee.ID, time.Now().Year(), time.Now().Month()),
+			"NextMonthLink":     fmt.Sprintf("/report/%d/%d/%02d", report.Employee.ID, nextYear, nextMonth),
+			"PreviousMonthLink": fmt.Sprintf("/report/%d/%d/%02d", report.Employee.ID, prevYear, prevMonth),
 		},
 		"Username": report.Employee.Name,
 	}
+}
+
+func getNextMonth(r timesheet.Report) (int, int) {
+	if r.Month >= 12 {
+		return r.Year + 1, 1
+	}
+	return r.Year, r.Month + 1
+}
+
+func getPreviousMonth(r timesheet.Report) (int, int) {
+	if r.Month <= 1 {
+		return r.Year - 1, 12
+	}
+	return r.Year, r.Month - 1
 }
