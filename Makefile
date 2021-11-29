@@ -60,7 +60,7 @@ run.docker: build.docker ## Run in docker on port 8080
 templates/bootstrap.min.css: generate
 
 .helmfile:
-	helmfile -e preview -f envs/helmfile.yaml $(helm_cmd)
+	helmfile -e $(ENV) -f envs/helmfile.yaml $(helm_cmd)
 
 preview.template: helm_cmd = template
 preview.template: export IMG_TAG = latest

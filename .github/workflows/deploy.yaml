@@ -7,7 +7,7 @@ on:
 
 env:
   ENVIRONMENT: prod
-  OPENSHIFT_API: https://api.c-appuio-cloudscale-lpg-1.appuio.cloud:6443
+  OPENSHIFT_API: https://api.c-appuio-cloudscale-lpg-2.appuio.cloud:6443
   HELM_RELEASE_NAME: odootools
 
 jobs:
@@ -39,7 +39,7 @@ jobs:
       with:
         openshift_server_url: ${{ env.OPENSHIFT_API }}
         openshift_token: ${{ secrets.OPENSHIFT_TOKEN }}
-        namespace: odootools-${{ env.ENVIRONMENT }}
+        namespace: vshn-odoo-${{ env.ENVIRONMENT }}
         # We don't have a LE cert yet
         insecure_skip_tls_verify: true
 
