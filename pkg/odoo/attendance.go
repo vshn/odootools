@@ -2,6 +2,7 @@ package odoo
 
 import (
 	"fmt"
+	"time"
 )
 
 type Attendance struct {
@@ -24,11 +25,11 @@ func (c Client) FetchAllAttendances(sid string, employeeID int) ([]Attendance, e
 	return c.fetchAttendances(sid, []Filter{[]interface{}{"employee_id", "=", employeeID}})
 }
 
-func (c Client) FetchAttendancesBetweenDates(sid string, employeeID int, begin, end Date) ([]Attendance, error) {
+func (c Client) FetchAttendancesBetweenDates(sid string, employeeID int, begin, end time.Time) ([]Attendance, error) {
 	return c.fetchAttendances(sid, []Filter{
 		[]interface{}{"employee_id", "=", employeeID},
-		[]string{"name", ">=", begin.ToTime().Format(DateFormat)},
-		[]string{"name", "<=", end.ToTime().Format(DateFormat)},
+		[]string{"name", ">=", begin.Format(DateFormat)},
+		[]string{"name", "<=", end.Format(DateFormat)},
 	})
 }
 
