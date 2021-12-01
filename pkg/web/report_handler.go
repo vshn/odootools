@@ -82,8 +82,10 @@ func (s Server) OvertimeReport() http.Handler {
 			return
 		}
 
-		begin := odoo.Date(time.Date(input.Year, time.Month(input.Month), 1, 0, 0, 0, 0, time.UTC))
-		end := odoo.Date(begin.ToTime().AddDate(0, 1, 0))
+		firstDay := time.Date(input.Year, time.Month(input.Month), 1, 0, 0, 0, 0, time.UTC)
+		// Let's get attendances within a month with +- 1 day to respect localized dates and filter them later.
+		begin := firstDay.AddDate(0, 0, -1)
+		end := firstDay.AddDate(0, 1, 0)
 
 		contracts, err := s.odoo.FetchAllContracts(session.ID, employee.ID)
 		if err != nil {

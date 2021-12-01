@@ -36,9 +36,9 @@ func (c *Client) FetchAllLeaves(sid string, employeeID int) ([]Leave, error) {
 	})
 }
 
-func (c *Client) FetchLeavesBetweenDates(sid string, employeeID int, begin, end Date) ([]Leave, error) {
-	beginStr := begin.ToTime().Format(DateFormat)
-	endStr := end.ToTime().Format(DateFormat)
+func (c *Client) FetchLeavesBetweenDates(sid string, employeeID int, begin, end time.Time) ([]Leave, error) {
+	beginStr := begin.Format(DateFormat)
+	endStr := end.Format(DateFormat)
 	return c.readLeaves(sid, []Filter{
 		[]string{"type", "=", "remove"}, // Only return used leaves. With type = "add" we would get leaves that add days to holiday budget
 		[]interface{}{"employee_id", "=", employeeID},

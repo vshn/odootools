@@ -50,13 +50,20 @@ func (d *Date) IsZero() bool {
 	return d == nil || d.ToTime().IsZero()
 }
 
-func (d *Date) ToTime() time.Time {
-	return time.Time(*d)
+func (d Date) ToTime() time.Time {
+	return time.Time(d)
+}
+
+func (d Date) WithLocation(loc *time.Location) Date {
+	return Date(d.ToTime().In(loc))
 }
 
 func (d Date) IsWithinMonth(year, month int) bool {
-	firstDayOfMonth := time.Date(year, time.Month(month), 1, 0, 0, 1, 0, time.Now().Location())
+	firstDayOfMonth := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, d.ToTime().Location())
 	nextMonth := firstDayOfMonth.AddDate(0, 1, 0)
 	date := d.ToTime()
-	return date.After(firstDayOfMonth) && date.Before(nextMonth)
+	// time.After doesn't return true if the unix seconds are the same.
+	// Yet some users record attendances exactly midnight 00:00:00 and that causes same-timestamp issues.
+	isBetween := date.After(firstDayOfMonth) && date.Before(nextMonth)
+	return isBetween || date.Unix() == firstDayOfMonth.Unix()
 }

@@ -207,7 +207,7 @@ func sortAttendances(filtered []odoo.Attendance) {
 func (r *Reporter) filterAttendancesInMonth() []odoo.Attendance {
 	filteredAttendances := make([]odoo.Attendance, 0)
 	for _, attendance := range r.attendances {
-		if attendance.DateTime.IsWithinMonth(r.year, r.month) {
+		if attendance.DateTime.WithLocation(r.timezone).IsWithinMonth(r.year, r.month) {
 			filteredAttendances = append(filteredAttendances, attendance)
 		}
 	}
@@ -219,7 +219,7 @@ func (r *Reporter) filterLeavesInMonth() []odoo.Leave {
 	for _, leave := range r.leaves {
 		splits := leave.SplitByDay()
 		for _, split := range splits {
-			date := split.DateFrom
+			date := split.DateFrom.WithLocation(r.timezone)
 			if date.IsWithinMonth(r.year, r.month) && date.ToTime().Weekday() != time.Sunday && date.ToTime().Weekday() != time.Saturday {
 				filteredLeaves = append(filteredLeaves, split)
 			}
