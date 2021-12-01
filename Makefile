@@ -64,12 +64,12 @@ templates/bootstrap.min.css: generate
 
 preview.template: helm_cmd = template
 preview.template: export IMG_TAG = latest
-preview.template: .helmfile
+preview.template: .helmfile ## Render helmfile template for preview (also renders secrets!)
 
-preview.push: export CONTAINER_IMG = registry.cloudscale-lpg-1.appuio.cloud/odootools-preview/odootools
-preview.push: build.docker
+preview.push: export CONTAINER_IMG = $(PREVIEW_IMG)
+preview.push: build.docker ## Push docker image to preview environment
 	docker push $(CONTAINER_IMG)
 
 preview.deploy: export IMG_TAG = latest
 preview.deploy: helm_cmd = apply
-preview.deploy: preview.push .helmfile
+preview.deploy: preview.push .helmfile ## Deploy Helm release to preview environment

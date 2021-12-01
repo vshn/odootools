@@ -1,6 +1,6 @@
 environments:
   prod: {}
-  preview: {}
+  test: {}
 
 helmDefaults:
   historyMax: 3

@@ -30,7 +30,7 @@ jobs:
 
     - name: Set environment for release candidates
       run: |
-        echo "ENVIRONMENT=preview" >> $GITHUB_ENV
+        echo "ENVIRONMENT=test" >> $GITHUB_ENV
         echo "HELM_RELEASE_NAME=${GITHUB_REF##*-}" >> $GITHUB_ENV
       if: "${{ contains(github.ref, '-rc') }}"
 

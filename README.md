@@ -38,17 +38,17 @@ You can run the tool in different ways:
 Setup the project and deploy user
 
 ```bash
-oc new-project odootools-preview
-oc new-project odootools-prod
+oc new-project vshn-odoo-test
+oc new-project vshn-odoo-prod
 
 ns=odootools-prod
 sa=odootools-deployer
 
 oc -n $ns create sa $sa
 
-# Allow the deployer user to manage deployments in preview namespace
+# Allow the deployer user to manage deployments in test namespace
 oc -n $ns policy add-role-to-user admin -z $sa --rolebinding-name admin
-oc -n odootools-preview patch rolebinding admin --type='json' -p='[{"op": "replace", "path": "/subjects/1/namespace", "value":"'$ns'"}]'
+oc -n vshn-odoo-test patch rolebinding admin --type='json' -p='[{"op": "replace", "path": "/subjects/1/namespace", "value":"'$ns'"}]'
 
 # Get SA token
 oc -n $ns sa get-token $sa
