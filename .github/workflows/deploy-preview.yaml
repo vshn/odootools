@@ -1,11 +1,7 @@
 name: Preview-Deploy
 
 on:
-  pull_request:
-    types:
-    - opened
-    - reopened
-    - synchronize
+  pull_request: {}
 
 env:
   ENVIRONMENT: test
@@ -15,7 +11,7 @@ env:
   IMG_TAG: pr-${{github.event.number}}
 
 jobs:
-  helm:
+  install:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
