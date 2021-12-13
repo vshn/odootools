@@ -8,8 +8,9 @@ on:
 env:
   ENVIRONMENT: test
   OPENSHIFT_API: https://api.c-appuio-cloudscale-lpg-2.appuio.cloud:6443
-  HELM_RELEASE_NAME: odootools-pr-${{github.event.number}}
-  IMG_TAG: pr-${{github.event.number}}
+  HELM_RELEASE_NAME: odootools-pr-${{ github.event.number }}
+  IMG_TAG: pr-${{ github.event.number }}
+  NAMESPACE: vshn-odoo-test
 
 jobs:
   uninstall:
@@ -34,7 +35,7 @@ jobs:
       with:
         openshift_server_url: ${{ env.OPENSHIFT_API }}
         openshift_token: ${{ secrets.OPENSHIFT_TOKEN }}
-        namespace: vshn-odoo-${{ env.ENVIRONMENT }}
+        namespace: ${{ env.NAMESPACE }}
         # We don't have a LE cert yet
         insecure_skip_tls_verify: true
 
@@ -44,4 +45,37 @@ jobs:
         HELM_RELEASE_NAME: ${{ env.HELM_RELEASE_NAME }}
 
     - name: Delete image in registry
-      run: oc -n vshn-odoo-${{ env.ENVIRONMENT }} delete imagestreamtags odootools:${{ env.IMG_TAG }}
+      run: oc -n ${{ env.NAMESPACE }} delete imagestreamtags odootools:${{ env.IMG_TAG }} --ignore-not-found
+
+    - name: Notify on success
+      uses: peter-evans/create-or-update-comment@v1
+      with:
+        issue-number: ${{ github.event.number }}
+        body: |
+          ## ✔️ Preview deployment uninstalled
+
+          | | |
+          |-|-|
+          **Helm release** | ${{ env.NAMESPACE }}/${{ env.HELM_RELEASE_NAME }}
+          **Cluster** | ${{ env.OPENSHIFT_API }}
+
+    - name: Notify on failure
+      uses: peter-evans/create-or-update-comment@v1
+      if: ${{ failure() }}
+      with:
+        issue-number: ${{ github.event.number }}
+        body: |
+          ## ❌ Failed removing preview deployment
+
+          | | |
+          |-|-|
+          **App URL** | https://${{ env.ROUTE_HOST }}
+          **Helm release** | ${{ env.NAMESPACE }}/${{ env.HELM_RELEASE_NAME }}
+          **Cluster** | ${{ env.OPENSHIFT_API }}
+
+          Please investigate what went wrong in the GitHub actions logs.
+          Maintainers can manually remove the deployment by running
+          ```bash
+          make preview.destroy -e HELM_RELEASE_NAME=${{ env.HELM_RELEASE_NAME }}
+          oc -n ${{ env.NAMESPACE }} delete imagestreamtags odootools:${{ env.IMG_TAG }} --ignore-not-found
+          ```
