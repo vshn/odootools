@@ -22,4 +22,4 @@ releases:
             SECRET_KEY: {{ requiredEnv "SECRET_KEY" }}
       - fullnameOverride: {{ env "HELM_RELEASE_NAME" | default "odootools" }}
       - podAnnotations:
-          app.kubernetes.io/git-shasum: {{ env "GITHUB_SHA" | default "GITHUB_SHA" }}
+          app.kubernetes.io/git-shasum: {{ env "GIT_SHA" | default "GIT_SHA" }}

@@ -6,9 +6,10 @@ on:
 env:
   ENVIRONMENT: test
   OPENSHIFT_API: https://api.c-appuio-cloudscale-lpg-2.appuio.cloud:6443
-  HELM_RELEASE_NAME: odootools-pr-${{github.event.number}}
+  HELM_RELEASE_NAME: odootools-pr-${{ github.event.number }}
   REGISTRY_URL: registry.cloudscale-lpg-2.appuio.cloud
-  IMG_TAG: pr-${{github.event.number}}
+  IMG_TAG: pr-${{ github.event.number }}
+  NAMESPACE: vshn-odoo-test
 
 jobs:
   install:
@@ -47,7 +48,7 @@ jobs:
       with:
         openshift_server_url: ${{ env.OPENSHIFT_API }}
         openshift_token: ${{ secrets.OPENSHIFT_TOKEN }}
-        namespace: vshn-odoo-${{ env.ENVIRONMENT }}
+        namespace: ${{ env.NAMESPACE }}
         # We don't have a LE cert yet
         insecure_skip_tls_verify: true
 
@@ -66,6 +67,27 @@ jobs:
       env:
         HELM_RELEASE_NAME: ${{ env.HELM_RELEASE_NAME }}
         IMG_TAG: ${{ env.IMG_TAG }}
+        GIT_SHA: ${{ github.event.pull_request.head.sha }}
         ODOO_DB: ${{ secrets.ODOO_DB }}
         ODOO_URL: http://odoo:8000
         SECRET_KEY: ${{ secrets.SECRET_KEY_PREVIEW }}
+
+    - name: Gather status
+      run: |
+        echo "ROUTE_HOST=$(oc -n ${{ env.NAMESPACE }} get route ${{ env.HELM_RELEASE_NAME }} -o jsonpath='{.spec.host}')" >> $GITHUB_ENV
+
+    - name: Make comment in PR
+      uses: peter-evans/create-or-update-comment@v1
+      with:
+        issue-number: ${{ github.event.number }}
+        body: |
+          ### Preview deployment active 🚀
+
+          | | |
+          |-|-|
+          **App URL** | https://${{ env.ROUTE_HOST }}
+          **Revision** | ${{ github.event.pull_request.head.sha }}
+          **Helm release** | ${{ env.NAMESPACE }}/${{ env.HELM_RELEASE_NAME }}
+          **Cluster** | ${{ env.OPENSHIFT_API }}
+
+          To uninstall this deployment, close or merge this PR.
