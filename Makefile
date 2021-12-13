@@ -60,10 +60,11 @@ run.docker: build.docker ## Run in docker on port 8080
 templates/bootstrap.min.css: generate
 
 .helmfile:
-	helmfile -e $(ENV) -f envs/helmfile.yaml $(helm_cmd)
+	helmfile -e $(ENV) -f envs/helmfile.yaml $(helm_cmd) $(helm_args)
 
 preview.template: helm_cmd = template
 preview.template: export IMG_TAG = latest
+preview.template: export SECRET_KEY = $(LOCAL_SECRET_KEY)
 preview.template: .helmfile ## Render helmfile template for preview (also renders secrets!)
 
 preview.push: export CONTAINER_IMG = $(PREVIEW_IMG)
@@ -73,3 +74,10 @@ preview.push: build.docker ## Push docker image to preview environment
 preview.deploy: export IMG_TAG = latest
 preview.deploy: helm_cmd = apply
 preview.deploy: preview.push .helmfile ## Deploy Helm release to preview environment
+
+preview.destroy: export ODOO_DB = none
+preview.destroy: export ODOO_URL = none
+preview.destroy: export SECRET_KEY = none
+preview.destroy: helm_cmd = destroy
+preview.destroy: helm_args = --args --wait
+preview.destroy: .helmfile ## Uninstall Helm release in preview environment

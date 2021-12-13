@@ -3,3 +3,4 @@ route:
 image:
   registry: image-registry.openshift-image-registry.svc:5000
   repository: vshn-odoo-test/odootools
+  pullPolicy: Always

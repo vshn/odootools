@@ -38,17 +38,20 @@ You can run the tool in different ways:
 Setup the project and deploy user
 
 ```bash
-oc new-project vshn-odoo-test
-oc new-project vshn-odoo-prod
-
-ns=odootools-prod
+ns=vshn-odoo-prod
+nstest=vshn-odoo-test
 sa=odootools-deployer
+
+oc new-project $ns
+oc new-project $nstest
 
 oc -n $ns create sa $sa
 
 # Allow the deployer user to manage deployments in test namespace
-oc -n $ns policy add-role-to-user admin -z $sa --rolebinding-name admin
-oc -n vshn-odoo-test patch rolebinding admin --type='json' -p='[{"op": "replace", "path": "/subjects/1/namespace", "value":"'$ns'"}]'
+oc -n $ns     policy add-role-to-user admin -z $sa --rolebinding-name admin
+oc -n $nstest policy add-role-to-user admin -z $sa --rolebinding-name admin
+oc -n $ns     policy add-cluster-role-to-user system:image-pusher -z $sa
+oc -n $nstest patch rolebinding admin --type='json' -p='[{"op": "replace", "path": "/subjects/1/namespace", "value":"'$ns'"}]'
 
 # Get SA token
 oc -n $ns sa get-token $sa
