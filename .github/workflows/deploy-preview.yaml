@@ -1,0 +1,75 @@
+name: Preview-Deploy
+
+on:
+  pull_request:
+    types:
+    - opened
+    - reopened
+    - synchronize
+
+env:
+  ENVIRONMENT: test
+  OPENSHIFT_API: https://api.c-appuio-cloudscale-lpg-2.appuio.cloud:6443
+  HELM_RELEASE_NAME: odootools-pr-${{github.event.number}}
+  REGISTRY_URL: registry.cloudscale-lpg-2.appuio.cloud
+  IMG_TAG: pr-${{github.event.number}}
+
+jobs:
+  helm:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Determine Go version from go.mod
+      run: echo "GO_VERSION=$(grep "go 1." go.mod | cut -d " " -f 2)" >> $GITHUB_ENV
+
+    - uses: actions/setup-go@v2
+      with:
+        go-version: ${{ env.GO_VERSION }}
+
+    - uses: actions/cache@v2
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Setup helmfile
+      uses: mamezou-tech/setup-helmfile@v0.9.0
+      with:
+        helm-version: v3.7.1
+        helmfile-version: v0.142.0
+        install-kubectl: false
+
+    - name: Install CLI tools from OpenShift Mirror
+      uses: redhat-actions/openshift-tools-installer@v1
+      with:
+        oc: "4"
+
+    - name: Authenticate and set context
+      uses: redhat-actions/oc-login@v1
+      with:
+        openshift_server_url: ${{ env.OPENSHIFT_API }}
+        openshift_token: ${{ secrets.OPENSHIFT_TOKEN }}
+        namespace: vshn-odoo-${{ env.ENVIRONMENT }}
+        # We don't have a LE cert yet
+        insecure_skip_tls_verify: true
+
+    - name: Docker login
+      uses: docker/login-action@v1
+      with:
+        registry: ${{ env.REGISTRY_URL }}
+        username: ${{ github.repository_owner }}
+        password: ${{ secrets.OPENSHIFT_TOKEN }}
+
+    - name: Build and push image
+      run: make preview.push -e IMG_TAG=${{ env.IMG_TAG }}
+
+    - name: Deploy app
+      run: helmfile -f envs/helmfile.yaml -e ${{ env.ENVIRONMENT }} apply --wait
+      env:
+        HELM_RELEASE_NAME: ${{ env.HELM_RELEASE_NAME }}
+        IMG_TAG: ${{ env.IMG_TAG }}
+        ODOO_DB: ${{ secrets.ODOO_DB }}
+        ODOO_URL: http://odoo:8000
+        SECRET_KEY: ${{ secrets.SECRET_KEY_PREVIEW }}
