@@ -1,0 +1,47 @@
+name: Preview-Destroy
+
+on:
+  pull_request:
+    types:
+    - closed
+
+env:
+  ENVIRONMENT: test
+  OPENSHIFT_API: https://api.c-appuio-cloudscale-lpg-2.appuio.cloud:6443
+  HELM_RELEASE_NAME: odootools-pr-${{github.event.number}}
+  IMG_TAG: pr-${{github.event.number}}
+
+jobs:
+  helm:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Setup helmfile
+      uses: mamezou-tech/setup-helmfile@v0.9.0
+      with:
+        helm-version: v3.7.1
+        helmfile-version: v0.142.0
+        install-kubectl: false
+
+    - name: Install CLI tools from OpenShift Mirror
+      uses: redhat-actions/openshift-tools-installer@v1
+      with:
+        oc: "4"
+
+    - name: Authenticate and set context
+      uses: redhat-actions/oc-login@v1
+      with:
+        openshift_server_url: ${{ env.OPENSHIFT_API }}
+        openshift_token: ${{ secrets.OPENSHIFT_TOKEN }}
+        namespace: vshn-odoo-${{ env.ENVIRONMENT }}
+        # We don't have a LE cert yet
+        insecure_skip_tls_verify: true
+
+    - name: Uninstall app
+      run: make preview.destroy
+      env:
+        HELM_RELEASE_NAME: ${{ env.HELM_RELEASE_NAME }}
+
+    - name: Delete image in registry
+      run: oc -n vshn-odoo-${{ env.ENVIRONMENT }} delete imagestreamtags odootools:${{ env.IMG_TAG }}
