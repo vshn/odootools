@@ -1,0 +1,58 @@
+name: Deploy-Master
+
+on:
+  push:
+    branches:
+    - master
+    paths:
+    - envs/**
+    - chart/**
+    - .github/workflows/deploy-*.yaml
+
+env:
+  OPENSHIFT_API: https://api.c-appuio-cloudscale-lpg-2.appuio.cloud:6443
+  HELM_RELEASE_NAME: odootools
+  NAMESPACE: vshn-odoo-prod
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Setup helmfile
+      uses: mamezou-tech/setup-helmfile@v0.9.0
+      with:
+        helm-version: v3.7.1
+        helmfile-version: v0.142.0
+        install-kubectl: false
+
+    - name: Install CLI tools from OpenShift Mirror
+      uses: redhat-actions/openshift-tools-installer@v1
+      with:
+        oc: "4"
+
+    - name: Authenticate and set context
+      uses: redhat-actions/oc-login@v1
+      with:
+        openshift_server_url: ${{ env.OPENSHIFT_API }}
+        openshift_token: ${{ secrets.OPENSHIFT_TOKEN }}
+        namespace: ${{ env.NAMESPACE }}
+        # We don't have a LE cert yet
+        insecure_skip_tls_verify: true
+
+    # Note: The following steps will fail if there's no deployment.
+
+    # On default branch, we don't know what the last pushed image tag was, so let's retrieve from currently deployed release.
+    - name: Gather status
+      run: |
+        echo "IMG_TAG=$(helm -n ${{ env.NAMESPACE }} get values ${{ env.HELM_RELEASE_NAME }} | yq eval '.image.tag' -)" >> $GITHUB_ENV
+
+    - name: Deploy app
+      run: helmfile -f envs/helmfile.yaml -e prod apply
+      env:
+        HELM_RELEASE_NAME: ${{ env.HELM_RELEASE_NAME }}
+        IMG_TAG: ${{ env.IMG_TAG }}
+        ODOO_DB: ${{ secrets.ODOO_DB }}
+        ODOO_URL: ${{ secrets.ODOO_URL }}
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}

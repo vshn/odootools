@@ -1,4 +1,4 @@
-name: Deploy
+name: Deploy-Prod
 
 on:
   push:
@@ -6,12 +6,11 @@ on:
     - "*"
 
 env:
-  ENVIRONMENT: prod
   OPENSHIFT_API: https://api.c-appuio-cloudscale-lpg-2.appuio.cloud:6443
   HELM_RELEASE_NAME: odootools
 
 jobs:
-  helm:
+  install:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -28,23 +27,17 @@ jobs:
       with:
         oc: "4"
 
-    - name: Set environment for release candidates
-      run: |
-        echo "ENVIRONMENT=test" >> $GITHUB_ENV
-        echo "HELM_RELEASE_NAME=${GITHUB_REF##*-}" >> $GITHUB_ENV
-      if: "${{ contains(github.ref, '-rc') }}"
-
     - name: Authenticate and set context
       uses: redhat-actions/oc-login@v1
       with:
         openshift_server_url: ${{ env.OPENSHIFT_API }}
         openshift_token: ${{ secrets.OPENSHIFT_TOKEN }}
-        namespace: vshn-odoo-${{ env.ENVIRONMENT }}
+        namespace: vshn-odoo-prod
         # We don't have a LE cert yet
         insecure_skip_tls_verify: true
 
     - name: Deploy app
-      run: helmfile -f envs/helmfile.yaml -e ${{ env.ENVIRONMENT }} apply
+      run: helmfile -f envs/helmfile.yaml -e prod apply
       env:
         HELM_RELEASE_NAME: ${{ env.HELM_RELEASE_NAME }}
         IMG_TAG: ${{ github.ref }}
