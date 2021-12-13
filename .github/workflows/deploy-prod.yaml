@@ -9,6 +9,7 @@ env:
   ENVIRONMENT: prod
   OPENSHIFT_API: https://api.c-appuio-cloudscale-lpg-2.appuio.cloud:6443
   HELM_RELEASE_NAME: odootools
+  NAMESPACE: vshn-odoo-prod
 
 jobs:
   helm:
@@ -28,18 +29,12 @@ jobs:
       with:
         oc: "4"
 
-    - name: Set environment for release candidates
-      run: |
-        echo "ENVIRONMENT=test" >> $GITHUB_ENV
-        echo "HELM_RELEASE_NAME=${GITHUB_REF##*-}" >> $GITHUB_ENV
-      if: "${{ contains(github.ref, '-rc') }}"
-
     - name: Authenticate and set context
       uses: redhat-actions/oc-login@v1
       with:
         openshift_server_url: ${{ env.OPENSHIFT_API }}
         openshift_token: ${{ secrets.OPENSHIFT_TOKEN }}
-        namespace: vshn-odoo-${{ env.ENVIRONMENT }}
+        namespace: ${{ env.NAMESPACE }}
         # We don't have a LE cert yet
         insecure_skip_tls_verify: true
 
