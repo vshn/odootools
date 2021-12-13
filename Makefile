@@ -64,6 +64,7 @@ templates/bootstrap.min.css: generate
 
 preview.template: helm_cmd = template
 preview.template: export IMG_TAG = latest
+preview.template: export SECRET_KEY = $(LOCAL_SECRET_KEY)
 preview.template: .helmfile ## Render helmfile template for preview (also renders secrets!)
 
 preview.push: export CONTAINER_IMG = $(PREVIEW_IMG)
