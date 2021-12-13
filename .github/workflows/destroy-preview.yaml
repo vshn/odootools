@@ -12,6 +12,7 @@ env:
   IMG_TAG: pr-${{ github.event.number }}
   NAMESPACE: vshn-odoo-test
 
+
 jobs:
   uninstall:
     runs-on: ubuntu-latest
