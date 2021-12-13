@@ -14,6 +14,7 @@ env:
 jobs:
   install:
     runs-on: ubuntu-latest
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'dependency') }}
     steps:
     - uses: actions/checkout@v2
 
