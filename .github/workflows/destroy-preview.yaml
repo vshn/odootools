@@ -65,7 +65,7 @@ jobs:
       with:
         issue-number: ${{ github.event.number }}
         body: |
-          ## ❌ Failed removing preview deployment
+          ## ❌ Failed to remove preview deployment
 
           | | |
           |-|-|

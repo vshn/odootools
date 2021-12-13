@@ -81,7 +81,7 @@ jobs:
       with:
         issue-number: ${{ github.event.number }}
         body: |
-          ### Preview deployment active 🚀
+          ## 🚀 Preview deployment active
 
           | | |
           |-|-|
