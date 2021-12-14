@@ -50,8 +50,9 @@ oc -n $ns create sa $sa
 # Allow the deployer user to manage deployments in test namespace
 oc -n $ns     policy add-role-to-user admin -z $sa --rolebinding-name admin
 oc -n $nstest policy add-role-to-user admin -z $sa --rolebinding-name admin
-oc -n $ns     policy add-cluster-role-to-user system:image-pusher -z $sa
+oc -n $nstest policy add-role-to-user system:image-pusher -z $sa
 oc -n $nstest patch rolebinding admin --type='json' -p='[{"op": "replace", "path": "/subjects/1/namespace", "value":"'$ns'"}]'
+oc -n $nstest patch rolebinding system:image-pusher --type='json' -p='[{"op": "replace", "path": "/subjects/0/namespace", "value":"'$ns'"}]'
 
 # Get SA token
 oc -n $ns sa get-token $sa
