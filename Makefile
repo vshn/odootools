@@ -76,7 +76,6 @@ preview.deploy: helm_cmd = apply
 preview.deploy: preview.push .helmfile ## Deploy Helm release to preview environment
 
 preview.destroy: export ODOO_DB = none
-preview.destroy: export ODOO_URL = none
 preview.destroy: export SECRET_KEY = none
 preview.destroy: helm_cmd = destroy
 preview.destroy: helm_args = --args --wait

@@ -17,7 +17,7 @@ releases:
           tag: {{ trimPrefix "refs/tags/" (requiredEnv "IMG_TAG") }}
       - odootools:
           secretEnvs:
-            ODOO_URL: {{ requiredEnv "ODOO_URL" }}
+            ODOO_URL: http://odoo:8000
             ODOO_DB: {{ requiredEnv "ODOO_DB" }}
             SECRET_KEY: {{ requiredEnv "SECRET_KEY" }}
       - fullnameOverride: {{ env "HELM_RELEASE_NAME" | default "odootools" }}
