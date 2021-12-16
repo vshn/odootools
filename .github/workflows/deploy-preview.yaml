@@ -70,7 +70,6 @@ jobs:
         IMG_TAG: ${{ env.IMG_TAG }}
         GIT_SHA: ${{ github.event.pull_request.head.sha }}
         ODOO_DB: ${{ secrets.ODOO_DB }}
-        ODOO_URL: http://odoo:8000
         SECRET_KEY: ${{ secrets.SECRET_KEY_PREVIEW }}
 
     - name: Gather status

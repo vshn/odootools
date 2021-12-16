@@ -54,5 +54,4 @@ jobs:
         HELM_RELEASE_NAME: ${{ env.HELM_RELEASE_NAME }}
         IMG_TAG: ${{ env.IMG_TAG }}
         ODOO_DB: ${{ secrets.ODOO_DB }}
-        ODOO_URL: ${{ secrets.ODOO_URL }}
         SECRET_KEY: ${{ secrets.SECRET_KEY }}
