@@ -18,7 +18,6 @@ import (
 func TestMain(m *testing.M) {
 	rand.Seed(time.Now().UnixNano())
 	log.SetOutput(io.Discard)
-	web.RootDir = ".."
 
 	os.Exit(m.Run())
 }

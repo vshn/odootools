@@ -11,10 +11,6 @@ import (
 	"github.com/vshn/odootools/pkg/web/views"
 )
 
-// RootDir optionally describes where the root directory with the "templates"
-/// and "public" folders is. This is mainly used in tests where the context dir is different.
-var RootDir = ""
-
 type Server struct {
 	router       *mux.Router
 	html         *views.Renderer
