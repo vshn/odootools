@@ -19,9 +19,6 @@ type Session struct {
 	// UID is the user's ID as an int, or the boolean `false` if authentication
 	// failed.
 	UID int `json:"uid,omitempty"`
-	// Username is usually set to the LoginName that was sent in the request.
-	// Is always set, no matter the authentication outcome.
-	Username string `json:"username,omitempty"`
 }
 
 type loginParams struct {
