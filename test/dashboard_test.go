@@ -11,7 +11,7 @@ import (
 func TestDashboardUnauthenticated(t *testing.T) {
 	is := is.New(t)
 
-	req := httptest.NewRequest("GET", "/", nil)
+	req := httptest.NewRequest("GET", "/report", nil)
 	res := httptest.NewRecorder()
 	newServer("").ServeHTTP(res, req)
 

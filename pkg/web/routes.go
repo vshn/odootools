@@ -1,34 +1,53 @@
 package web
 
 import (
+	"embed"
 	"net/http"
 
-	"github.com/gorilla/mux"
+	"github.com/labstack/echo/v4"
 	"github.com/vshn/odootools/templates"
 )
 
-func (s *Server) routes(middleware ...mux.MiddlewareFunc) {
-	router := mux.NewRouter()
-
-	// System routes
-	router.HandleFunc("/healthz", Healthz).Methods("GET")
+func (s *Server) setupRoutes(middleware ...echo.MiddlewareFunc) {
+	e := s.Echo
+	// System setupRoutes
+	e.GET("/healthz", Healthz)
 
 	// Application routes
-	r := router.NewRoute().Subrouter()
-	r.Use(middleware...)
+	e.GET("/", s.RedirectTo("/report"))
 
-	r.Handle("/", s.RequestReportForm()).Methods("GET")
-	r.Handle("/report", s.RequestReportForm()).Methods("GET")
-	r.Handle("/report", s.RedirectReport()).Methods("POST")
-	r.Handle("/report/{employee:[0-9]+}/{year:[0-9]+}/{month:[0-9]+}", s.OvertimeReport()).Methods("GET")
+	report := e.Group("/report", middleware...)
+	report.GET("", s.RequestReportForm)
+	report.POST("", s.ProcessReportInput)
+	report.GET("/:employee/:year/:month", s.OvertimeReport)
 
 	// Authentication
-	r.Handle("/login", s.LoginForm()).Methods("GET")
-	r.Handle("/login", s.Login()).Methods("POST")
-	r.Handle("/logout", s.Logout()).Methods("GET")
+	e.GET("/login", s.LoginForm)
+	e.POST("/login", s.Login)
+	e.GET("/logout", s.Logout)
 
 	// static files
-	r.PathPrefix("/").Handler(http.FileServer(http.FS(templates.PublicFS)))
+	e.GET("/robots.txt", EmbeddedFile(templates.PublicFS, "robots.txt", "text/plain; charset=UTF-8"))
+	e.GET("/favicon.ico", EmbeddedFile(templates.PublicFS, "favicon.png", "image/png"))
+	e.GET("/static/*", echo.WrapHandler(http.StripPrefix("/static/", http.FileServer(http.FS(templates.PublicFS)))))
+}
 
-	s.router = router
+func Healthz(e echo.Context) error {
+	return e.String(http.StatusOK, "")
+}
+
+func EmbeddedFile(fs embed.FS, fileName string, contentType string) echo.HandlerFunc {
+	return func(e echo.Context) error {
+		file, err := fs.Open(fileName)
+		if err != nil {
+			return err
+		}
+		return e.Stream(http.StatusOK, contentType, file)
+	}
+}
+
+func (s Server) RedirectTo(url string) echo.HandlerFunc {
+	return func(context echo.Context) error {
+		return context.Redirect(http.StatusTemporaryRedirect, url)
+	}
 }

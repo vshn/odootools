@@ -53,6 +53,7 @@ func main() {
 		},
 	}
 
+	log.Printf("odootools %s", app.Version)
 	err := app.Run(os.Args)
 	if err != nil {
 		log.Fatal(err)

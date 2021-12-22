@@ -2,70 +2,65 @@ package web
 
 import (
 	"errors"
-	"log"
 	"net/http"
 
+	"github.com/gorilla/sessions"
+	"github.com/labstack/echo-contrib/session"
+	"github.com/labstack/echo/v4"
 	"github.com/vshn/odootools/pkg/odoo"
-	"github.com/vshn/odootools/pkg/web/views"
+	"github.com/vshn/odootools/pkg/web/controller"
 )
 
 const (
-	CookieSID = "ftb_sid"
+	CookieSID = "odootools"
 )
 
-func (s Server) sessionFrom(r *http.Request) *odoo.Session {
-	if c, err := r.Cookie(CookieSID); err == nil {
-		var sess odoo.Session
-		if err = s.securecookie.Decode(CookieSID, c.Value, &sess); err == nil {
-			return &sess
-		}
-	}
-
-	return nil
-}
-
 // LoginForm GET /login
-func (s Server) LoginForm() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		s.html.Render(w, "login", nil)
-	})
+func (s Server) LoginForm(e echo.Context) error {
+	return e.Render(http.StatusOK, "login", nil)
 }
 
 // Login POST /login
-func (s Server) Login() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		sess, err := s.odoo.Login(r.FormValue("login"), r.FormValue("password"))
-		if errors.Is(err, odoo.ErrInvalidCredentials) {
-			s.html.Render(w, "login", views.Values{"Error": "Invalid login or password"})
-			return
-		}
-		if err != nil {
-			log.Println(err)
-			http.Error(w, "Got an error from Odoo, check logs", http.StatusBadGateway)
-			return
-		}
+func (s Server) Login(e echo.Context) error {
 
-		// Set session cookie
-		val, err := s.securecookie.Encode(CookieSID, sess)
-		if err != nil {
-			log.Printf("Login: error encoding session: %v\n", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		http.SetCookie(w, &http.Cookie{
-			Name:     CookieSID,
-			Value:    val,
-			HttpOnly: true,
-			Secure:   true,
-		})
-		http.Redirect(w, r, "/", http.StatusFound)
-	})
+	odooSession, err := s.odoo.Login(e.FormValue("login"), e.FormValue("password"))
+	if errors.Is(err, odoo.ErrInvalidCredentials) {
+		return e.Render(http.StatusOK, "login", controller.Values{"Error": "Invalid login or password"})
+	}
+	if err != nil {
+		e.Logger().Error(err)
+		return e.Render(http.StatusBadGateway, "error", controller.AsError(errors.New("got an error from Odoo, check logs")))
+	}
+	if err := s.SaveOdooSession(e, odooSession); err != nil {
+		return s.ShowError(e, err)
+	}
+	return e.Redirect(http.StatusFound, "/report")
 }
 
 // Logout GET /logout
-func (s Server) Logout() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.SetCookie(w, &http.Cookie{Name: CookieSID, MaxAge: -1})
-		http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
-	})
+func (s Server) Logout(e echo.Context) error {
+	e.SetCookie(&http.Cookie{Name: CookieSID, MaxAge: -1})
+	return e.Redirect(http.StatusTemporaryRedirect, "/login")
+}
+
+func (s Server) GetOdooSession(e echo.Context) *odoo.Session {
+	sess, _ := session.Get(CookieSID, e)
+	odooSess := &odoo.Session{
+		ID:  sess.Values["odoo_id"].(string),
+		UID: sess.Values["odoo_uid"].(int),
+	}
+	return odooSess
+}
+
+func (s Server) SaveOdooSession(e echo.Context, odooSession *odoo.Session) error {
+	sess := sessions.NewSession(s.cookieStore, CookieSID)
+	sess.Options = &sessions.Options{
+		Path:     "/",
+		MaxAge:   86400 * 7,
+		HttpOnly: true,
+		Secure:   true,
+	}
+	sess.Values["odoo_id"] = odooSession.ID
+	sess.Values["odoo_uid"] = odooSession.UID
+	return sess.Save(e.Request(), e.Response())
 }

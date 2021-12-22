@@ -25,7 +25,7 @@ func TestRenderLoginForm(t *testing.T) {
 	newServer("").ServeHTTP(res, req)
 
 	is.Equal(200, res.Code)
-	is.Equal("text/html", res.Header().Get("content-type")) // Content-Type
+	is.Equal("text/html; charset=UTF-8", res.Header().Get("content-type")) // Content-Type
 	body, err := ioutil.ReadAll(res.Body)
 	is.NoErr(err)
 	is.True(bytes.Contains(body, []byte("<h1>Login</h1>")))
@@ -85,12 +85,12 @@ func TestLoginSuccess(t *testing.T) {
 	res := httptest.NewRecorder()
 	newServer(odooMock.URL).ServeHTTP(res, req)
 
-	is.Equal(res.Code, http.StatusFound)        // HTTP status
-	is.Equal(res.Header().Get("Location"), "/") // Location header
+	is.Equal(res.Code, http.StatusFound)              // HTTP status
+	is.Equal(res.Header().Get("Location"), "/report") // Location header
 
 	is.Equal(1, len(res.Result().Cookies())) // number of cookies
 	c := res.Result().Cookies()[0]
-	is.Equal("ftb_sid", c.Name) // cookie name
+	is.Equal("odootools", c.Name) // cookie name
 	is.True(!strings.Contains(c.Value, testLogin))
 	is.Equal(true, c.HttpOnly) // cookie HttpOnly
 	is.Equal(true, c.Secure)   // cookie Secure
@@ -146,7 +146,7 @@ func TestLoginBadCredentials(t *testing.T) {
 	is.Equal(numRequests, 1)                   // total number of requests
 
 	// Verify that the login page is rendered
-	is.Equal("text/html", res.Header().Get("content-type")) // Content-Type
+	is.Equal("text/html; charset=UTF-8", res.Header().Get("content-type")) // Content-Type
 	body, err := ioutil.ReadAll(res.Body)
 	is.NoErr(err)
 	is.True(bytes.Contains(body, []byte("<h1>Login</h1>")))

@@ -1,38 +1,24 @@
 package cmd
 
 import (
-	"log"
-	"net/http"
-	"time"
-
 	"github.com/urfave/cli/v2"
 	"github.com/vshn/odootools/pkg/odoo"
 	"github.com/vshn/odootools/pkg/web"
-	"github.com/vshn/odootools/pkg/web/middleware"
 )
 
-func RunWebServer(context *cli.Context) error {
+func RunWebServer(cli *cli.Context) error {
+
 	server := web.NewServer(
-		odoo.NewClient(context.String("odoo-url"), context.String("odoo-db")),
-		context.String("secret-key"),
-		middleware.AccessLog,
+		odoo.NewClient(cli.String("odoo-url"), cli.String("odoo-db")),
+		cli.String("secret-key"),
 	)
 
-	srv := http.Server{
-		Handler:        server,
-		Addr:           context.String("listen-address"),
-		ReadTimeout:    10 * time.Second,
-		WriteTimeout:   10 * time.Second,
-		MaxHeaderBytes: 1 << 20, // 1MiB
-	}
+	addr := cli.String("listen-address")
 
-	log.Printf("Starting odoo at %s\n", srv.Addr)
-	if certPath := context.String("tls-cert"); certPath != "" {
-		return srv.ListenAndServeTLS(
-			certPath, context.String("tls-key"),
-		)
+	if certPath := cli.String("tls-cert"); certPath != "" {
+		return server.Echo.StartTLS(addr, cli.String("tls-cert"), cli.String("tls-key"))
 	}
-	return srv.ListenAndServe()
+	return server.Echo.Start(addr)
 }
 
 var WebCommand = &cli.Command{

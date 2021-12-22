@@ -16,7 +16,7 @@ func TestStaticAssets(t *testing.T) {
 	newServer("").ServeHTTP(res, req)
 
 	is.Equal(200, res.Code)
-	is.Equal(res.Header().Get("content-type"), "text/plain; charset=utf-8") // Content-Type
+	is.Equal(res.Header().Get("content-type"), "text/plain; charset=UTF-8") // Content-Type
 	body, err := ioutil.ReadAll(res.Body)
 	is.NoErr(err)
 	is.Equal(string(body), "User-agent: *\nDisallow: /\n")

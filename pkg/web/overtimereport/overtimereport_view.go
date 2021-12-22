@@ -1,29 +1,22 @@
-package views
+package overtimereport
 
 import (
 	"fmt"
-	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/vshn/odootools/pkg/odoo"
 	"github.com/vshn/odootools/pkg/timesheet"
+	"github.com/vshn/odootools/pkg/web/controller"
 )
 
-type OvertimeReportView struct {
-	renderer *Renderer
-	template string
+const reportTemplateName string = "overtimereport"
+
+type reportView struct {
 }
 
-func NewOvertimeReportView(renderer *Renderer) *OvertimeReportView {
-	return &OvertimeReportView{
-		renderer: renderer,
-		template: "overtimereport",
-	}
-}
-
-func (v *OvertimeReportView) formatDailySummary(daily *timesheet.DailySummary) Values {
-	basic := Values{
+func (v *reportView) formatDailySummary(daily *timesheet.DailySummary) controller.Values {
+	basic := controller.Values{
 		"Weekday":       daily.Date.Weekday(),
 		"Date":          daily.Date.Format(odoo.DateFormat),
 		"Workload":      daily.FTERatio * 100,
@@ -54,21 +47,20 @@ func formatDurationInHours(d time.Duration) string {
 	return fmt.Sprintf("%s%d:%02d", sign, h, m)
 }
 
-func (v *OvertimeReportView) formatSummary(s timesheet.Summary) Values {
-	return Values{
+func (v *reportView) formatSummary(s timesheet.Summary) controller.Values {
+	return controller.Values{
 		"TotalOvertime": formatDurationInHours(s.TotalOvertime.Truncate(time.Minute)),
 		// TODO: Might not be accurate for days before 2021
 		"TotalLeaves": fmt.Sprintf("%sd", strconv.FormatFloat(s.TotalLeaveDays.Hours()/8, 'f', 0, 64)),
 	}
 }
 
-func (v *OvertimeReportView) ShowAttendanceReport(w http.ResponseWriter, report timesheet.Report) {
-	w.WriteHeader(http.StatusOK)
-	v.renderer.Render(w, v.template, v.prepareValues(report))
+func (v *reportView) ShowAttendanceReport(report timesheet.Report) controller.Values {
+	return v.prepareValues(report)
 }
 
-func (v *OvertimeReportView) prepareValues(report timesheet.Report) Values {
-	formatted := make([]Values, 0)
+func (v *reportView) prepareValues(report timesheet.Report) controller.Values {
+	formatted := make([]controller.Values, 0)
 	for _, summary := range report.DailySummaries {
 		if summary.IsWeekend() && summary.CalculateWorkingHours() == 0 {
 			continue
@@ -77,12 +69,12 @@ func (v *OvertimeReportView) prepareValues(report timesheet.Report) Values {
 	}
 	nextYear, nextMonth := getNextMonth(report)
 	prevYear, prevMonth := getPreviousMonth(report)
-	return Values{
+	return controller.Values{
 		"Attendances": formatted,
 		"Summary":     v.formatSummary(report.Summary),
-		"Nav": Values{
+		"Nav": controller.Values{
 			"LoggedIn":          true,
-			"ActiveView":        v.template,
+			"ActiveView":        reportTemplateName,
 			"CurrentMonthLink":  fmt.Sprintf("/report/%d/%d/%02d", report.Employee.ID, time.Now().Year(), time.Now().Month()),
 			"NextMonthLink":     fmt.Sprintf("/report/%d/%d/%02d", report.Employee.ID, nextYear, nextMonth),
 			"PreviousMonthLink": fmt.Sprintf("/report/%d/%d/%02d", report.Employee.ID, prevYear, prevMonth),
