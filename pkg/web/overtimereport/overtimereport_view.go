@@ -10,7 +10,7 @@ import (
 	"github.com/vshn/odootools/pkg/web/controller"
 )
 
-const reportTemplateName string = "overtimereport"
+const monthlyReportTemplateName string = "overtimereport-monthly"
 
 type reportView struct {
 }
@@ -69,7 +69,7 @@ func (v *reportView) formatSummary(s timesheet.Summary, payslip *odoo.Payslip) c
 	return val
 }
 
-func (v *reportView) GetValuesForAttendanceReport(report timesheet.Report, payslip *odoo.Payslip) controller.Values {
+func (v *reportView) GetValuesForAttendanceReport(report timesheet.MonthlyReport, payslip *odoo.Payslip) controller.Values {
 	formatted := make([]controller.Values, 0)
 	for _, summary := range report.DailySummaries {
 		if summary.IsWeekend() && summary.CalculateWorkingTime() == 0 {
@@ -84,7 +84,7 @@ func (v *reportView) GetValuesForAttendanceReport(report timesheet.Report, paysl
 		"Summary":     v.formatSummary(report.Summary, payslip),
 		"Nav": controller.Values{
 			"LoggedIn":          true,
-			"ActiveView":        reportTemplateName,
+			"ActiveView":        monthlyReportTemplateName,
 			"CurrentMonthLink":  fmt.Sprintf("/report/%d/%d/%02d", report.Employee.ID, time.Now().Year(), time.Now().Month()),
 			"NextMonthLink":     fmt.Sprintf("/report/%d/%d/%02d", report.Employee.ID, nextYear, nextMonth),
 			"PreviousMonthLink": fmt.Sprintf("/report/%d/%d/%02d", report.Employee.ID, prevYear, prevMonth),
@@ -93,14 +93,14 @@ func (v *reportView) GetValuesForAttendanceReport(report timesheet.Report, paysl
 	}
 }
 
-func getNextMonth(r timesheet.Report) (int, int) {
+func getNextMonth(r timesheet.MonthlyReport) (int, int) {
 	if r.Month >= 12 {
 		return r.Year + 1, 1
 	}
 	return r.Year, r.Month + 1
 }
 
-func getPreviousMonth(r timesheet.Report) (int, int) {
+func getPreviousMonth(r timesheet.MonthlyReport) (int, int) {
 	if r.Month <= 1 {
 		return r.Year - 1, 12
 	}

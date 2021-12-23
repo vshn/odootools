@@ -67,10 +67,6 @@ func (p Payslip) GetOvertime() string {
 	return p.Overtime.(string)
 }
 
-const clockLayout = "15:04:05"
-
-var clockZero, _ = time.Parse(clockLayout, "00:00:00")
-
 // colonFormatRegex searches for string reference that has somewhere a pattern like '123:45' or '123:45:54'
 // A match will be divided into subgroups, e.g. '123' for hours, '45' for minutes, '54' for seconds.
 // The hours group can have a dash in front of the number to indicate negative hours.

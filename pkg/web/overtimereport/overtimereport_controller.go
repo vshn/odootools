@@ -99,7 +99,7 @@ func (c *ReportController) calculateReport(_ pipeline.Context) error {
 		SetTimeZone("Europe/Zurich") // hardcoded for now
 	report := reporter.CalculateReport()
 	values := c.ReportView.GetValuesForAttendanceReport(report, c.Payslip)
-	return c.Echo.Render(http.StatusOK, reportTemplateName, values)
+	return c.Echo.Render(http.StatusOK, monthlyReportTemplateName, values)
 }
 
 func (c *ReportController) searchEmployee(_ pipeline.Context) error {

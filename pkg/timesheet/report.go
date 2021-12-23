@@ -51,7 +51,7 @@ type Summary struct {
 	TotalLeaveDays time.Duration
 }
 
-type Report struct {
+type MonthlyReport struct {
 	DailySummaries []*DailySummary
 	Summary        Summary
 	Employee       *odoo.Employee
@@ -95,7 +95,7 @@ func (r *Reporter) SetTimeZone(zone string) *Reporter {
 	return r
 }
 
-func (r *Reporter) CalculateReport() Report {
+func (r *Reporter) CalculateReport() MonthlyReport {
 	filteredAttendances := r.filterAttendancesInMonth()
 	blocks := r.reduceAttendancesToBlocks(filteredAttendances)
 	filteredLeaves := r.filterLeavesInMonth()
@@ -110,7 +110,7 @@ func (r *Reporter) CalculateReport() Report {
 		summary.TotalOvertime += dailySummary.CalculateOvertime()
 		summary.TotalLeaveDays += dailySummary.CalculateAbsenceTime()
 	}
-	return Report{
+	return MonthlyReport{
 		DailySummaries: dailySummaries,
 		Summary:        summary,
 		Employee:       r.employee,
