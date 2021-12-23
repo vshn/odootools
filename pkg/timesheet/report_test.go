@@ -50,18 +50,18 @@ func localzone(t *testing.T) *time.Location {
 	return zone
 }
 
-func TestReporter_AddAttendanceBlocksToDailies(t *testing.T) {
+func TestReporter_AddAttendanceShiftsToDailies(t *testing.T) {
 	tests := map[string]struct {
 		givenDailySummaries    []*DailySummary
-		givenBlocks            []AttendanceBlock
+		givenShifts            []AttendanceShift
 		expectedDailySummaries []*DailySummary
 	}{
-		"GivenBlocksWithDifferentDates_ThenSeparateDaily": {
+		"GivenShiftsWithDifferentDates_ThenSeparateDaily": {
 			givenDailySummaries: []*DailySummary{
 				{Date: *date(t, "2021-02-03")},
 				{Date: *date(t, "2021-02-04")},
 			},
-			givenBlocks: []AttendanceBlock{
+			givenShifts: []AttendanceShift{
 				{Start: parse(t, "2021-02-03 09:00"), End: parse(t, "2021-02-03 18:00")},
 				{Start: parse(t, "2021-02-04 09:00"), End: parse(t, "2021-02-04 12:00")},
 				{Start: parse(t, "2021-02-04 13:00"), End: parse(t, "2021-02-04 19:00")},
@@ -69,13 +69,13 @@ func TestReporter_AddAttendanceBlocksToDailies(t *testing.T) {
 			expectedDailySummaries: []*DailySummary{
 				{
 					Date: *date(t, "2021-02-03"),
-					Blocks: []AttendanceBlock{
+					Shifts: []AttendanceShift{
 						{Start: parse(t, "2021-02-03 09:00"), End: parse(t, "2021-02-03 18:00")},
 					},
 				},
 				{
 					Date: *date(t, "2021-02-04"),
-					Blocks: []AttendanceBlock{
+					Shifts: []AttendanceShift{
 						{Start: parse(t, "2021-02-04 09:00"), End: parse(t, "2021-02-04 12:00")},
 						{Start: parse(t, "2021-02-04 13:00"), End: parse(t, "2021-02-04 19:00")},
 					},
@@ -89,24 +89,24 @@ func TestReporter_AddAttendanceBlocksToDailies(t *testing.T) {
 				year:  2021,
 				month: 2,
 			}
-			r.addAttendanceBlocksToDailies(tt.givenBlocks, tt.givenDailySummaries)
+			r.addAttendanceShiftsToDailies(tt.givenShifts, tt.givenDailySummaries)
 
 			assert.Equal(t, tt.expectedDailySummaries, tt.givenDailySummaries)
 		})
 	}
 }
 
-func TestReporter_ReduceAttendancesToBlocks(t *testing.T) {
+func TestReporter_ReduceAttendancesToShifts(t *testing.T) {
 	tests := map[string]struct {
 		givenAttendances []odoo.Attendance
-		expectedBlocks   []AttendanceBlock
+		expectedShifts   []AttendanceShift
 	}{
 		"GivenAttendancesInUTC_WhenReducing_ThenApplyLocalZone": {
 			givenAttendances: []odoo.Attendance{
 				{DateTime: newDateTime(t, "2021-02-03 19:00"), Action: ActionSignIn}, // these times are UTC
 				{DateTime: newDateTime(t, "2021-02-03 22:59"), Action: ActionSignOut},
 			},
-			expectedBlocks: []AttendanceBlock{
+			expectedShifts: []AttendanceShift{
 				{Start: newDateTime(t, "2021-02-03 19:00").ToTime().In(localzone(t)),
 					End: newDateTime(t, "2021-02-03 22:59").ToTime().In(localzone(t)),
 				},
@@ -119,7 +119,7 @@ func TestReporter_ReduceAttendancesToBlocks(t *testing.T) {
 				{DateTime: newDateTime(t, "2021-02-03 23:00"), Action: ActionSignIn},
 				{DateTime: newDateTime(t, "2021-02-04 00:00"), Action: ActionSignOut},
 			},
-			expectedBlocks: []AttendanceBlock{
+			expectedShifts: []AttendanceShift{
 				{
 					Start: newDateTime(t, "2021-02-03 19:00").ToTime().In(localzone(t)),
 					End:   newDateTime(t, "2021-02-03 22:59").ToTime().In(localzone(t)),
@@ -138,9 +138,9 @@ func TestReporter_ReduceAttendancesToBlocks(t *testing.T) {
 				month:    2,
 				timezone: localzone(t),
 			}
-			result := r.reduceAttendancesToBlocks(tt.givenAttendances)
+			result := r.reduceAttendancesToShifts(tt.givenAttendances)
 
-			assert.Equal(t, tt.expectedBlocks, result)
+			assert.Equal(t, tt.expectedShifts, result)
 		})
 	}
 }

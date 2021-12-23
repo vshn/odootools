@@ -7,7 +7,7 @@ import (
 type DailySummary struct {
 	// Date is the localized date of the summary.
 	Date     time.Time
-	Blocks   []AttendanceBlock
+	Shifts   []AttendanceShift
 	Absences []AbsenceBlock
 	FTERatio float64
 }
@@ -20,18 +20,18 @@ func NewDailySummary(fteRatio float64, date time.Time) *DailySummary {
 		FTERatio: fteRatio,
 		Date:     date,
 		Absences: []AbsenceBlock{},
-		Blocks:   []AttendanceBlock{},
+		Shifts:   []AttendanceShift{},
 	}
 }
 
-// addAttendanceBlock adds the given block to the existing blocks.
-// If the block is not starting in the same day as DailySummary.Date, it will be silently ignored.
-func (s *DailySummary) addAttendanceBlock(block AttendanceBlock) {
-	if block.Start.Day() != s.Date.Day() {
-		// Block is not on the same day
+// addAttendanceShift adds the given shift to the existing shifts.
+// If the shift is not starting in the same day as DailySummary.Date, it will be silently ignored.
+func (s *DailySummary) addAttendanceShift(shift AttendanceShift) {
+	if shift.Start.Day() != s.Date.Day() {
+		// Shift is not on the same day
 		return
 	}
-	s.Blocks = append(s.Blocks, block)
+	s.Shifts = append(s.Shifts, shift)
 }
 
 // addAbsenceBlock adds the given block to the existing absences.
@@ -85,13 +85,13 @@ func (s *DailySummary) CalculateDailyMax() time.Duration {
 // The outside office hours are multiplied with 1.5.
 func (s *DailySummary) CalculateWorkingTime() time.Duration {
 	workTime := time.Duration(0)
-	for _, block := range s.Blocks {
-		switch block.Reason {
+	for _, shift := range s.Shifts {
+		switch shift.Reason {
 		case "":
-			diff := block.End.Sub(block.Start)
+			diff := shift.End.Sub(shift.Start)
 			workTime += diff
 		case ReasonOutsideOfficeHours:
-			diff := 1.5 * float64(block.End.Sub(block.Start))
+			diff := 1.5 * float64(shift.End.Sub(shift.Start))
 			workTime += time.Duration(diff)
 		}
 	}
@@ -101,10 +101,10 @@ func (s *DailySummary) CalculateWorkingTime() time.Duration {
 // CalculateExcusedTime accumulates all hours that are excused in some way (sick leave etc) from that day.
 func (s *DailySummary) CalculateExcusedTime() time.Duration {
 	total := time.Duration(0)
-	for _, block := range s.Blocks {
-		switch block.Reason {
+	for _, shift := range s.Shifts {
+		switch shift.Reason {
 		case ReasonSickLeave, ReasonAuthorities, ReasonPublicService:
-			diff := block.End.Sub(block.Start)
+			diff := shift.End.Sub(shift.Start)
 			total += diff
 		}
 	}

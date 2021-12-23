@@ -33,7 +33,7 @@ const (
 	ActionSignOut = "sign_out"
 )
 
-type AttendanceBlock struct {
+type AttendanceShift struct {
 	// Start is the localized beginning time of the attendance
 	Start time.Time
 	// End is the localized finish time of the attendance
@@ -97,12 +97,12 @@ func (r *Reporter) SetTimeZone(zone string) *Reporter {
 
 func (r *Reporter) CalculateReport() MonthlyReport {
 	filteredAttendances := r.filterAttendancesInMonth()
-	blocks := r.reduceAttendancesToBlocks(filteredAttendances)
+	shifts := r.reduceAttendancesToShifts(filteredAttendances)
 	filteredLeaves := r.filterLeavesInMonth()
 	absences := r.reduceLeavesToBlocks(filteredLeaves)
 	dailySummaries := r.prepareDays()
 
-	r.addAttendanceBlocksToDailies(blocks, dailySummaries)
+	r.addAttendanceShiftsToDailies(shifts, dailySummaries)
 	r.addAbsencesToDailies(absences, dailySummaries)
 
 	summary := Summary{}
@@ -119,23 +119,23 @@ func (r *Reporter) CalculateReport() MonthlyReport {
 	}
 }
 
-func (r *Reporter) reduceAttendancesToBlocks(attendances []odoo.Attendance) []AttendanceBlock {
+func (r *Reporter) reduceAttendancesToShifts(attendances []odoo.Attendance) []AttendanceShift {
 	sortAttendances(attendances)
-	blocks := make([]AttendanceBlock, 0)
-	var tmpBlock AttendanceBlock
+	shifts := make([]AttendanceShift, 0)
+	var tmpShift AttendanceShift
 	for _, attendance := range attendances {
 		if attendance.Action == ActionSignIn {
-			tmpBlock = AttendanceBlock{
+			tmpShift = AttendanceShift{
 				Start:  attendance.DateTime.ToTime().In(r.timezone),
 				Reason: attendance.Reason.String(),
 			}
 		}
 		if attendance.Action == ActionSignOut {
-			tmpBlock.End = attendance.DateTime.ToTime().In(r.timezone)
-			blocks = append(blocks, tmpBlock)
+			tmpShift.End = attendance.DateTime.ToTime().In(r.timezone)
+			shifts = append(shifts, tmpShift)
 		}
 	}
-	return blocks
+	return shifts
 }
 
 func (r *Reporter) reduceLeavesToBlocks(leaves []odoo.Leave) []AbsenceBlock {
@@ -178,11 +178,11 @@ func (r *Reporter) getDateTomorrow() time.Time {
 	return now().In(r.timezone).Truncate(24*time.Hour).AddDate(0, 0, 1)
 }
 
-func (r *Reporter) addAttendanceBlocksToDailies(blocks []AttendanceBlock, dailySums []*DailySummary) {
-	for _, block := range blocks {
-		existing, found := findDailySummaryByDate(dailySums, block.Start)
+func (r *Reporter) addAttendanceShiftsToDailies(shifts []AttendanceShift, dailySums []*DailySummary) {
+	for _, shift := range shifts {
+		existing, found := findDailySummaryByDate(dailySums, shift.Start)
 		if found {
-			existing.addAttendanceBlock(block)
+			existing.addAttendanceShift(shift)
 			continue
 		}
 	}
