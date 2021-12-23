@@ -15,6 +15,7 @@ jobs:
   install:
     runs-on: ubuntu-latest
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'dependency') }}
+    environment: preview
     steps:
     - uses: actions/checkout@v2
 
@@ -70,7 +71,7 @@ jobs:
         IMG_TAG: ${{ env.IMG_TAG }}
         GIT_SHA: ${{ github.event.pull_request.head.sha }}
         ODOO_DB: ${{ secrets.ODOO_DB }}
-        SECRET_KEY: ${{ secrets.SECRET_KEY_PREVIEW }}
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
     - name: Gather status
       run: |
