@@ -1,0 +1,56 @@
+package timesheet
+
+import (
+	"time"
+
+	"github.com/vshn/odootools/pkg/odoo"
+)
+
+type YearlyReport struct {
+	MonthlyReports []MonthlyReport
+	Employee       *odoo.Employee
+	Year           int
+	Summary        YearlySummary
+}
+
+type YearlySummary struct {
+	TotalOvertime time.Duration
+	TotalExcused  time.Duration
+	TotalWorked   time.Duration
+	TotalLeaves   time.Duration
+}
+
+func (r *ReportBuilder) CalculateYearlyReport() YearlyReport {
+	reports := make([]MonthlyReport, 12)
+	max := 12
+	if r.year >= now().Year() {
+		max = int(now().Month())
+	}
+	for i, month := range makeRange(1, max) {
+		r.month = month
+		monthlyReport := r.CalculateMonthlyReport()
+		reports[i] = monthlyReport
+	}
+	yearlyReport := YearlyReport{
+		MonthlyReports: reports,
+		Year:           r.year,
+		Employee:       r.employee,
+	}
+	summary := YearlySummary{}
+	for _, month := range reports {
+		summary.TotalOvertime += month.Summary.TotalOvertime
+		summary.TotalExcused += month.Summary.TotalExcusedTime
+		summary.TotalWorked += month.Summary.TotalWorkedTime
+		summary.TotalLeaves += month.Summary.TotalLeave
+	}
+	yearlyReport.Summary = summary
+	return yearlyReport
+}
+
+func makeRange(min, max int) []int {
+	a := make([]int, max-min+1)
+	for i := range a {
+		a[i] = min + i
+	}
+	return a
+}

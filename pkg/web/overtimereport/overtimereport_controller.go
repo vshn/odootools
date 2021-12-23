@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	pipeline "github.com/ccremer/go-command-pipeline"
+	"github.com/ccremer/go-command-pipeline/predicate"
 	"github.com/vshn/odootools/pkg/odoo"
 	"github.com/vshn/odootools/pkg/timesheet"
 	"github.com/vshn/odootools/pkg/web/controller"
@@ -39,7 +40,8 @@ func (c *ReportController) DisplayOvertimeReport() error {
 			pipeline.NewStepFromFunc("fetch attendances", c.fetchAttendances),
 			pipeline.NewStepFromFunc("fetch leaves", c.fetchLeaves),
 			pipeline.NewStepFromFunc("fetch last issued payslip", c.fetchPayslip),
-			pipeline.NewStepFromFunc("calculate report", c.calculateReport),
+			predicate.If(predicate.Not(c.noMonthGiven), pipeline.NewStepFromFunc("calculate monthly report", c.calculateMonthlyReport)),
+			predicate.If(c.noMonthGiven, pipeline.NewStepFromFunc("calculate yearly report", c.calculateYearlyReport)),
 		)
 	result := root.Run()
 	return result.Err
@@ -82,24 +84,33 @@ func (c *ReportController) fetchContracts(_ pipeline.Context) error {
 }
 
 func (c *ReportController) fetchAttendances(_ pipeline.Context) error {
-	attendances, err := c.OdooClient.FetchAttendancesBetweenDates(c.OdooSession.ID, c.Employee.ID, c.Input.getFirstDayOfMonth(), c.Input.getLastDayOfMonth())
+	attendances, err := c.OdooClient.FetchAttendancesBetweenDates(c.OdooSession.ID, c.Employee.ID, c.Input.getFirstDay(), c.Input.getLastDay())
 	c.Attendances = attendances
 	return err
 }
 
 func (c *ReportController) fetchLeaves(_ pipeline.Context) error {
-	leaves, err := c.OdooClient.FetchLeavesBetweenDates(c.OdooSession.ID, c.Employee.ID, c.Input.getFirstDayOfMonth(), c.Input.getLastDayOfMonth())
+	leaves, err := c.OdooClient.FetchLeavesBetweenDates(c.OdooSession.ID, c.Employee.ID, c.Input.getFirstDay(), c.Input.getLastDay())
 	c.Leaves = leaves
 	return err
 }
 
-func (c *ReportController) calculateReport(_ pipeline.Context) error {
+func (c *ReportController) calculateMonthlyReport(_ pipeline.Context) error {
 	reporter := timesheet.NewReporter(c.Attendances, c.Leaves, c.Employee, c.Contracts).
 		SetMonth(c.Input.Year, c.Input.Month).
 		SetTimeZone("Europe/Zurich") // hardcoded for now
-	report := reporter.CalculateReport()
-	values := c.ReportView.GetValuesForAttendanceReport(report, c.Payslip)
+	report := reporter.CalculateMonthlyReport()
+	values := c.ReportView.GetValuesForMonthlyReport(report, c.Payslip)
 	return c.Echo.Render(http.StatusOK, monthlyReportTemplateName, values)
+}
+
+func (c *ReportController) calculateYearlyReport(_ pipeline.Context) error {
+	reporter := timesheet.NewReporter(c.Attendances, c.Leaves, c.Employee, c.Contracts).
+		SetMonth(c.Input.Year, 1).
+		SetTimeZone("Europe/Zurich") // hardcoded for now
+	report := reporter.CalculateYearlyReport()
+	values := c.ReportView.GetValuesForYearlyReport(report)
+	return c.Echo.Render(http.StatusOK, yearlyReportTemplateName, values)
 }
 
 func (c *ReportController) searchEmployee(_ pipeline.Context) error {
@@ -117,8 +128,12 @@ func (c *ReportController) searchEmployee(_ pipeline.Context) error {
 }
 
 func (c *ReportController) fetchPayslip(_ pipeline.Context) error {
-	lastMonth := c.Input.getLastDayOfMonth().AddDate(0, -1, 0)
+	lastMonth := c.Input.getLastDay().AddDate(0, -1, 0)
 	payslip, err := c.OdooClient.FetchPayslipOfLastMonth(c.OdooSession.ID, c.Employee.ID, lastMonth)
 	c.Payslip = payslip
 	return err
+}
+
+func (c *ReportController) noMonthGiven(_ pipeline.Context, _ pipeline.Step) bool {
+	return c.Input.Month == 0
 }

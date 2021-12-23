@@ -85,7 +85,7 @@ func TestReporter_AddAttendanceShiftsToDailies(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			r := Reporter{
+			r := ReportBuilder{
 				year:  2021,
 				month: 2,
 			}
@@ -133,7 +133,7 @@ func TestReporter_ReduceAttendancesToShifts(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			r := Reporter{
+			r := ReportBuilder{
 				year:     2021,
 				month:    2,
 				timezone: localzone(t),
@@ -213,7 +213,7 @@ func TestReporter_prepareWorkDays(t *testing.T) {
 				}()
 			}
 
-			r := &Reporter{
+			r := &ReportBuilder{
 				year:     tt.givenYear,
 				month:    tt.givenMonth,
 				timezone: localzone(t),

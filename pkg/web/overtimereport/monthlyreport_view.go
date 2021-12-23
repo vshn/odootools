@@ -47,11 +47,11 @@ func formatDurationInHours(d time.Duration) string {
 	return fmt.Sprintf("%s%d:%02d", sign, h, m)
 }
 
-func (v *reportView) formatSummary(s timesheet.Summary, payslip *odoo.Payslip) controller.Values {
+func (v *reportView) formatMonthlySummary(s timesheet.Summary, payslip *odoo.Payslip) controller.Values {
 	val := controller.Values{
 		"TotalOvertime": formatDurationInHours(s.TotalOvertime),
 		// TODO: Might not be accurate for days before 2021
-		"TotalLeaves": fmt.Sprintf("%sd", strconv.FormatFloat(s.TotalLeaveDays.Hours()/8, 'f', 0, 64)),
+		"TotalLeaves": fmt.Sprintf("%sd", strconv.FormatFloat(s.TotalLeave.Hours()/8, 'f', 0, 64)),
 	}
 	if payslip == nil {
 		val["PayslipError"] = "No matching payslip found"
@@ -69,7 +69,7 @@ func (v *reportView) formatSummary(s timesheet.Summary, payslip *odoo.Payslip) c
 	return val
 }
 
-func (v *reportView) GetValuesForAttendanceReport(report timesheet.MonthlyReport, payslip *odoo.Payslip) controller.Values {
+func (v *reportView) GetValuesForMonthlyReport(report timesheet.MonthlyReport, payslip *odoo.Payslip) controller.Values {
 	formatted := make([]controller.Values, 0)
 	for _, summary := range report.DailySummaries {
 		if summary.IsWeekend() && summary.CalculateWorkingTime() == 0 {
@@ -79,15 +79,16 @@ func (v *reportView) GetValuesForAttendanceReport(report timesheet.MonthlyReport
 	}
 	nextYear, nextMonth := getNextMonth(report)
 	prevYear, prevMonth := getPreviousMonth(report)
+	linkFormat := "/report/%d/%d/%02d"
 	return controller.Values{
 		"Attendances": formatted,
-		"Summary":     v.formatSummary(report.Summary, payslip),
+		"Summary":     v.formatMonthlySummary(report.Summary, payslip),
 		"Nav": controller.Values{
 			"LoggedIn":          true,
 			"ActiveView":        monthlyReportTemplateName,
-			"CurrentMonthLink":  fmt.Sprintf("/report/%d/%d/%02d", report.Employee.ID, time.Now().Year(), time.Now().Month()),
-			"NextMonthLink":     fmt.Sprintf("/report/%d/%d/%02d", report.Employee.ID, nextYear, nextMonth),
-			"PreviousMonthLink": fmt.Sprintf("/report/%d/%d/%02d", report.Employee.ID, prevYear, prevMonth),
+			"CurrentMonthLink":  fmt.Sprintf(linkFormat, report.Employee.ID, time.Now().Year(), time.Now().Month()),
+			"NextMonthLink":     fmt.Sprintf(linkFormat, report.Employee.ID, nextYear, nextMonth),
+			"PreviousMonthLink": fmt.Sprintf(linkFormat, report.Employee.ID, prevYear, prevMonth),
 		},
 		"Username": report.Employee.Name,
 	}
