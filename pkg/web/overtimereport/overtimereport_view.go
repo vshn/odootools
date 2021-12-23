@@ -20,8 +20,8 @@ func (v *reportView) formatDailySummary(daily *timesheet.DailySummary) controlle
 		"Weekday":       daily.Date.Weekday(),
 		"Date":          daily.Date.Format(odoo.DateFormat),
 		"Workload":      daily.FTERatio * 100,
-		"ExcusedHours":  formatDurationInHours(timesheet.ToDuration(daily.CalculateExcusedHours())),
-		"WorkedHours":   formatDurationInHours(timesheet.ToDuration(daily.CalculateWorkingHours())),
+		"ExcusedHours":  formatDurationInHours(daily.CalculateExcusedTime()),
+		"WorkedHours":   formatDurationInHours(daily.CalculateWorkingTime()),
 		"OvertimeHours": formatDurationInHours(daily.CalculateOvertime()),
 		"LeaveType":     "",
 	}
@@ -72,7 +72,7 @@ func (v *reportView) formatSummary(s timesheet.Summary, payslip *odoo.Payslip) c
 func (v *reportView) GetValuesForAttendanceReport(report timesheet.Report, payslip *odoo.Payslip) controller.Values {
 	formatted := make([]controller.Values, 0)
 	for _, summary := range report.DailySummaries {
-		if summary.IsWeekend() && summary.CalculateWorkingHours() == 0 {
+		if summary.IsWeekend() && summary.CalculateWorkingTime() == 0 {
 			continue
 		}
 		formatted = append(formatted, v.formatDailySummary(summary))

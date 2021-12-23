@@ -168,8 +168,8 @@ func TestDailySummary_CalculateDailyMaxHours(t *testing.T) {
 				FTERatio: tt.givenFteRatio,
 				Absences: tt.givenAbsences,
 			}
-			result := s.CalculateDailyMaxHours()
-			assert.Equal(t, tt.expectedHours, result)
+			result := s.CalculateDailyMax()
+			assert.Equal(t, time.Duration(tt.expectedHours*float64(time.Hour)), result)
 		})
 	}
 }

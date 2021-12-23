@@ -1,8 +1,6 @@
 package timesheet
 
 import (
-	"fmt"
-	"strconv"
 	"time"
 )
 
@@ -52,79 +50,79 @@ func (s *DailySummary) addAbsenceBlock(block AbsenceBlock) {
 //  * If the working hours exceed the theoretical daily maximum, then the excused hours are basically ignored.
 //    Example: it's not possible to work 9 hours, have 1 hour sick leave and expect 2 hours overtime for an 8 hours daily maximum, the overtime here is 1 hour.
 func (s *DailySummary) CalculateOvertime() time.Duration {
-	workHours := s.CalculateWorkingHours()
-	excusedHours := s.CalculateExcusedHours()
+	workingTime := s.CalculateWorkingTime()
+	excusedTime := s.CalculateExcusedTime()
 
-	dailyMax := s.CalculateDailyMaxHours() - s.CalculateAbsenceHours().Hours()
-	if workHours >= dailyMax {
+	dailyMax := s.CalculateDailyMax() - s.CalculateAbsenceTime()
+	if workingTime >= dailyMax {
 		// Can't be on sick leave etc. if working overtime.
-		excusedHours = 0
-	} else if workHours+excusedHours > dailyMax {
+		excusedTime = 0
+	} else if workingTime+excusedTime > dailyMax {
 		// There is overlap: Not enough workHours, but having excused hours = Cap at daily max, no overtime
-		excusedHours = dailyMax - workHours
+		excusedTime = dailyMax - workingTime
 	}
-	overtime := workHours + excusedHours - dailyMax
+	overtime := workingTime + excusedTime - dailyMax
 
-	return ToDuration(overtime)
+	return overtime
 }
 
-// CalculateDailyMaxHours returns the theoretical amount of hours that an employee should work on this day.
+// CalculateDailyMax returns the theoretical amount of hours that an employee should work on this day.
 //  * It returns 0 for weekend days.
 //  * It returns 8.5 hours multiplied by FTE ratio for days in 2020 and earlier.
 //  * It returns 8.0 hours multiplied by FTE ratio for days in 2021 and later.
-func (s *DailySummary) CalculateDailyMaxHours() float64 {
+func (s *DailySummary) CalculateDailyMax() time.Duration {
 	if s.IsWeekend() {
 		return 0
 	}
 	if s.Date.Year() < 2021 {
 		// VSHN switched from 42h-a-week to 40h-a-week on 1st of January 2021.
-		return 8.5 * s.FTERatio
+		return time.Duration(8.5 * s.FTERatio * float64(time.Hour))
 	}
-	return 8 * s.FTERatio
+	return time.Duration(8 * s.FTERatio * float64(time.Hour))
 }
 
-// CalculateWorkingHours accumulates all working hours from that day.
+// CalculateWorkingTime accumulates all working hours from that day.
 // The outside office hours are multiplied with 1.5.
-func (s *DailySummary) CalculateWorkingHours() float64 {
-	workHours := float64(0)
+func (s *DailySummary) CalculateWorkingTime() time.Duration {
+	workTime := time.Duration(0)
 	for _, block := range s.Blocks {
 		switch block.Reason {
 		case "":
-			diff := block.End.Sub(block.Start).Hours()
-			workHours += diff
+			diff := block.End.Sub(block.Start)
+			workTime += diff
 		case ReasonOutsideOfficeHours:
-			diff := block.End.Sub(block.Start).Hours() * 1.5
-			workHours += diff
+			diff := 1.5 * float64(block.End.Sub(block.Start))
+			workTime += time.Duration(diff)
 		}
 	}
-	return workHours
+	return workTime
 }
 
-// CalculateExcusedHours accumulates all hours that are excused in some way (sick leave etc) from that day.
-func (s *DailySummary) CalculateExcusedHours() float64 {
-	excusedHours := float64(0)
+// CalculateExcusedTime accumulates all hours that are excused in some way (sick leave etc) from that day.
+func (s *DailySummary) CalculateExcusedTime() time.Duration {
+	total := time.Duration(0)
 	for _, block := range s.Blocks {
 		switch block.Reason {
 		case ReasonSickLeave, ReasonAuthorities, ReasonPublicService:
-			diff := block.End.Sub(block.Start).Hours()
-			excusedHours += diff
+			diff := block.End.Sub(block.Start)
+			total += diff
 		}
 	}
-	return excusedHours
+	return total
 }
 
-// CalculateAbsenceHours accumulates all absence hours from that day.
-func (s *DailySummary) CalculateAbsenceHours() time.Duration {
-	hours := float64(0)
+// CalculateAbsenceTime accumulates all absence hours from that day.
+func (s *DailySummary) CalculateAbsenceTime() time.Duration {
+	total := time.Duration(0)
 	for _, absence := range s.Absences {
 		if absence.Reason != TypeUnpaid {
 			// VSHN specific: Odoo treats "Unpaid" as normal leave, but for VSHN it's informational-only, meaning one still has to work.
 			// For every other type of absence, we add the daily max equivalent.
 
-			hours += s.CalculateDailyMaxHours()
+			total += s.CalculateDailyMax()
 		}
 	}
-	return ToDuration(hours)
+	return total
 }
 
 // HasAbsences returns true if there are any absences.
@@ -144,13 +142,4 @@ func findDailySummaryByDate(dailies []*DailySummary, date time.Time) (*DailySumm
 		}
 	}
 	return nil, false
-}
-
-// ToDuration returns the given hours as time.Duration with 3 decimal precision.
-func ToDuration(hours float64) time.Duration {
-	duration, err := time.ParseDuration(fmt.Sprintf("%sh", strconv.FormatFloat(hours, 'f', 3, 64)))
-	if err != nil {
-		panic(err)
-	}
-	return duration
 }
