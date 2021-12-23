@@ -19,6 +19,7 @@ type ReportController struct {
 	Attendances []odoo.Attendance
 	Leaves      []odoo.Leave
 	view        *reportView
+	Payslip     *odoo.Payslip
 }
 
 func NewReportController(ctx *controller.Context) *ReportController {
@@ -37,6 +38,7 @@ func (c *ReportController) DisplayOvertimeReport() error {
 			pipeline.NewStepFromFunc("fetch contracts", c.fetchContracts),
 			pipeline.NewStepFromFunc("fetch attendances", c.fetchAttendances),
 			pipeline.NewStepFromFunc("fetch leaves", c.fetchLeaves),
+			pipeline.NewStepFromFunc("fetch last issued payslip", c.fetchPayslip),
 			pipeline.NewStepFromFunc("calculate report", c.calculateReport),
 		)
 	result := root.Run()
@@ -48,8 +50,7 @@ func (c *ReportController) ProcessInput() error {
 		WithSteps(
 			pipeline.NewStepFromFunc("parse user input", c.parseInput),
 			pipeline.NewStepFromFunc("search employee", c.searchEmployee),
-			pipeline.NewStepFromFunc("redirect to report", func(ctx pipeline.Context) error {
-				c := ctx.(*ReportController)
+			pipeline.NewStepFromFunc("redirect to report", func(_ pipeline.Context) error {
 				return c.Echo.Redirect(http.StatusFound, fmt.Sprintf("/report/%d/%d/%02d", c.Employee.ID, c.Input.Year, c.Input.Month))
 			}),
 		)
@@ -97,7 +98,7 @@ func (c *ReportController) calculateReport(_ pipeline.Context) error {
 		SetMonth(c.Input.Year, c.Input.Month).
 		SetTimeZone("Europe/Zurich") // hardcoded for now
 	report := reporter.CalculateReport()
-	values := c.ReportView.ShowAttendanceReport(report)
+	values := c.ReportView.GetValuesForAttendanceReport(report, c.Payslip)
 	return c.Echo.Render(http.StatusOK, reportTemplateName, values)
 }
 
@@ -112,5 +113,12 @@ func (c *ReportController) searchEmployee(_ pipeline.Context) error {
 	}
 	e, err := c.OdooClient.FetchEmployeeBySession(c.OdooSession)
 	c.Employee = e
+	return err
+}
+
+func (c *ReportController) fetchPayslip(_ pipeline.Context) error {
+	lastMonth := c.Input.getLastDayOfMonth().AddDate(0, -1, 0)
+	payslip, err := c.OdooClient.FetchPayslipOfLastMonth(c.OdooSession.ID, c.Employee.ID, lastMonth)
+	c.Payslip = payslip
 	return err
 }

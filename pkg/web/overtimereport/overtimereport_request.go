@@ -8,19 +8,17 @@ import (
 )
 
 type ReportRequest struct {
-	Year              int    `param:"year"`
-	Month             int    `param:"month"`
+	Year              int    `param:"year" form:"year"`
+	Month             int    `param:"month" form:"month"`
 	SearchUser        string `form:"username"`
 	SearchUserEnabled bool
 	EmployeeID        int `param:"employee"`
 }
 
 func (i *ReportRequest) FromRequest(e echo.Context) error {
-	err := e.Bind(i)
-	if err != nil {
+	if err := e.Bind(i); err != nil {
 		return err
 	}
-
 	i.SearchUserEnabled = e.FormValue("userscope") == "user-foreign-radio"
 	i.SearchUser = html.EscapeString(i.SearchUser)
 

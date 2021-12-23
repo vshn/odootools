@@ -40,8 +40,8 @@
         <th scope="col"></th>
         <th scope="col">Total Leaves</th>
         <th scope="col"></th>
-        <th scope="col"></th>
         <th scope="col">Total Overtime</th>
+        <th scope="col">New Balance</th>
     </tr>
     <tr>
         <td></td>
@@ -49,8 +49,8 @@
         <td></td>
         <td>{{ .Summary.TotalLeaves }}</td>
         <td></td>
-        <td></td>
         <td>{{ .Summary.TotalOvertime }}</td>
+        <td>{{ if .Summary.PayslipError }}{{ .Summary.PayslipError }}{{ else }}{{ .Summary.NewOvertimeBalance }}{{ end }}</td>
     </tr>
     </tfoot>
 </table>

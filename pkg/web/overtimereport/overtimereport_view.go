@@ -47,19 +47,29 @@ func formatDurationInHours(d time.Duration) string {
 	return fmt.Sprintf("%s%d:%02d", sign, h, m)
 }
 
-func (v *reportView) formatSummary(s timesheet.Summary) controller.Values {
-	return controller.Values{
-		"TotalOvertime": formatDurationInHours(s.TotalOvertime.Truncate(time.Minute)),
+func (v *reportView) formatSummary(s timesheet.Summary, payslip *odoo.Payslip) controller.Values {
+	val := controller.Values{
+		"TotalOvertime": formatDurationInHours(s.TotalOvertime),
 		// TODO: Might not be accurate for days before 2021
 		"TotalLeaves": fmt.Sprintf("%sd", strconv.FormatFloat(s.TotalLeaveDays.Hours()/8, 'f', 0, 64)),
 	}
+	if payslip == nil {
+		val["PayslipError"] = "No matching payslip found"
+	} else {
+		lastMonthBalance, err := payslip.ParseOvertime()
+		if err != nil {
+			val["PayslipError"] = err.Error()
+		}
+		if lastMonthBalance == 0 {
+			val["PayslipError"] = "No overtime saved in payslip"
+		} else {
+			val["NewOvertimeBalance"] = formatDurationInHours(lastMonthBalance + s.TotalOvertime)
+		}
+	}
+	return val
 }
 
-func (v *reportView) ShowAttendanceReport(report timesheet.Report) controller.Values {
-	return v.prepareValues(report)
-}
-
-func (v *reportView) prepareValues(report timesheet.Report) controller.Values {
+func (v *reportView) GetValuesForAttendanceReport(report timesheet.Report, payslip *odoo.Payslip) controller.Values {
 	formatted := make([]controller.Values, 0)
 	for _, summary := range report.DailySummaries {
 		if summary.IsWeekend() && summary.CalculateWorkingHours() == 0 {
@@ -71,7 +81,7 @@ func (v *reportView) prepareValues(report timesheet.Report) controller.Values {
 	prevYear, prevMonth := getPreviousMonth(report)
 	return controller.Values{
 		"Attendances": formatted,
-		"Summary":     v.formatSummary(report.Summary),
+		"Summary":     v.formatSummary(report.Summary, payslip),
 		"Nav": controller.Values{
 			"LoggedIn":          true,
 			"ActiveView":        reportTemplateName,
