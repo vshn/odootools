@@ -26,7 +26,7 @@ const (
 )
 
 // for testing purposes
-var now = time.Now()
+var now = time.Now
 
 const (
 	ActionSignIn  = "sign_in"
