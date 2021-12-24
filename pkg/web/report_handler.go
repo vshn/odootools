@@ -5,7 +5,7 @@ import (
 	"github.com/vshn/odootools/pkg/web/overtimereport"
 )
 
-// OvertimeReport GET /report/:id/:year/:month
+// OvertimeReport GET /report/:id/:year(/:month)
 func (s Server) OvertimeReport(e echo.Context) error {
 	ctrl := overtimereport.NewReportController(s.newControllerContext(e))
 	if err := ctrl.DisplayOvertimeReport(); err != nil {

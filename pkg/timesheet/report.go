@@ -33,7 +33,7 @@ const (
 	ActionSignOut = "sign_out"
 )
 
-type AttendanceBlock struct {
+type AttendanceShift struct {
 	// Start is the localized beginning time of the attendance
 	Start time.Time
 	// End is the localized finish time of the attendance
@@ -47,11 +47,13 @@ type AbsenceBlock struct {
 }
 
 type Summary struct {
-	TotalOvertime  time.Duration
-	TotalLeaveDays time.Duration
+	TotalOvertime    time.Duration
+	TotalLeave       time.Duration
+	TotalExcusedTime time.Duration
+	TotalWorkedTime  time.Duration
 }
 
-type Report struct {
+type MonthlyReport struct {
 	DailySummaries []*DailySummary
 	Summary        Summary
 	Employee       *odoo.Employee
@@ -59,7 +61,7 @@ type Report struct {
 	Month          int
 }
 
-type Reporter struct {
+type ReportBuilder struct {
 	attendances []odoo.Attendance
 	leaves      []odoo.Leave
 	employee    *odoo.Employee
@@ -69,8 +71,8 @@ type Reporter struct {
 	timezone    *time.Location
 }
 
-func NewReporter(attendances []odoo.Attendance, leaves []odoo.Leave, employee *odoo.Employee, contracts []odoo.Contract) *Reporter {
-	return &Reporter{
+func NewReporter(attendances []odoo.Attendance, leaves []odoo.Leave, employee *odoo.Employee, contracts []odoo.Contract) *ReportBuilder {
+	return &ReportBuilder{
 		attendances: attendances,
 		leaves:      leaves,
 		employee:    employee,
@@ -81,13 +83,13 @@ func NewReporter(attendances []odoo.Attendance, leaves []odoo.Leave, employee *o
 	}
 }
 
-func (r *Reporter) SetMonth(year, month int) *Reporter {
+func (r *ReportBuilder) SetMonth(year, month int) *ReportBuilder {
 	r.year = year
 	r.month = month
 	return r
 }
 
-func (r *Reporter) SetTimeZone(zone string) *Reporter {
+func (r *ReportBuilder) SetTimeZone(zone string) *ReportBuilder {
 	loc, err := time.LoadLocation(zone)
 	if err == nil {
 		r.timezone = loc
@@ -95,22 +97,24 @@ func (r *Reporter) SetTimeZone(zone string) *Reporter {
 	return r
 }
 
-func (r *Reporter) CalculateReport() Report {
+func (r *ReportBuilder) CalculateMonthlyReport() MonthlyReport {
 	filteredAttendances := r.filterAttendancesInMonth()
-	blocks := r.reduceAttendancesToBlocks(filteredAttendances)
+	shifts := r.reduceAttendancesToShifts(filteredAttendances)
 	filteredLeaves := r.filterLeavesInMonth()
 	absences := r.reduceLeavesToBlocks(filteredLeaves)
 	dailySummaries := r.prepareDays()
 
-	r.addAttendanceBlocksToDailies(blocks, dailySummaries)
+	r.addAttendanceShiftsToDailies(shifts, dailySummaries)
 	r.addAbsencesToDailies(absences, dailySummaries)
 
 	summary := Summary{}
 	for _, dailySummary := range dailySummaries {
 		summary.TotalOvertime += dailySummary.CalculateOvertime()
-		summary.TotalLeaveDays += dailySummary.CalculateAbsenceHours()
+		summary.TotalLeave += dailySummary.CalculateAbsenceTime()
+		summary.TotalExcusedTime += dailySummary.CalculateExcusedTime()
+		summary.TotalWorkedTime += dailySummary.CalculateWorkingTime()
 	}
-	return Report{
+	return MonthlyReport{
 		DailySummaries: dailySummaries,
 		Summary:        summary,
 		Employee:       r.employee,
@@ -119,26 +123,26 @@ func (r *Reporter) CalculateReport() Report {
 	}
 }
 
-func (r *Reporter) reduceAttendancesToBlocks(attendances []odoo.Attendance) []AttendanceBlock {
+func (r *ReportBuilder) reduceAttendancesToShifts(attendances []odoo.Attendance) []AttendanceShift {
 	sortAttendances(attendances)
-	blocks := make([]AttendanceBlock, 0)
-	var tmpBlock AttendanceBlock
+	shifts := make([]AttendanceShift, 0)
+	var tmpShift AttendanceShift
 	for _, attendance := range attendances {
 		if attendance.Action == ActionSignIn {
-			tmpBlock = AttendanceBlock{
+			tmpShift = AttendanceShift{
 				Start:  attendance.DateTime.ToTime().In(r.timezone),
 				Reason: attendance.Reason.String(),
 			}
 		}
 		if attendance.Action == ActionSignOut {
-			tmpBlock.End = attendance.DateTime.ToTime().In(r.timezone)
-			blocks = append(blocks, tmpBlock)
+			tmpShift.End = attendance.DateTime.ToTime().In(r.timezone)
+			shifts = append(shifts, tmpShift)
 		}
 	}
-	return blocks
+	return shifts
 }
 
-func (r *Reporter) reduceLeavesToBlocks(leaves []odoo.Leave) []AbsenceBlock {
+func (r *ReportBuilder) reduceLeavesToBlocks(leaves []odoo.Leave) []AbsenceBlock {
 	blocks := make([]AbsenceBlock, 0)
 	for _, leave := range leaves {
 		// Only consider approved leaves
@@ -152,7 +156,7 @@ func (r *Reporter) reduceLeavesToBlocks(leaves []odoo.Leave) []AbsenceBlock {
 	return blocks
 }
 
-func (r *Reporter) prepareDays() []*DailySummary {
+func (r *ReportBuilder) prepareDays() []*DailySummary {
 	days := make([]*DailySummary, 0)
 
 	firstDay := time.Date(r.year, time.Month(r.month), 1, 0, 0, 0, 0, time.UTC)
@@ -174,21 +178,21 @@ func (r *Reporter) prepareDays() []*DailySummary {
 	return days
 }
 
-func (r *Reporter) getDateTomorrow() time.Time {
+func (r *ReportBuilder) getDateTomorrow() time.Time {
 	return now().In(r.timezone).Truncate(24*time.Hour).AddDate(0, 0, 1)
 }
 
-func (r *Reporter) addAttendanceBlocksToDailies(blocks []AttendanceBlock, dailySums []*DailySummary) {
-	for _, block := range blocks {
-		existing, found := findDailySummaryByDate(dailySums, block.Start)
+func (r *ReportBuilder) addAttendanceShiftsToDailies(shifts []AttendanceShift, dailySums []*DailySummary) {
+	for _, shift := range shifts {
+		existing, found := findDailySummaryByDate(dailySums, shift.Start)
 		if found {
-			existing.addAttendanceBlock(block)
+			existing.addAttendanceShift(shift)
 			continue
 		}
 	}
 }
 
-func (r *Reporter) addAbsencesToDailies(absences []AbsenceBlock, summaries []*DailySummary) {
+func (r *ReportBuilder) addAbsencesToDailies(absences []AbsenceBlock, summaries []*DailySummary) {
 	for _, block := range absences {
 		existing, found := findDailySummaryByDate(summaries, block.Date)
 		if found {
@@ -204,7 +208,7 @@ func sortAttendances(filtered []odoo.Attendance) {
 	})
 }
 
-func (r *Reporter) filterAttendancesInMonth() []odoo.Attendance {
+func (r *ReportBuilder) filterAttendancesInMonth() []odoo.Attendance {
 	filteredAttendances := make([]odoo.Attendance, 0)
 	for _, attendance := range r.attendances {
 		if attendance.DateTime.WithLocation(r.timezone).IsWithinMonth(r.year, r.month) {
@@ -214,7 +218,7 @@ func (r *Reporter) filterAttendancesInMonth() []odoo.Attendance {
 	return filteredAttendances
 }
 
-func (r *Reporter) filterLeavesInMonth() []odoo.Leave {
+func (r *ReportBuilder) filterLeavesInMonth() []odoo.Leave {
 	filteredLeaves := make([]odoo.Leave, 0)
 	for _, leave := range r.leaves {
 		splits := leave.SplitByDay()

@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestOvertimeReportView_formatDurationHumanFriendly(t *testing.T) {
+func TestReportView_formatDurationHumanFriendly(t *testing.T) {
 	tests := map[string]struct {
 		givenDuration   time.Duration
 		expectedOutcome string
