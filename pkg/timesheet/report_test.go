@@ -152,53 +152,17 @@ func TestReporter_prepareWorkDays(t *testing.T) {
 		expectedDays []*DailySummary
 		nowF         func() time.Time
 	}{
-		"GivenFullMonthInThePast_ThenReturnOnlyWorkingDays": {
-			givenYear:  2021,
-			givenMonth: 5,
-			expectedDays: []*DailySummary{
-				{Date: *date(t, "2021-05-01")},
-				{Date: *date(t, "2021-05-02")},
-				{Date: *date(t, "2021-05-03")},
-				{Date: *date(t, "2021-05-04")},
-				{Date: *date(t, "2021-05-05")},
-				{Date: *date(t, "2021-05-06")},
-				{Date: *date(t, "2021-05-07")},
-				{Date: *date(t, "2021-05-08")},
-				{Date: *date(t, "2021-05-09")},
-				{Date: *date(t, "2021-05-10")},
-				{Date: *date(t, "2021-05-11")},
-				{Date: *date(t, "2021-05-12")},
-				{Date: *date(t, "2021-05-13")},
-				{Date: *date(t, "2021-05-14")},
-				{Date: *date(t, "2021-05-15")},
-				{Date: *date(t, "2021-05-16")},
-				{Date: *date(t, "2021-05-17")},
-				{Date: *date(t, "2021-05-18")},
-				{Date: *date(t, "2021-05-19")},
-				{Date: *date(t, "2021-05-20")},
-				{Date: *date(t, "2021-05-21")},
-				{Date: *date(t, "2021-05-22")},
-				{Date: *date(t, "2021-05-23")},
-				{Date: *date(t, "2021-05-24")},
-				{Date: *date(t, "2021-05-25")},
-				{Date: *date(t, "2021-05-26")},
-				{Date: *date(t, "2021-05-27")},
-				{Date: *date(t, "2021-05-28")},
-				{Date: *date(t, "2021-05-29")},
-				{Date: *date(t, "2021-05-30")},
-				{Date: *date(t, "2021-05-31")},
-			},
+		"GivenFullMonthInThePast_ThenReturnAllDays": {
+			givenYear:    2021,
+			givenMonth:   5,
+			expectedDays: generateMonth(t, 2021, 5, 31),
 		},
 		"GivenCurrentMonth_ThenReturnNoMoreThanToday": {
-			givenYear:  2021,
-			givenMonth: 3,
-			expectedDays: []*DailySummary{
-				{Date: *date(t, "2021-03-01")},
-				{Date: *date(t, "2021-03-02")},
-				{Date: *date(t, "2021-03-03")},
-			},
+			givenYear:    2021,
+			givenMonth:   3,
+			expectedDays: generateMonth(t, 2021, 3, 7),
 			nowF: func() time.Time {
-				return time.Unix(1614788672, 0) // Wednesday, March 3, 2021 4:24:32 PM
+				return time.Unix(1615113136, 0) // Sunday, March 7, 2021 10:32:16
 			},
 		},
 	}
@@ -225,4 +189,12 @@ func TestReporter_prepareWorkDays(t *testing.T) {
 			}
 		})
 	}
+}
+
+func generateMonth(t *testing.T, year, month, lastDay int) []*DailySummary {
+	days := make([]*DailySummary, lastDay)
+	for i := 0; i < lastDay; i++ {
+		days[i] = &DailySummary{Date: *date(t, fmt.Sprintf("%d-%02d-%02d", year, month, i+1))}
+	}
+	return days
 }

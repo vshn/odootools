@@ -17,7 +17,7 @@ type YearlySummary struct {
 	TotalOvertime time.Duration
 	TotalExcused  time.Duration
 	TotalWorked   time.Duration
-	TotalLeaves   time.Duration
+	TotalLeaves   float64
 }
 
 func (r *ReportBuilder) CalculateYearlyReport() YearlyReport {

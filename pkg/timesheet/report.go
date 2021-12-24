@@ -48,9 +48,11 @@ type AbsenceBlock struct {
 
 type Summary struct {
 	TotalOvertime    time.Duration
-	TotalLeave       time.Duration
 	TotalExcusedTime time.Duration
 	TotalWorkedTime  time.Duration
+	// TotalLeave is the amount of paid leave days.
+	// This value respects FTE ratio, e.g. in a 50% ratio a public holiday is still counted as '1d'.
+	TotalLeave float64
 }
 
 type MonthlyReport struct {
@@ -110,9 +112,11 @@ func (r *ReportBuilder) CalculateMonthlyReport() MonthlyReport {
 	summary := Summary{}
 	for _, dailySummary := range dailySummaries {
 		summary.TotalOvertime += dailySummary.CalculateOvertime()
-		summary.TotalLeave += dailySummary.CalculateAbsenceTime()
 		summary.TotalExcusedTime += dailySummary.CalculateExcusedTime()
 		summary.TotalWorkedTime += dailySummary.CalculateWorkingTime()
+		if dailySummary.IsHoliday() {
+			summary.TotalLeave += 1
+		}
 	}
 	return MonthlyReport{
 		DailySummaries: dailySummaries,

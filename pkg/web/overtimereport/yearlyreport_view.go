@@ -2,7 +2,6 @@ package overtimereport
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/vshn/odootools/pkg/timesheet"
@@ -36,7 +35,7 @@ func (v *reportView) GetValuesForYearlyReport(report timesheet.YearlyReport) con
 func (v *reportView) formatMonthlySummaryForYearlyReport(s timesheet.MonthlyReport) controller.Values {
 	val := controller.Values{
 		"OvertimeHours":  formatDurationInHours(s.Summary.TotalOvertime),
-		"LeaveDays":      fmt.Sprintf("%sd", strconv.FormatFloat(s.Summary.TotalLeave.Hours()/8, 'f', 0, 64)),
+		"LeaveDays":      formatFloat(s.Summary.TotalLeave),
 		"ExcusedHours":   formatDurationInHours(s.Summary.TotalExcusedTime),
 		"WorkedHours":    formatDurationInHours(s.Summary.TotalWorkedTime),
 		"DetailViewLink": fmt.Sprintf("/report/%d/%d/%d", s.Employee.ID, s.Year, s.Month),
@@ -50,6 +49,6 @@ func (v *reportView) formatYearlySummary(summary timesheet.YearlySummary) contro
 		"TotalExcused":  formatDurationInHours(summary.TotalExcused),
 		"TotalWorked":   formatDurationInHours(summary.TotalWorked),
 		"TotalOvertime": formatDurationInHours(summary.TotalOvertime),
-		"TotalLeaves":   "not-implemented-yet",
+		"TotalLeaves":   formatFloat(summary.TotalLeaves),
 	}
 }
