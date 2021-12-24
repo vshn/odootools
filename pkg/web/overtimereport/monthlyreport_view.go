@@ -47,11 +47,14 @@ func formatDurationInHours(d time.Duration) string {
 	return fmt.Sprintf("%s%d:%02d", sign, h, m)
 }
 
+func formatFloat(v float64) string {
+	return strconv.FormatFloat(v, 'f', 1, 64)
+}
+
 func (v *reportView) formatMonthlySummary(s timesheet.Summary, payslip *odoo.Payslip) controller.Values {
 	val := controller.Values{
 		"TotalOvertime": formatDurationInHours(s.TotalOvertime),
-		// TODO: Might not be accurate for days before 2021
-		"TotalLeaves": fmt.Sprintf("%sd", strconv.FormatFloat(s.TotalLeave.Hours()/8, 'f', 0, 64)),
+		"TotalLeaves":   fmt.Sprintf("%sd", formatFloat(s.TotalLeave)),
 	}
 	if payslip == nil {
 		val["PayslipError"] = "No matching payslip found"
