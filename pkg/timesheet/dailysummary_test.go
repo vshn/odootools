@@ -203,3 +203,39 @@ func Test_findDailySummaryByDate(t *testing.T) {
 		})
 	}
 }
+
+func TestDailySummary_IsHoliday(t *testing.T) {
+	tests := map[string]struct {
+		givenDay        *DailySummary
+		expectedHoliday bool
+	}{
+		"GivenDailyWithoutAbsences_ThenReturnFalse": {
+			givenDay: &DailySummary{Date: *date(t, "2021-02-04")},
+		},
+		"GivenDailyWithAbsence_WhenPublicHoliday_ThenReturnTrue": {
+			givenDay: &DailySummary{
+				Date:     *date(t, "2021-02-04"),
+				Absences: []AbsenceBlock{{Reason: TypePublicHoliday}},
+			},
+			expectedHoliday: true,
+		},
+		"GivenDailyWithAbsence_WhenPublicHolidayOnWeekend_ThenReturnFalse": {
+			givenDay: &DailySummary{
+				Date:     *date(t, "2021-02-06"),
+				Absences: []AbsenceBlock{{Reason: TypePublicHoliday}},
+			},
+		},
+		"GivenDailyWithAbsence_WhenUnpaid_ThenReturnFalse": {
+			givenDay: &DailySummary{
+				Date:     *date(t, "2021-02-04"),
+				Absences: []AbsenceBlock{{Reason: TypeUnpaid}},
+			},
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			result := tt.givenDay.IsHoliday()
+			assert.Equal(t, tt.expectedHoliday, result)
+		})
+	}
+}
