@@ -22,11 +22,17 @@ type YearlySummary struct {
 
 func (r *ReportBuilder) CalculateYearlyReport() YearlyReport {
 	reports := make([]MonthlyReport, 0)
+
 	max := 12
 	if r.year >= now().Year() {
 		max = int(now().Month())
 	}
-	for _, month := range makeRange(1, max) {
+	min := 1
+	if startDate, found := r.getEarliestStartContractDate(); found && startDate.Year() == now().Year() && r.year == now().Year() {
+		min = int(startDate.Month())
+	}
+
+	for _, month := range makeRange(min, max) {
 		r.month = month
 		monthlyReport := r.CalculateMonthlyReport()
 		reports = append(reports, monthlyReport)
@@ -53,4 +59,15 @@ func makeRange(min, max int) []int {
 		a[i] = min + i
 	}
 	return a
+}
+
+func (r *ReportBuilder) getEarliestStartContractDate() (time.Time, bool) {
+	n := now()
+	start := n
+	for _, contract := range r.contracts {
+		if contract.Start.ToTime().Before(start) {
+			start = contract.Start.ToTime()
+		}
+	}
+	return start, start != n
 }
