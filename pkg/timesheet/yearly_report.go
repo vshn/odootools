@@ -21,15 +21,15 @@ type YearlySummary struct {
 }
 
 func (r *ReportBuilder) CalculateYearlyReport() YearlyReport {
-	reports := make([]MonthlyReport, 12)
+	reports := make([]MonthlyReport, 0)
 	max := 12
 	if r.year >= now().Year() {
 		max = int(now().Month())
 	}
-	for i, month := range makeRange(1, max) {
+	for _, month := range makeRange(1, max) {
 		r.month = month
 		monthlyReport := r.CalculateMonthlyReport()
-		reports[i] = monthlyReport
+		reports = append(reports, monthlyReport)
 	}
 	yearlyReport := YearlyReport{
 		MonthlyReports: reports,
