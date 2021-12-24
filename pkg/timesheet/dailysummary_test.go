@@ -210,26 +210,50 @@ func TestDailySummary_IsHoliday(t *testing.T) {
 		expectedHoliday bool
 	}{
 		"GivenDailyWithoutAbsences_ThenReturnFalse": {
-			givenDay: &DailySummary{Date: *date(t, "2021-02-04")},
+			givenDay:        &DailySummary{Date: *date(t, "2021-02-04")},
+			expectedHoliday: false,
 		},
-		"GivenDailyWithAbsence_WhenPublicHoliday_ThenReturnTrue": {
+		"GivenDailyWithAbsence_WhenPublicHoliday_ThenReturnFalse": {
 			givenDay: &DailySummary{
 				Date:     *date(t, "2021-02-04"),
 				Absences: []AbsenceBlock{{Reason: TypePublicHoliday}},
 			},
-			expectedHoliday: true,
+			expectedHoliday: false,
 		},
 		"GivenDailyWithAbsence_WhenPublicHolidayOnWeekend_ThenReturnFalse": {
 			givenDay: &DailySummary{
 				Date:     *date(t, "2021-02-06"),
 				Absences: []AbsenceBlock{{Reason: TypePublicHoliday}},
 			},
+			expectedHoliday: false,
 		},
 		"GivenDailyWithAbsence_WhenUnpaid_ThenReturnFalse": {
 			givenDay: &DailySummary{
 				Date:     *date(t, "2021-02-04"),
 				Absences: []AbsenceBlock{{Reason: TypeUnpaid}},
 			},
+			expectedHoliday: false,
+		},
+		"GivenDailyWithAbsence_WhenTypeLegalLeaves_ThenReturnTrue": {
+			givenDay: &DailySummary{
+				Date:     *date(t, "2021-02-04"),
+				Absences: []AbsenceBlock{{Reason: TypeLegalLeavesPrefix}},
+			},
+			expectedHoliday: true,
+		},
+		"GivenDailyWithAbsence_WhenTypeMilitary_ThenReturnTrue": {
+			givenDay: &DailySummary{
+				Date:     *date(t, "2021-02-04"),
+				Absences: []AbsenceBlock{{Reason: TypeMilitaryService}},
+			},
+			expectedHoliday: true,
+		},
+		"GivenDailyWithAbsence_WhenTypeSpecialOccasions_ThenReturnTrue": {
+			givenDay: &DailySummary{
+				Date:     *date(t, "2021-02-04"),
+				Absences: []AbsenceBlock{{Reason: TypeSpecialOccasions}},
+			},
+			expectedHoliday: true,
 		},
 	}
 	for name, tt := range tests {

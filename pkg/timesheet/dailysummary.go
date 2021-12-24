@@ -130,11 +130,12 @@ func (s *DailySummary) HasAbsences() bool {
 	return len(s.Absences) != 0
 }
 
-// IsHoliday returns true if there is any paid leave on that day.
-// However, if the holiday falls on a weekend, the day is not counted.
+// IsHoliday returns true if there is a "personalized" leave.
+// Public and unpaid holidays return false.
+// If the holiday falls on a weekend, the day is not counted.
 func (s *DailySummary) IsHoliday() bool {
 	for _, absence := range s.Absences {
-		if absence.Reason != TypeUnpaid {
+		if absence.Reason != TypeUnpaid && absence.Reason != TypePublicHoliday {
 			return !s.IsWeekend()
 		}
 	}
