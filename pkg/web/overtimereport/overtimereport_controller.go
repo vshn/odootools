@@ -52,12 +52,17 @@ func (c *ReportController) ProcessInput() error {
 		WithSteps(
 			pipeline.NewStepFromFunc("parse user input", c.parseInput),
 			pipeline.NewStepFromFunc("search employee", c.searchEmployee),
-			pipeline.NewStepFromFunc("redirect to report", func(_ pipeline.Context) error {
-				return c.Echo.Redirect(http.StatusFound, fmt.Sprintf("/report/%d/%d/%02d", c.Employee.ID, c.Input.Year, c.Input.Month))
-			}),
+			pipeline.NewStepFromFunc("redirect to report", c.redirectToReportView),
 		)
 	result := root.Run()
 	return result.Err
+}
+
+func (c *ReportController) redirectToReportView(_ pipeline.Context) error {
+	if c.Input.Month == 0 {
+		return c.Echo.Redirect(http.StatusFound, fmt.Sprintf("/report/%d/%d", c.Employee.ID, c.Input.Year))
+	}
+	return c.Echo.Redirect(http.StatusFound, fmt.Sprintf("/report/%d/%d/%02d", c.Employee.ID, c.Input.Year, c.Input.Month))
 }
 
 func (c *ReportController) parseInput(_ pipeline.Context) error {

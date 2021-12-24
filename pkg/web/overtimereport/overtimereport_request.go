@@ -23,10 +23,16 @@ func (i *ReportRequest) FromRequest(e echo.Context) error {
 	i.SearchUser = html.EscapeString(i.SearchUser)
 
 	if i.Month == 0 && i.Year == 0 {
+		// this is kinda invalid input. Maybe created via curl or so.
 		i.Month = int(time.Now().Month())
 	}
 	if i.Year == 0 {
+		// The HTML view doesn't leave this empty. Maybe the request is foreign, so we give a sane default.
 		i.Year = time.Now().Year()
+	}
+	if e.FormValue("yearlyReport") == "true" {
+		// this way we configure the pipeline to do a yearly report.
+		i.Month = 0
 	}
 	return nil
 }
