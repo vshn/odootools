@@ -3,7 +3,7 @@ module github.com/vshn/odootools
 go 1.17
 
 require (
-	github.com/ccremer/go-command-pipeline v0.11.0
+	github.com/ccremer/go-command-pipeline v0.12.0
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/sessions v1.2.1
 	github.com/labstack/echo-contrib v0.11.0
