@@ -139,6 +139,6 @@ func (c *ReportController) fetchPayslip(_ pipeline.Context) error {
 	return err
 }
 
-func (c *ReportController) noMonthGiven(_ pipeline.Context, _ pipeline.Step) bool {
+func (c *ReportController) noMonthGiven(_ pipeline.Context) bool {
 	return c.Input.Month == 0
 }
