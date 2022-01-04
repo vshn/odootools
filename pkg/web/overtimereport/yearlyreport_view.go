@@ -39,7 +39,7 @@ func (v *reportView) formatMonthlySummaryForYearlyReport(s timesheet.MonthlyRepo
 		"ExcusedHours":   formatDurationInHours(s.Summary.TotalExcusedTime),
 		"WorkedHours":    formatDurationInHours(s.Summary.TotalWorkedTime),
 		"DetailViewLink": fmt.Sprintf("/report/%d/%d/%d", s.Employee.ID, s.Year, s.Month),
-		"Name":           time.Month(s.Month).String(),
+		"Name":           fmt.Sprintf("%s %d", time.Month(s.Month), s.Year),
 	}
 	return val
 }
