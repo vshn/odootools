@@ -1,9 +1,7 @@
 package odoo
 
 import (
-	"fmt"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,11 +18,11 @@ func TestDate_UnmarshalJSON(t *testing.T) {
 		},
 		"GivenValidInput_WhenFormatIsDate_ThenExpectDate": {
 			givenInput:   "2021-02-03",
-			expectedDate: newDate(t, "2021-02-03"),
+			expectedDate: MustParseDate("2021-02-03"),
 		},
 		"GivenValidInput_WhenFormatIsDateTime_ThenExpectDateTime": {
 			givenInput:   "2021-02-03 15:34:00",
-			expectedDate: newDateTime(t, "2021-02-03 15:34"),
+			expectedDate: MustParseDateTime("2021-02-03 15:34:00"),
 		},
 	}
 	for name, tt := range tests {
@@ -39,18 +37,4 @@ func TestDate_UnmarshalJSON(t *testing.T) {
 			assert.Equal(t, tt.expectedDate, subject)
 		})
 	}
-}
-
-func newDateTime(t *testing.T, value string) *Date {
-	tm, err := time.Parse(DateTimeFormat, fmt.Sprintf("%s:00", value))
-	require.NoError(t, err)
-	ptr := Date(tm)
-	return &ptr
-}
-
-func newDate(t *testing.T, value string) *Date {
-	tm, err := time.Parse(DateFormat, value)
-	require.NoError(t, err)
-	ptr := Date(tm)
-	return &ptr
 }

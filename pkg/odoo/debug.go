@@ -12,12 +12,16 @@ import (
 )
 
 type debugTransport struct {
-	pwRe *regexp.Regexp
+	pwRe   *regexp.Regexp
+	sessRe *regexp.Regexp
 }
+
+const confidentialPlaceholder = `$1[confidential]$2`
 
 func newDebugTransport() *debugTransport {
 	return &debugTransport{
-		pwRe: regexp.MustCompile(`("password":\s?").+("[,}])`),
+		pwRe:   regexp.MustCompile(`("password":\s?").+("[,}])`),
+		sessRe: regexp.MustCompile(`("session_id":\s?").+("[,}])`),
 	}
 }
 
@@ -34,7 +38,8 @@ func (t *debugTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 		reqBody, _ := r.GetBody()
 		defer reqBody.Close()
 		buf, _ := ioutil.ReadAll(reqBody)
-		buf = t.pwRe.ReplaceAll(buf, []byte(`$1[confidential]$2`))
+		buf = t.pwRe.ReplaceAll(buf, []byte(confidentialPlaceholder))
+		buf = t.sessRe.ReplaceAll(buf, []byte(confidentialPlaceholder))
 		logger.V(2).Info(fmt.Sprintf("%s %s ---> %s", r.Method, r.URL.Path, string(buf)))
 	}
 
@@ -46,7 +51,8 @@ func (t *debugTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	if res.Body != nil {
 		defer res.Body.Close()
 		buf, _ := ioutil.ReadAll(res.Body)
-		logger.V(2).Info(fmt.Sprintf("%s %s <--- %s", r.Method, r.URL.Path, string(buf)))
+		redacted := t.sessRe.ReplaceAll(buf, []byte(confidentialPlaceholder))
+		logger.V(2).Info(fmt.Sprintf("%s %s <--- %s", r.Method, r.URL.Path, string(redacted)))
 		res.Body = io.NopCloser(bytes.NewReader(buf))
 	}
 
