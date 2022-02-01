@@ -6,7 +6,7 @@ require (
 	github.com/ccremer/go-command-pipeline v0.12.0
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/sessions v1.2.1
-	github.com/labstack/echo-contrib v0.11.0
+	github.com/labstack/echo-contrib v0.12.0
 	github.com/labstack/echo/v4 v4.6.3
 	github.com/matryer/is v1.4.0
 	github.com/stretchr/testify v1.7.0
