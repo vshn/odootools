@@ -2,11 +2,11 @@ package controller
 
 import (
 	"github.com/labstack/echo/v4"
-	"github.com/vshn/odootools/pkg/odoo"
+	"github.com/vshn/odootools/pkg/odoo/model"
 )
 
 type Context struct {
-	Echo        echo.Context
-	OdooSession *odoo.Session
-	OdooClient  *odoo.Client
+	Echo       echo.Context
+	OdooClient *model.Odoo
+	UserID     int
 }

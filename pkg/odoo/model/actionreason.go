@@ -1,4 +1,4 @@
-package odoo
+package model
 
 import "encoding/json"
 
@@ -18,6 +18,7 @@ type ActionReason struct {
 	Name string
 }
 
+// String implements fmt.Stringer.
 func (reason *ActionReason) String() string {
 	if reason == nil {
 		return ""
@@ -25,6 +26,7 @@ func (reason *ActionReason) String() string {
 	return reason.Name
 }
 
+// MarshalJSON implements json.Marshaler.
 func (reason ActionReason) MarshalJSON() ([]byte, error) {
 	if reason.Name == "" {
 		return []byte("false"), nil
@@ -32,6 +34,8 @@ func (reason ActionReason) MarshalJSON() ([]byte, error) {
 	arr := []interface{}{reason.ID, reason.Name}
 	return json.Marshal(arr)
 }
+
+// UnmarshalJSON implements json.Unmarshaler.
 func (reason *ActionReason) UnmarshalJSON(b []byte) error {
 	var f bool
 	if err := json.Unmarshal(b, &f); err == nil || string(b) == "false" {

@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/vshn/odootools/pkg/odoo"
+	"github.com/vshn/odootools/pkg/odoo/model"
 )
 
 func hours(t *testing.T, date, hours string) time.Time {
@@ -98,11 +99,11 @@ func TestReporter_AddAttendanceShiftsToDailies(t *testing.T) {
 
 func TestReporter_ReduceAttendancesToShifts(t *testing.T) {
 	tests := map[string]struct {
-		givenAttendances []odoo.Attendance
+		givenAttendances []model.Attendance
 		expectedShifts   []AttendanceShift
 	}{
 		"GivenAttendancesInUTC_WhenReducing_ThenApplyLocalZone": {
-			givenAttendances: []odoo.Attendance{
+			givenAttendances: []model.Attendance{
 				{DateTime: newDateTime(t, "2021-02-03 19:00"), Action: ActionSignIn}, // these times are UTC
 				{DateTime: newDateTime(t, "2021-02-03 22:59"), Action: ActionSignOut},
 			},
@@ -113,7 +114,7 @@ func TestReporter_ReduceAttendancesToShifts(t *testing.T) {
 			},
 		},
 		"GivenAttendancesInUTC_WhenSplitOverMidnight_ThenSplitInTwoDays": {
-			givenAttendances: []odoo.Attendance{
+			givenAttendances: []model.Attendance{
 				{DateTime: newDateTime(t, "2021-02-03 19:00"), Action: ActionSignIn}, // these times are UTC
 				{DateTime: newDateTime(t, "2021-02-03 22:59"), Action: ActionSignOut},
 				{DateTime: newDateTime(t, "2021-02-03 23:00"), Action: ActionSignIn},

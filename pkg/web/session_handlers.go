@@ -46,8 +46,8 @@ func (s Server) Logout(e echo.Context) error {
 func (s Server) GetOdooSession(e echo.Context) *odoo.Session {
 	sess, _ := session.Get(CookieSID, e)
 	odooSess := &odoo.Session{
-		ID:  sess.Values["odoo_id"].(string),
-		UID: sess.Values["odoo_uid"].(int),
+		SessionID: sess.Values["odoo_id"].(string),
+		UID:       sess.Values["odoo_uid"].(int),
 	}
 	return odooSess
 }
@@ -60,7 +60,7 @@ func (s Server) SaveOdooSession(e echo.Context, odooSession *odoo.Session) error
 		HttpOnly: true,
 		Secure:   true,
 	}
-	sess.Values["odoo_id"] = odooSession.ID
+	sess.Values["odoo_id"] = odooSession.SessionID
 	sess.Values["odoo_uid"] = odooSession.UID
 	return sess.Save(e.Request(), e.Response())
 }

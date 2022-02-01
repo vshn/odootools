@@ -9,14 +9,14 @@ import (
 	"github.com/google/uuid"
 )
 
-// JsonRpcRequest represents a generic json-rpc request
-type JsonRpcRequest struct {
-	// ID should be a randomly generated value, either as a string or int. The
-	// server will return this value in the response.
+// JSONRPCRequest represents a generic json-rpc request
+type JSONRPCRequest struct {
+	// ID should be a randomly generated value, either as a string or int.
+	// The server will return this value in the response.
 	ID string `json:"id,omitempty"`
 
-	// Jsonrpc is always set to "2.0"
-	Jsonrpc string `json:"jsonrpc,omitempty"`
+	// JSONRPC is always set to "2.0"
+	JSONRPC string `json:"jsonrpc,omitempty"`
 
 	// Method to call, usually just "call"
 	Method string `json:"method,omitempty"`
@@ -25,23 +25,25 @@ type JsonRpcRequest struct {
 	Params interface{} `json:"params,omitempty"`
 }
 
-// NewJsonRpcRequest returns a JSON RPC request with its protocol fileds populated:
+var uuidGenerator = uuid.NewString
+
+// NewJSONRPCRequest returns a JSON RPC request with its protocol fields populated:
 //
 // * "id" will be set to a random UUID
 // * "jsonrpc" will be set to "2.0"
 // * "method" will be set to "call"
 // * "params" will be set to whatever was passed in
-func NewJsonRpcRequest(params interface{}) *JsonRpcRequest {
-	return &JsonRpcRequest{
-		ID:      uuid.NewString(),
-		Jsonrpc: "2.0",
+func NewJSONRPCRequest(params interface{}) *JSONRPCRequest {
+	return &JSONRPCRequest{
+		ID:      uuidGenerator(),
+		JSONRPC: "2.0",
 		Method:  "call",
 		Params:  params,
 	}
 }
 
 // Encode encodes the request as JSON in a buffer and returns the buffer.
-func (r *JsonRpcRequest) Encode() (io.Reader, error) {
+func (r *JSONRPCRequest) Encode() (io.Reader, error) {
 	buf := new(bytes.Buffer)
 	if err := json.NewEncoder(buf).Encode(r); err != nil {
 		return nil, err
@@ -50,29 +52,30 @@ func (r *JsonRpcRequest) Encode() (io.Reader, error) {
 	return buf, nil
 }
 
-type JsonRpcResponse struct {
+// JSONRPCResponse holds the JSONRPC response.
+type JSONRPCResponse struct {
 	// ID that was sent with the request
 	ID string `json:"id,omitempty"`
-	// Jsonrpc is always set to "2.0"
-	Jsonrpc string `json:"jsonrpc,omitempty"`
+	// JSONRPC is always set to "2.0"
+	JSONRPC string `json:"jsonrpc,omitempty"`
 	// Result payload
 	Result *json.RawMessage `json:"result,omitempty"`
 
-	// Optional eror field
-	Error *JsonRpcError `json:"error,omitempty"`
+	// Optional error field
+	Error *JSONRPCError `json:"error,omitempty"`
 }
 
-type JsonRpcError struct {
+// JSONRPCError holds error information.
+type JSONRPCError struct {
 	Message string                 `json:"message,omitempty"`
 	Code    int                    `json:"code,omitempty"`
 	Data    map[string]interface{} `json:"data,omitempty"`
 }
 
-// DecodeResult takes a buffer, decodes the intermediate JsonRpcResponse and
-// then the contained "result" field into "result".
+// DecodeResult takes a buffer, decodes the intermediate JSONRPCResponse and then the contained "result" field into "result".
 func DecodeResult(buf io.Reader, result interface{}) error {
 	// Decode intermediate
-	var res JsonRpcResponse
+	var res JSONRPCResponse
 	if err := json.NewDecoder(buf).Decode(&res); err != nil {
 		return fmt.Errorf("decode intermediate: %w", err)
 	}
@@ -81,4 +84,12 @@ func DecodeResult(buf io.Reader, result interface{}) error {
 	}
 
 	return json.Unmarshal(*res.Result, result)
+}
+
+func newEncodingRequestError(err error) error {
+	return fmt.Errorf("encoding request: %w", err)
+}
+
+func newCreatingRequestError(err error) error {
+	return fmt.Errorf("creating request: %w", err)
 }

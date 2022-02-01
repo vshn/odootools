@@ -1,27 +1,35 @@
-package odoo
+package model
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/vshn/odootools/pkg/odoo"
 )
 
 type Payslip struct {
 	ID       int         `json:"id"`
 	Name     string      `json:"name"`
 	Overtime interface{} `json:"x_overtime"`
-	DateFrom Date        `json:"date_from"`
-	DateTo   Date        `json:"date_to"`
+	DateFrom odoo.Date   `json:"date_from"`
+	DateTo   odoo.Date   `json:"date_to"`
 }
 
-func (c Client) FetchPayslipOfLastMonth(sid string, employeeID int, lastDayOfMonth time.Time) (*Payslip, error) {
-	payslips, err := c.readPayslips(sid, []Filter{
+// PayslipList contains a slice of Payslip.
+type PayslipList struct {
+	Items []Payslip `json:"records,omitempty"`
+}
+
+func (o Odoo) FetchPayslipOfLastMonth(employeeID int, lastDayOfMonth time.Time) (*Payslip, error) {
+	payslips, err := o.readPayslips([]odoo.Filter{
 		[]interface{}{"employee_id", "=", employeeID},
-		[]string{"date_to", "<=", lastDayOfMonth.Format(DateFormat)},
-		[]string{"date_from", ">=", lastDayOfMonth.AddDate(0, -1, -1).Format(DateFormat)},
+		[]string{"date_to", "<=", lastDayOfMonth.Format(odoo.DateFormat)},
+		[]string{"date_from", ">=", lastDayOfMonth.AddDate(0, -1, -1).Format(odoo.DateFormat)},
 	})
-	for _, payslip := range payslips {
+	for _, payslip := range payslips.Items {
 		if strings.Contains(payslip.Name, "Pikett") {
 			continue
 		}
@@ -32,31 +40,14 @@ func (c Client) FetchPayslipOfLastMonth(sid string, employeeID int, lastDayOfMon
 	return nil, err
 }
 
-func (c Client) readPayslips(sid string, domainFilters []Filter) ([]Payslip, error) {
-	// Prepare "search contract" request
-	body, err := NewJsonRpcRequest(&ReadModelRequest{
+func (o Odoo) readPayslips(domainFilters []odoo.Filter) (PayslipList, error) {
+	result := PayslipList{}
+	err := o.querier.SearchGenericModel(context.Background(), odoo.SearchReadModel{
 		Model:  "hr.payslip",
 		Domain: domainFilters,
 		Fields: []string{"date_from", "date_to", "x_overtime", "name"},
-	}).Encode()
-	if err != nil {
-		return nil, fmt.Errorf("encoding request: %w", err)
-	}
-
-	res, err := c.makeRequest(sid, body)
-	if err != nil {
-		return nil, err
-	}
-
-	type readResult struct {
-		Length  int       `json:"length,omitempty"`
-		Records []Payslip `json:"records,omitempty"`
-	}
-	result := &readResult{}
-	if err := c.unmarshalResponse(res.Body, result); err != nil {
-		return nil, err
-	}
-	return result.Records, nil
+	}, &result)
+	return result, err
 }
 
 // GetOvertime returns the plain field value as string.

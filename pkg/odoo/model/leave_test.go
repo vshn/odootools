@@ -1,19 +1,20 @@
-package odoo
+package model
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/vshn/odootools/pkg/odoo"
 )
 
 func TestLeave_SplitByDay(t *testing.T) {
 	t.Run("GivenLeaveWithSingleDate_ThenExpectSameLeave", func(t *testing.T) {
 		givenLeave := Leave{
 			ID:       1,
-			DateFrom: newDateTime(t, "2021-02-03 07:00"),
-			DateTo:   newDateTime(t, "2021-02-03 19:00"),
-			Type:     &LeaveType{ID: 1, Name: "SomeType"},
+			DateFrom: odoo.MustParseDateTime("2021-02-03 07:00:00"),
+			DateTo:   odoo.MustParseDateTime("2021-02-03 19:00:00"),
+			Type:     &odoo.LeaveType{ID: 1, Name: "SomeType"},
 			State:    "validated",
 		}
 		result := givenLeave.SplitByDay()
@@ -27,11 +28,11 @@ func TestLeave_SplitByDay(t *testing.T) {
 	}{
 		"GivenLeave_WhenDurationGoesIntoNextDay_ThenExpectSplit": {
 			givenLeave: Leave{
-				DateFrom: newDateTime(t, "2021-02-03 07:00"), DateTo: newDateTime(t, "2021-02-04 19:00"),
+				DateFrom: odoo.MustParseDateTime("2021-02-03 07:00:00"), DateTo: odoo.MustParseDateTime("2021-02-04 19:00:00"),
 			},
 			expectedLeaves: []Leave{
-				{DateFrom: newDateTime(t, "2021-02-03 07:00"), DateTo: newDateTime(t, "2021-02-03 15:00")},
-				{DateFrom: newDateTime(t, "2021-02-04 07:00"), DateTo: newDateTime(t, "2021-02-04 15:00")},
+				{DateFrom: odoo.MustParseDateTime("2021-02-03 07:00:00"), DateTo: odoo.MustParseDateTime("2021-02-03 15:00:00")},
+				{DateFrom: odoo.MustParseDateTime("2021-02-04 07:00:00"), DateTo: odoo.MustParseDateTime("2021-02-04 15:00:00")},
 			},
 		},
 	}

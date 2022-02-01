@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/vshn/odootools/pkg/odoo"
+	"github.com/vshn/odootools/pkg/odoo/model"
 )
 
 const (
@@ -58,22 +59,22 @@ type Summary struct {
 type MonthlyReport struct {
 	DailySummaries []*DailySummary
 	Summary        Summary
-	Employee       *odoo.Employee
+	Employee       *model.Employee
 	Year           int
 	Month          int
 }
 
 type ReportBuilder struct {
-	attendances []odoo.Attendance
-	leaves      []odoo.Leave
-	employee    *odoo.Employee
+	attendances model.AttendanceList
+	leaves      model.LeaveList
+	employee    *model.Employee
 	year        int
 	month       int
-	contracts   odoo.ContractList
+	contracts   model.ContractList
 	timezone    *time.Location
 }
 
-func NewReporter(attendances []odoo.Attendance, leaves []odoo.Leave, employee *odoo.Employee, contracts []odoo.Contract) *ReportBuilder {
+func NewReporter(attendances model.AttendanceList, leaves model.LeaveList, employee *model.Employee, contracts model.ContractList) *ReportBuilder {
 	return &ReportBuilder{
 		attendances: attendances,
 		leaves:      leaves,
@@ -127,7 +128,7 @@ func (r *ReportBuilder) CalculateMonthlyReport() MonthlyReport {
 	}
 }
 
-func (r *ReportBuilder) reduceAttendancesToShifts(attendances []odoo.Attendance) []AttendanceShift {
+func (r *ReportBuilder) reduceAttendancesToShifts(attendances []model.Attendance) []AttendanceShift {
 	sortAttendances(attendances)
 	shifts := make([]AttendanceShift, 0)
 	var tmpShift AttendanceShift
@@ -146,7 +147,7 @@ func (r *ReportBuilder) reduceAttendancesToShifts(attendances []odoo.Attendance)
 	return shifts
 }
 
-func (r *ReportBuilder) reduceLeavesToBlocks(leaves []odoo.Leave) []AbsenceBlock {
+func (r *ReportBuilder) reduceLeavesToBlocks(leaves []model.Leave) []AbsenceBlock {
 	blocks := make([]AbsenceBlock, 0)
 	for _, leave := range leaves {
 		// Only consider approved leaves
@@ -206,15 +207,15 @@ func (r *ReportBuilder) addAbsencesToDailies(absences []AbsenceBlock, summaries 
 	}
 }
 
-func sortAttendances(filtered []odoo.Attendance) {
+func sortAttendances(filtered []model.Attendance) {
 	sort.Slice(filtered, func(i, j int) bool {
 		return filtered[i].DateTime.ToTime().Unix() < filtered[j].DateTime.ToTime().Unix()
 	})
 }
 
-func (r *ReportBuilder) filterAttendancesInMonth() []odoo.Attendance {
-	filteredAttendances := make([]odoo.Attendance, 0)
-	for _, attendance := range r.attendances {
+func (r *ReportBuilder) filterAttendancesInMonth() []model.Attendance {
+	filteredAttendances := make([]model.Attendance, 0)
+	for _, attendance := range r.attendances.Items {
 		if attendance.DateTime.WithLocation(r.timezone).IsWithinMonth(r.year, r.month) {
 			filteredAttendances = append(filteredAttendances, attendance)
 		}
@@ -222,9 +223,9 @@ func (r *ReportBuilder) filterAttendancesInMonth() []odoo.Attendance {
 	return filteredAttendances
 }
 
-func (r *ReportBuilder) filterLeavesInMonth() []odoo.Leave {
-	filteredLeaves := make([]odoo.Leave, 0)
-	for _, leave := range r.leaves {
+func (r *ReportBuilder) filterLeavesInMonth() []model.Leave {
+	filteredLeaves := make([]model.Leave, 0)
+	for _, leave := range r.leaves.Items {
 		splits := leave.SplitByDay()
 		for _, split := range splits {
 			date := split.DateFrom.WithLocation(r.timezone)

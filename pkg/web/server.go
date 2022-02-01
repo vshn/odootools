@@ -10,6 +10,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/vshn/odootools/pkg/odoo"
+	"github.com/vshn/odootools/pkg/odoo/model"
 	"github.com/vshn/odootools/pkg/web/controller"
 )
 
@@ -63,7 +64,7 @@ func (s Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s Server) newControllerContext(e echo.Context) *controller.Context {
-	return &controller.Context{Echo: e, OdooClient: s.odoo, OdooSession: s.GetOdooSession(e)}
+	return &controller.Context{Echo: e, OdooClient: model.NewOdoo(), UserID: s.GetOdooSession(e).UID}
 }
 
 func (s Server) ShowError(e echo.Context, err error) error {
