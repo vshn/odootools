@@ -3,12 +3,12 @@ package timesheet
 import (
 	"time"
 
-	"github.com/vshn/odootools/pkg/odoo"
+	"github.com/vshn/odootools/pkg/odoo/model"
 )
 
 type YearlyReport struct {
 	MonthlyReports []MonthlyReport
-	Employee       *odoo.Employee
+	Employee       *model.Employee
 	Year           int
 	Summary        YearlySummary
 }
@@ -64,7 +64,7 @@ func makeRange(min, max int) []int {
 func (r *ReportBuilder) getEarliestStartContractDate() (time.Time, bool) {
 	n := now()
 	start := n
-	for _, contract := range r.contracts {
+	for _, contract := range r.contracts.Items {
 		if contract.Start.ToTime().Before(start) {
 			start = contract.Start.ToTime()
 		}

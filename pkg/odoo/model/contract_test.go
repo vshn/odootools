@@ -1,4 +1,4 @@
-package odoo
+package model
 
 import (
 	"strconv"
@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/vshn/odootools/pkg/odoo"
 )
 
 func newFTESchedule(ratioPercentage int) *WorkingSchedule {
@@ -18,54 +19,54 @@ func newFTESchedule(ratioPercentage int) *WorkingSchedule {
 func TestContractList_GetFTERatioForDay(t *testing.T) {
 	tests := map[string]struct {
 		givenList     ContractList
-		givenDay      Date
+		givenDay      odoo.Date
 		expectedRatio float64
-		expectErr     bool
+		expectedError string
 	}{
 		"GivenEmptyList_WhenNil_ThenReturnErr": {
-			givenList: nil,
-			expectErr: true,
+			givenList:     ContractList{},
+			expectedError: "no contract found that covers date: 0001-01-01 00:00:00",
 		},
 		"GivenEmptyList_WhenNoContracts_ThenReturnErr": {
-			givenList: []Contract{},
-			expectErr: true,
+			givenList:     ContractList{Items: []Contract{}},
+			expectedError: "no contract found that covers date: 0001-01-01 00:00:00",
 		},
 		"GivenListWith1Contract_WhenOpenEnd_ThenReturnRatio": {
 			givenDay: *newDate(t, "2021-12-04"),
-			givenList: []Contract{
+			givenList: ContractList{Items: []Contract{
 				{Start: newDate(t, "2021-02-01"), WorkingSchedule: newFTESchedule(100)},
-			},
+			}},
 			expectedRatio: 1,
 		},
 		"GivenListWith1Contract_WhenDayBeforeStart_ThenReturnErr": {
 			givenDay: *newDate(t, "2021-02-01"),
-			givenList: []Contract{
+			givenList: ContractList{Items: []Contract{
 				{Start: newDate(t, "2021-02-02"), WorkingSchedule: newFTESchedule(100)},
-			},
-			expectErr: true,
+			}},
+			expectedError: "no contract found that covers date: 2021-02-01 00:00:00",
 		},
 		"GivenListWith2Contract_WhenDayBetweenContract_ThenReturnRatioFromTerminatedContract": {
 			givenDay: *newDate(t, "2021-03-31"),
-			givenList: []Contract{
+			givenList: ContractList{Items: []Contract{
 				{Start: newDate(t, "2021-02-02"), End: newDate(t, "2021-03-31"), WorkingSchedule: newFTESchedule(90)},
 				{Start: newDate(t, "2021-04-01"), WorkingSchedule: newFTESchedule(80)},
-			},
+			}},
 			expectedRatio: 0.9,
 		},
 		"GivenListWith2Contract_WhenDayInOpenContract_ThenReturnRatioFromOpenContract": {
 			givenDay: *newDate(t, "2021-04-01"),
-			givenList: []Contract{
+			givenList: ContractList{Items: []Contract{
 				{Start: newDate(t, "2021-02-02"), End: newDate(t, "2021-03-31"), WorkingSchedule: newFTESchedule(90)},
 				{Start: newDate(t, "2021-04-01"), WorkingSchedule: newFTESchedule(80)},
-			},
+			}},
 			expectedRatio: 0.8,
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			result, err := tt.givenList.GetFTERatioForDay(tt.givenDay)
-			if tt.expectErr {
-				require.Error(t, err)
+			if tt.expectedError != "" {
+				require.EqualError(t, err, tt.expectedError)
 				return
 			}
 			require.NoError(t, err)

@@ -67,3 +67,23 @@ func (d Date) IsWithinMonth(year, month int) bool {
 	isBetween := date.After(firstDayOfMonth) && date.Before(nextMonth)
 	return isBetween || date.Unix() == firstDayOfMonth.Unix()
 }
+
+// MustParseDateTime parses the given value in DateTimeFormat or panics if it fails.
+func MustParseDateTime(value string) *Date {
+	tm, err := time.Parse(DateTimeFormat, value)
+	if err != nil {
+		panic(err)
+	}
+	d := Date(tm)
+	return &d
+}
+
+// MustParseDate parses the given value in DateFormat or panics if it fails.
+func MustParseDate(value string) *Date {
+	tm, err := time.Parse(DateFormat, value)
+	if err != nil {
+		panic(err)
+	}
+	d := Date(tm)
+	return &d
+}

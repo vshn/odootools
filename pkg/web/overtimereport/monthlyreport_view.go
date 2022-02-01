@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/vshn/odootools/pkg/odoo"
+	"github.com/vshn/odootools/pkg/odoo/model"
 	"github.com/vshn/odootools/pkg/timesheet"
 	"github.com/vshn/odootools/pkg/web/controller"
 )
@@ -51,7 +52,7 @@ func formatFloat(v float64) string {
 	return strconv.FormatFloat(v, 'f', 1, 64)
 }
 
-func (v *reportView) formatMonthlySummary(s timesheet.Summary, payslip *odoo.Payslip) controller.Values {
+func (v *reportView) formatMonthlySummary(s timesheet.Summary, payslip *model.Payslip) controller.Values {
 	val := controller.Values{
 		"TotalOvertime": formatDurationInHours(s.TotalOvertime),
 		"TotalLeaves":   fmt.Sprintf("%sd", formatFloat(s.TotalLeave)),
@@ -72,7 +73,7 @@ func (v *reportView) formatMonthlySummary(s timesheet.Summary, payslip *odoo.Pay
 	return val
 }
 
-func (v *reportView) GetValuesForMonthlyReport(report timesheet.MonthlyReport, payslip *odoo.Payslip) controller.Values {
+func (v *reportView) GetValuesForMonthlyReport(report timesheet.MonthlyReport, payslip *model.Payslip) controller.Values {
 	formatted := make([]controller.Values, 0)
 	for _, summary := range report.DailySummaries {
 		if summary.IsWeekend() && summary.CalculateWorkingTime() == 0 {

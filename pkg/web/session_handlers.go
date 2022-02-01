@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"errors"
 	"net/http"
 
@@ -22,8 +23,11 @@ func (s Server) LoginForm(e echo.Context) error {
 
 // Login POST /login
 func (s Server) Login(e echo.Context) error {
-
-	odooSession, err := s.odoo.Login(e.FormValue("login"), e.FormValue("password"))
+	odooSession, err := s.odooClient.Login(context.Background(), odoo.LoginOptions{
+		DatabaseName: s.dbName,
+		Username:     e.FormValue("login"),
+		Password:     e.FormValue("password"),
+	})
 	if errors.Is(err, odoo.ErrInvalidCredentials) {
 		return e.Render(http.StatusOK, "login", controller.Values{"Error": "Invalid login or password"})
 	}
@@ -45,10 +49,7 @@ func (s Server) Logout(e echo.Context) error {
 
 func (s Server) GetOdooSession(e echo.Context) *odoo.Session {
 	sess, _ := session.Get(CookieSID, e)
-	odooSess := &odoo.Session{
-		ID:  sess.Values["odoo_id"].(string),
-		UID: sess.Values["odoo_uid"].(int),
-	}
+	odooSess := odoo.RestoreSession(s.odooClient, sess.Values["odoo_id"].(string), sess.Values["odoo_uid"].(int))
 	return odooSess
 }
 
@@ -60,7 +61,7 @@ func (s Server) SaveOdooSession(e echo.Context, odooSession *odoo.Session) error
 		HttpOnly: true,
 		Secure:   true,
 	}
-	sess.Values["odoo_id"] = odooSession.ID
+	sess.Values["odoo_id"] = odooSession.SessionID
 	sess.Values["odoo_uid"] = odooSession.UID
 	return sess.Save(e.Request(), e.Response())
 }

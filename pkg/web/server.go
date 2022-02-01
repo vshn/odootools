@@ -10,18 +10,21 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/vshn/odootools/pkg/odoo"
+	"github.com/vshn/odootools/pkg/odoo/model"
 	"github.com/vshn/odootools/pkg/web/controller"
 )
 
 type Server struct {
-	odoo        *odoo.Client
+	odooClient  *odoo.Client
 	Echo        *echo.Echo
 	cookieStore *sessions.CookieStore
+	dbName      string
 }
 
 func NewServer(
 	odoo *odoo.Client,
 	secretKey string,
+	dbName string,
 ) *Server {
 	key, err := base64.StdEncoding.DecodeString(secretKey)
 	if err != nil {
@@ -29,7 +32,8 @@ func NewServer(
 	}
 
 	s := Server{
-		odoo:        odoo,
+		odooClient:  odoo,
+		dbName:      dbName,
 		Echo:        echo.New(),
 		cookieStore: sessions.NewCookieStore(key, key),
 	}
@@ -63,7 +67,8 @@ func (s Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s Server) newControllerContext(e echo.Context) *controller.Context {
-	return &controller.Context{Echo: e, OdooClient: s.odoo, OdooSession: s.GetOdooSession(e)}
+	sess := s.GetOdooSession(e)
+	return &controller.Context{Echo: e, OdooClient: model.NewOdoo(sess), UserID: sess.UID}
 }
 
 func (s Server) ShowError(e echo.Context, err error) error {

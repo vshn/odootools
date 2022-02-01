@@ -1,4 +1,4 @@
-package odoo
+package model
 
 import (
 	"encoding/json"
@@ -15,6 +15,7 @@ type WorkingSchedule struct {
 	Name string
 }
 
+// String implements fmt.Stringer.
 func (s *WorkingSchedule) String() string {
 	if s == nil {
 		return ""
@@ -22,6 +23,7 @@ func (s *WorkingSchedule) String() string {
 	return s.Name
 }
 
+// MarshalJSON implements json.Marshaler.
 func (s WorkingSchedule) MarshalJSON() ([]byte, error) {
 	if s.Name == "" {
 		return []byte("false"), nil
@@ -29,6 +31,8 @@ func (s WorkingSchedule) MarshalJSON() ([]byte, error) {
 	arr := []interface{}{s.ID, s.Name}
 	return json.Marshal(arr)
 }
+
+// UnmarshalJSON implements json.Unmarshaler.
 func (s *WorkingSchedule) UnmarshalJSON(b []byte) error {
 	var f bool
 	if err := json.Unmarshal(b, &f); err == nil || string(b) == "false" {
@@ -51,7 +55,7 @@ func (s *WorkingSchedule) UnmarshalJSON(b []byte) error {
 
 // GetFTERatio tries to extract the FTE ratio from the name of the schedule.
 // It returns an error if it could not find a match
-func (s *WorkingSchedule) GetFTERatio() (float64, error) {
+func (s WorkingSchedule) GetFTERatio() (float64, error) {
 	match := workingScheduleRegex.FindStringSubmatch(s.Name)
 	if len(match) > 0 {
 		v := match[0]

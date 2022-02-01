@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/urfave/cli/v2"
-	"github.com/vshn/odootools/cmd"
 )
 
 var (
@@ -47,9 +46,14 @@ func main() {
 				Required: true,
 				EnvVars:  []string{"ODOO_DB"},
 			},
+			&cli.IntFlag{
+				Name:    "log-level",
+				Usage:   "Log verbosity level",
+				EnvVars: []string{"LOG_LEVEL"},
+			},
 		},
 		Commands: []*cli.Command{
-			cmd.WebCommand,
+			newWebCommand(),
 		},
 	}
 

@@ -6,7 +6,7 @@ import (
 
 	pipeline "github.com/ccremer/go-command-pipeline"
 	"github.com/ccremer/go-command-pipeline/predicate"
-	"github.com/vshn/odootools/pkg/odoo"
+	"github.com/vshn/odootools/pkg/odoo/model"
 	"github.com/vshn/odootools/pkg/timesheet"
 	"github.com/vshn/odootools/pkg/web/controller"
 )
@@ -14,13 +14,13 @@ import (
 type ReportController struct {
 	controller.Context
 	Input       ReportRequest
-	Employee    *odoo.Employee
+	Employee    *model.Employee
 	ReportView  *reportView
-	Contracts   odoo.ContractList
-	Attendances []odoo.Attendance
-	Leaves      []odoo.Leave
+	Contracts   model.ContractList
+	Attendances model.AttendanceList
+	Leaves      model.LeaveList
 	view        *reportView
-	Payslip     *odoo.Payslip
+	Payslip     *model.Payslip
 }
 
 func NewReportController(ctx *controller.Context) *ReportController {
@@ -74,7 +74,7 @@ func (c *ReportController) parseInput(_ pipeline.Context) error {
 
 func (c *ReportController) fetchEmployeeByID(_ pipeline.Context) error {
 	employeeID := c.Input.EmployeeID
-	employee, err := c.OdooClient.FetchEmployeeByID(c.OdooSession.ID, employeeID)
+	employee, err := c.OdooClient.FetchEmployeeByID(employeeID)
 	if employee == nil {
 		return fmt.Errorf("no employee found with given ID: %d", employeeID)
 	}
@@ -83,19 +83,19 @@ func (c *ReportController) fetchEmployeeByID(_ pipeline.Context) error {
 }
 
 func (c *ReportController) fetchContracts(_ pipeline.Context) error {
-	contracts, err := c.OdooClient.FetchAllContracts(c.OdooSession.ID, c.Employee.ID)
+	contracts, err := c.OdooClient.FetchAllContracts(c.Employee.ID)
 	c.Contracts = contracts
 	return err
 }
 
 func (c *ReportController) fetchAttendances(_ pipeline.Context) error {
-	attendances, err := c.OdooClient.FetchAttendancesBetweenDates(c.OdooSession.ID, c.Employee.ID, c.Input.getFirstDay(), c.Input.getLastDay())
+	attendances, err := c.OdooClient.FetchAttendancesBetweenDates(c.Employee.ID, c.Input.getFirstDay(), c.Input.getLastDay())
 	c.Attendances = attendances
 	return err
 }
 
 func (c *ReportController) fetchLeaves(_ pipeline.Context) error {
-	leaves, err := c.OdooClient.FetchLeavesBetweenDates(c.OdooSession.ID, c.Employee.ID, c.Input.getFirstDay(), c.Input.getLastDay())
+	leaves, err := c.OdooClient.FetchLeavesBetweenDates(c.Employee.ID, c.Input.getFirstDay(), c.Input.getLastDay())
 	c.Leaves = leaves
 	return err
 }
@@ -120,21 +120,21 @@ func (c *ReportController) calculateYearlyReport(_ pipeline.Context) error {
 
 func (c *ReportController) searchEmployee(_ pipeline.Context) error {
 	if c.Input.SearchUserEnabled {
-		e, err := c.OdooClient.SearchEmployee(c.Input.SearchUser, c.OdooSession.ID)
+		e, err := c.OdooClient.SearchEmployee(c.Input.SearchUser)
 		if e == nil {
 			return fmt.Errorf("no user matching '%s' found", c.Input.SearchUser)
 		}
 		c.Employee = e
 		return err
 	}
-	e, err := c.OdooClient.FetchEmployeeBySession(c.OdooSession)
+	e, err := c.OdooClient.FetchEmployeeByUserID(c.UserID)
 	c.Employee = e
 	return err
 }
 
 func (c *ReportController) fetchPayslip(_ pipeline.Context) error {
 	lastMonth := c.Input.getLastDay().AddDate(0, -1, 0)
-	payslip, err := c.OdooClient.FetchPayslipOfLastMonth(c.OdooSession.ID, c.Employee.ID, lastMonth)
+	payslip, err := c.OdooClient.FetchPayslipOfLastMonth(c.Employee.ID, lastMonth)
 	c.Payslip = payslip
 	return err
 }

@@ -1,9 +1,11 @@
-package odoo
+package model
 
 import (
-	"fmt"
+	"context"
 	"strconv"
 	"time"
+
+	"github.com/vshn/odootools/pkg/odoo"
 )
 
 type Leave struct {
@@ -12,14 +14,14 @@ type Leave struct {
 
 	// DateFrom is the starting timestamp of the leave in UTC
 	// Format: DateTimeFormat
-	DateFrom *Date `json:"date_from"`
+	DateFrom *odoo.Date `json:"date_from"`
 
 	// DateTo is the ending timestamp of the leave in UTC
 	// Format: DateTimeFormat
-	DateTo *Date `json:"date_to"`
+	DateTo *odoo.Date `json:"date_to"`
 
 	// Type describes the "leave type" from Odoo.
-	Type *LeaveType `json:"holiday_status_id,omitempty"`
+	Type *odoo.LeaveType `json:"holiday_status_id,omitempty"`
 
 	// State is the leave request state.
 	// Example raw values returned from Odoo:
@@ -29,17 +31,22 @@ type Leave struct {
 	State string `json:"state,omitempty"`
 }
 
-func (c *Client) FetchAllLeaves(sid string, employeeID int) ([]Leave, error) {
-	return c.readLeaves(sid, []Filter{
+// LeaveList contains a slice of Leave.
+type LeaveList struct {
+	Items []Leave `json:"records,omitempty"`
+}
+
+func (o Odoo) FetchAllLeaves(employeeID int) (LeaveList, error) {
+	return o.readLeaves([]odoo.Filter{
 		[]string{"employee_id", "=", strconv.Itoa(employeeID)},
 		[]string{"type", "=", "remove"}, // Only return used leaves. With type = "add" we would get leaves that add days to holiday budget
 	})
 }
 
-func (c *Client) FetchLeavesBetweenDates(sid string, employeeID int, begin, end time.Time) ([]Leave, error) {
-	beginStr := begin.Format(DateFormat)
-	endStr := end.Format(DateFormat)
-	return c.readLeaves(sid, []Filter{
+func (o Odoo) FetchLeavesBetweenDates(employeeID int, begin, end time.Time) (LeaveList, error) {
+	beginStr := begin.Format(odoo.DateFormat)
+	endStr := end.Format(odoo.DateFormat)
+	return o.readLeaves([]odoo.Filter{
 		[]string{"type", "=", "remove"}, // Only return used leaves. With type = "add" we would get leaves that add days to holiday budget
 		[]interface{}{"employee_id", "=", employeeID},
 		"|",
@@ -56,33 +63,16 @@ func (c *Client) FetchLeavesBetweenDates(sid string, employeeID int, begin, end 
 	})
 }
 
-func (c Client) readLeaves(sid string, domainFilters []Filter) ([]Leave, error) {
-	// Prepare "search leaves" request
-	body, err := NewJsonRpcRequest(&ReadModelRequest{
+func (o Odoo) readLeaves(domainFilters []odoo.Filter) (LeaveList, error) {
+	result := LeaveList{}
+	err := o.querier.SearchGenericModel(context.Background(), odoo.SearchReadModel{
 		Model:  "hr.holidays",
 		Domain: domainFilters,
 		Fields: []string{"date_from", "date_to", "holiday_status_id", "state"},
 		Limit:  0,
 		Offset: 0,
-	}).Encode()
-	if err != nil {
-		return nil, fmt.Errorf("encoding request: %w", err)
-	}
-
-	res, err := c.makeRequest(sid, body)
-	if err != nil {
-		return nil, err
-	}
-
-	type readResult struct {
-		Length  int     `json:"length,omitempty"`
-		Records []Leave `json:"records,omitempty"`
-	}
-	result := &readResult{}
-	if err := c.unmarshalResponse(res.Body, result); err != nil {
-		return nil, err
-	}
-	return result.Records, nil
+	}, &result)
+	return result, err
 }
 
 func (l Leave) SplitByDay() []Leave {
@@ -97,8 +87,8 @@ func (l Leave) SplitByDay() []Leave {
 	startDate := l.DateFrom.ToTime()
 	endDate := l.DateTo.ToTime()
 	for currentDate := startDate; currentDate.Before(endDate); currentDate = currentDate.AddDate(0, 0, 1) {
-		from := Date(currentDate)
-		to := Date(currentDate.Add(hoursPerDay))
+		from := odoo.Date(currentDate)
+		to := odoo.Date(currentDate.Add(hoursPerDay))
 		newLeave := Leave{
 			DateFrom: &from,
 			DateTo:   &to,

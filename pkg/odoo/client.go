@@ -1,99 +1,161 @@
 package odoo
 
 import (
-	"bytes"
+	"context"
+	"encoding/json"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"log"
 	"net/http"
-	"os"
-	"regexp"
+	"net/url"
 	"strings"
 	"time"
 )
 
 // Client is the base struct that holds information required to talk to Odoo
 type Client struct {
-	baseURL string
-	db      string
-	http    *http.Client
+	parsedURL *url.URL
+	http      *http.Client
 }
 
-// NewClient returns a new client with its basic fields set
-func NewClient(baseURL, db string) *Client {
-	transport := http.DefaultTransport
-	if os.Getenv("DEBUG") != "" {
-		transport = newDebugTransport()
-	}
-	return &Client{strings.TrimSuffix(baseURL, "/"), db, &http.Client{
-		Timeout:   10 * time.Second,
-		Jar:       nil, // don't save any cookies!
-		Transport: transport,
-	}}
+// ClientOptions configures the Odoo client.
+type ClientOptions struct {
+	// UseDebugLogger sets the http.Transport field of the internal http client with a transport implementation that logs the raw contents of requests and responses.
+	// The logger is retrieved from the request's context via logr.FromContextOrDiscard.
+	// The log level used is '2'.
+	// Any "password":"..." byte content is replaced with a placeholder to avoid leaking credentials.
+	// Still, this should not be called in production as other sensitive information might be leaked.
+	// This method is meant to be called before any requests are made (for example after setting up the Client).
+	UseDebugLogger bool
 }
 
-type debugTransport struct {
-	pwRe *regexp.Regexp
-}
-
-func newDebugTransport() *debugTransport {
-	return &debugTransport{
-		pwRe: regexp.MustCompile(`("password":\s?").+("[,}])`),
-	}
-}
-
-func (t *debugTransport) RoundTrip(r *http.Request) (*http.Response, error) {
-	if r.Body != nil {
-		reqBody, _ := r.GetBody()
-		defer reqBody.Close()
-		buf, _ := ioutil.ReadAll(reqBody)
-		buf = t.pwRe.ReplaceAll(buf, []byte(`$1[confidential]$2`))
-		log.Printf("%s %s ---> %s", r.Method, r.URL.Path, string(buf))
-	}
-
-	res, err := http.DefaultTransport.RoundTrip(r)
-
-	if res.Body != nil {
-		defer res.Body.Close()
-		buf, _ := ioutil.ReadAll(res.Body)
-		log.Print("<--- ", string(buf))
-		res.Body = io.NopCloser(bytes.NewReader(buf))
-	}
-
-	return res, err
-}
-
-func (c *Client) makeRequest(sid string, body io.Reader) (*http.Response, error) {
-	// Create request
-	req, err := http.NewRequest("POST", c.baseURL+"/web/dataset/search_read", body)
+// Open returns a new Session by trying to log in.
+// The URL must be in the format of `https://user:pass@host[:port]/db-name`.
+// It returns error if baseURL is not parseable with url.Parse or if the Login failed.
+func Open(ctx context.Context, fullURL string, options ClientOptions) (*Session, error) {
+	client, err := NewClient(fullURL, options)
 	if err != nil {
-		return nil, fmt.Errorf("creating request: %w", err)
+		return nil, err
 	}
-	req.Header.Set("content-type", "application/json")
-	req.Header.Set("cookie", "session_id="+sid)
+	login, err := client.parseOdooURL(fullURL)
+	if err != nil {
+		return nil, err
+	}
+	if login.Username == "" || login.Password == "" || login.DatabaseName == "" {
+		return nil, fmt.Errorf("missing database name, username or password in URL")
+	}
+	return client.Login(ctx, login)
+}
+
+// NewClient returns a new Client.
+func NewClient(baseURL string, options ClientOptions) (*Client, error) {
+	client := &Client{}
+	parsed, err := url.Parse(baseURL)
+	if err != nil {
+		return nil, err
+	}
+	client.parsedURL = parsed
+
+	client.http = &http.Client{
+		Timeout: 10 * time.Second,
+		Jar:     nil, // don't save any cookies!
+	}
+
+	client.useDebugLogger(options.UseDebugLogger)
+	return client, nil
+}
+
+// RestoreSession restores a Session based on existing Session.SessionID and Session.UID.
+// It's not validated if the session is valid.
+func RestoreSession(client *Client, sessionID string, userID int) *Session {
+	return &Session{
+		SessionID: sessionID,
+		UID:       userID,
+		client:    client,
+	}
+}
+
+func (c *Client) parseOdooURL(baseURL string) (LoginOptions, error) {
+	u, err := url.Parse(baseURL)
+	if err != nil {
+		return LoginOptions{}, fmt.Errorf("proper URL format is required: %w", err)
+	}
+
+	options := LoginOptions{}
+
+	if u.User != nil {
+		options.Username = u.User.Username()
+		pw, _ := u.User.Password()
+		options.Password = pw
+	}
+
+	// Technical debt: This means an Odoo running under a path like https://odoo/pathprefix/ can't be parsed.
+	options.DatabaseName = strings.Trim(u.Path, "/")
+
+	c.parsedURL = &url.URL{Scheme: u.Scheme, Host: u.Host}
+	return options, nil
+}
+
+// LoginOptions contains all necessary authentication parameters.
+type LoginOptions struct {
+	DatabaseName string `json:"db,omitempty"`
+	Username     string `json:"login,omitempty"`
+	Password     string `json:"password,omitempty"`
+}
+
+// Login tries to authenticate the user against Odoo.
+// It returns a session if authentication was successful. An error is returned if
+//  - the credentials were wrong,
+//  - encoding or sending the request,
+//  - or decoding the request failed.
+func (c Client) Login(ctx context.Context, options LoginOptions) (*Session, error) {
+	resp, err := c.requestSession(ctx, options)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.decodeSession(resp)
+}
+
+func (c Client) requestSession(ctx context.Context, options LoginOptions) (*http.Response, error) {
+	// Prepare request
+	body, err := NewJSONRPCRequest(options).Encode()
+	if err != nil {
+		return nil, newEncodingRequestError(err)
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.parsedURL.String()+"/web/session/authenticate", body)
+	if err != nil {
+		return nil, newCreatingRequestError(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
 
 	// Send request
-	res, err := c.http.Do(req)
+	resp, err := c.http.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("sending HTTP request: %w", err)
-	} else if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("expected HTTP status 200 OK, got %s", res.Status)
+		return nil, fmt.Errorf("login: sending HTTP request: %w", err)
 	}
-	return res, nil
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("login: expected HTTP status 200 OK, got %s", resp.Status)
+	}
+	return resp, nil
 }
 
-func (c *Client) unmarshalResponse(body io.ReadCloser, into interface{}) error {
-	b, err := io.ReadAll(body)
-	defer body.Close()
-	if err != nil {
-		return fmt.Errorf("read result: %w", err)
+func (c *Client) decodeSession(res *http.Response) (*Session, error) {
+	// Decode response
+	// We don't use DecodeResult here because we're interested in whether unmarshalling the result failed.
+	// If so, this is likely because "uid" is set to `false` which indicates an authentication failure.
+	var response JSONRPCResponse
+	if err := json.NewDecoder(res.Body).Decode(&response); err != nil {
+		return nil, fmt.Errorf("login: decode response: %w", err)
+	}
+	if response.Error != nil {
+		return nil, fmt.Errorf("error from Odoo: %v", response.Error)
 	}
 
-	buf := bytes.NewBuffer(b)
-	// decode response
-	if err := DecodeResult(buf, &into); err != nil {
-		return fmt.Errorf("decoding result: %w", err)
+	// Decode session
+	var session Session
+	if err := json.Unmarshal(*response.Result, &session); err != nil {
+		// UID is not set, authentication failed
+		return nil, ErrInvalidCredentials
 	}
-	return nil
+	session.client = c
+	return &session, nil
 }

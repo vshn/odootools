@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/matryer/is"
+	"github.com/stretchr/testify/assert"
 	"github.com/vshn/odootools/pkg/odoo"
 	"github.com/vshn/odootools/pkg/web"
 )
@@ -23,22 +23,24 @@ func TestMain(m *testing.M) {
 }
 
 func TestHealthz(t *testing.T) {
-	is := is.New(t)
-
 	req := httptest.NewRequest("GET", "/healthz", nil)
 	res := httptest.NewRecorder()
 	newServer("").ServeHTTP(res, req)
 
-	is.Equal(200, res.Code)
+	assert.Equal(t, res.Code, 200)
 	body, err := ioutil.ReadAll(res.Body)
-	is.NoErr(err)
-	is.Equal(body, []byte{}) // response body
+	assert.NoError(t, err)
+	assert.Equal(t, []byte{}, body) // response body
 }
 
 func newServer(odooURL string) *web.Server {
 	var oc *odoo.Client
 	if odooURL != "" {
-		oc = odoo.NewClient(odooURL, "TestDB")
+		c, err := odoo.NewClient(odooURL, odoo.ClientOptions{})
+		if err != nil {
+			panic(err)
+		}
+		oc = c
 	}
-	return web.NewServer(oc, "0000000000000000000000000000000000000000000=")
+	return web.NewServer(oc, "0000000000000000000000000000000000000000000=", "TestDB")
 }

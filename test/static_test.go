@@ -5,19 +5,17 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/matryer/is"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestStaticAssets(t *testing.T) {
-	is := is.New(t)
-
 	req := httptest.NewRequest("GET", "/robots.txt", nil)
 	res := httptest.NewRecorder()
 	newServer("").ServeHTTP(res, req)
 
-	is.Equal(200, res.Code)
-	is.Equal(res.Header().Get("content-type"), "text/plain; charset=UTF-8") // Content-Type
+	assert.Equal(t, 200, res.Code)
+	assert.Equal(t, "text/plain; charset=UTF-8", res.Header().Get("content-type"))
 	body, err := ioutil.ReadAll(res.Body)
-	is.NoErr(err)
-	is.Equal(string(body), "User-agent: *\nDisallow: /\n")
+	assert.NoError(t, err)
+	assert.Equal(t, "User-agent: *\nDisallow: /\n", string(body))
 }
