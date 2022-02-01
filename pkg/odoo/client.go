@@ -13,9 +13,6 @@ import (
 // Client is the base struct that holds information required to talk to Odoo
 type Client struct {
 	parsedURL *url.URL
-	db        string
-	username  string
-	password  string
 	http      *http.Client
 }
 
@@ -30,15 +27,32 @@ type ClientOptions struct {
 	UseDebugLogger bool
 }
 
-// Open returns a new client and tries to log in to create a session.
+// Open returns a new Session by trying to log in.
 // The URL must be in the format of `https://user:pass@host[:port]/db-name`.
-// It returns error if baseURL is not parseable with url.Parse or if the login failed.
-func Open(ctx context.Context, baseURL string, options ClientOptions) (*Session, error) {
-	client := &Client{}
-	err := client.parseOdooURL(baseURL)
+// It returns error if baseURL is not parseable with url.Parse or if the Login failed.
+func Open(ctx context.Context, fullURL string, options ClientOptions) (*Session, error) {
+	client, err := NewClient(fullURL, options)
 	if err != nil {
 		return nil, err
 	}
+	login, err := client.parseOdooURL(fullURL)
+	if err != nil {
+		return nil, err
+	}
+	if login.Username == "" || login.Password == "" || login.DatabaseName == "" {
+		return nil, fmt.Errorf("missing database name, username or password in URL")
+	}
+	return client.Login(ctx, login)
+}
+
+// NewClient returns a new Client.
+func NewClient(baseURL string, options ClientOptions) (*Client, error) {
+	client := &Client{}
+	parsed, err := url.Parse(baseURL)
+	if err != nil {
+		return nil, err
+	}
+	client.parsedURL = parsed
 
 	client.http = &http.Client{
 		Timeout: 10 * time.Second,
@@ -46,51 +60,54 @@ func Open(ctx context.Context, baseURL string, options ClientOptions) (*Session,
 	}
 
 	client.useDebugLogger(options.UseDebugLogger)
-
-	return client.login(ctx)
+	return client, nil
 }
 
-func (c *Client) parseOdooURL(baseURL string) error {
+// RestoreSession restores a Session based on existing Session.SessionID and Session.UID.
+// It's not validated if the session is valid.
+func RestoreSession(client *Client, sessionID string, userID int) *Session {
+	return &Session{
+		SessionID: sessionID,
+		UID:       userID,
+		client:    client,
+	}
+}
+
+func (c *Client) parseOdooURL(baseURL string) (LoginOptions, error) {
 	u, err := url.Parse(baseURL)
 	if err != nil {
-		return fmt.Errorf("proper URL format is required: %w", err)
+		return LoginOptions{}, fmt.Errorf("proper URL format is required: %w", err)
 	}
 
-	if u.User == nil || u.User.Username() == "" {
-		return fmt.Errorf("missing username and password in URL")
-	}
-	pw := ""
-	if value, set := u.User.Password(); set {
-		pw = value
-	} else {
-		return fmt.Errorf("missing password in URL")
+	options := LoginOptions{}
+
+	if u.User != nil {
+		options.Username = u.User.Username()
+		pw, _ := u.User.Password()
+		options.Password = pw
 	}
 
 	// Technical debt: This means an Odoo running under a path like https://odoo/pathprefix/ can't be parsed.
-	db := strings.Trim(u.Path, "/")
-	if db == "" {
-		return fmt.Errorf("missing db name in URL path")
-	}
+	options.DatabaseName = strings.Trim(u.Path, "/")
+
 	c.parsedURL = &url.URL{Scheme: u.Scheme, Host: u.Host}
-	c.username = u.User.Username()
-	c.password = pw
-	c.db = db
-	return nil
+	return options, nil
 }
 
-type loginParams struct {
-	DB       string `json:"db,omitempty"`
-	Login    string `json:"login,omitempty"`
-	Password string `json:"password,omitempty"`
+// LoginOptions contains all necessary authentication parameters.
+type LoginOptions struct {
+	DatabaseName string `json:"db,omitempty"`
+	Username     string `json:"login,omitempty"`
+	Password     string `json:"password,omitempty"`
 }
 
-// login tries to authenticate the user against Odoo.
+// Login tries to authenticate the user against Odoo.
 // It returns a session if authentication was successful. An error is returned if
 //  - the credentials were wrong,
 //  - encoding or sending the request,
 //  - or decoding the request failed.
-func (c Client) login(ctx context.Context) (*Session, error) {
-	resp, err := c.requestSession(ctx, c.username, c.password)
+func (c Client) Login(ctx context.Context, options LoginOptions) (*Session, error) {
+	resp, err := c.requestSession(ctx, options)
 	if err != nil {
 		return nil, err
 	}
@@ -98,9 +115,9 @@ func (c Client) login(ctx context.Context) (*Session, error) {
 	return c.decodeSession(resp)
 }
 
-func (c Client) requestSession(ctx context.Context, login string, password string) (*http.Response, error) {
+func (c Client) requestSession(ctx context.Context, options LoginOptions) (*http.Response, error) {
 	// Prepare request
-	body, err := NewJSONRPCRequest(loginParams{c.db, login, password}).Encode()
+	body, err := NewJSONRPCRequest(options).Encode()
 	if err != nil {
 		return nil, newEncodingRequestError(err)
 	}

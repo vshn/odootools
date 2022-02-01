@@ -27,18 +27,6 @@ func TestClient_parseURL(t *testing.T) {
 		expectedDBName   string
 		expectedError    string
 	}{
-		"GivenURLWithoutUserInfo_ThenExpectError": {
-			givenURL:      "https://host:80/db",
-			expectedError: "missing username and password in URL",
-		},
-		"GivenURLWithoutPassword_ThenExpectError": {
-			givenURL:      "https://user@host:80/db",
-			expectedError: "missing password in URL",
-		},
-		"GivenURLWithoutDB_ThenExpectError": {
-			givenURL:      "https://user:pass@host:80/",
-			expectedError: "missing db name in URL path",
-		},
 		"GivenValidURL_ThenExpectParsedProperties": {
 			givenURL:         "https://user:pass@host:80/db-name",
 			expectedUsername: "user",
@@ -49,15 +37,15 @@ func TestClient_parseURL(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			c := &Client{}
-			err := c.parseOdooURL(tc.givenURL)
+			login, err := c.parseOdooURL(tc.givenURL)
 			if tc.expectedError != "" {
 				assert.EqualError(t, err, tc.expectedError)
 				return
 			}
 			require.NoError(t, err)
-			assert.Equal(t, tc.expectedDBName, c.db)
-			assert.Equal(t, tc.expectedUsername, c.username)
-			assert.Equal(t, tc.expectedPassword, c.password)
+			assert.Equal(t, tc.expectedDBName, login.DatabaseName)
+			assert.Equal(t, tc.expectedUsername, login.Username)
+			assert.Equal(t, tc.expectedPassword, login.Password)
 		})
 	}
 }
