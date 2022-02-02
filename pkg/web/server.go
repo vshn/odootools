@@ -110,3 +110,12 @@ func (s *Server) unprotectedRoutes() middleware.Skipper {
 		return false
 	}
 }
+
+func (s *Server) helpPage(e echo.Context) error {
+	return e.Render(http.StatusOK, "help",
+		controller.Values{
+			"Nav": controller.Values{
+				"LoggedIn": true,
+			},
+		})
+}

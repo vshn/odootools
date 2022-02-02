@@ -1,0 +1,6 @@
+{{ define "main" }}
+<h1>Help</h1>
+{{ with .Error }}
+<div class="alert alert-warning" role="alert">{{ . }}</div>
+{{ end }}
+{{ end }}
