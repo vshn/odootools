@@ -3,4 +3,46 @@
 {{ with .Error }}
 <div class="alert alert-warning" role="alert">{{ . }}</div>
 {{ end }}
+<div>
+    <h3>Overtime calculation</h3>
+    <p>
+        The overtime is calculated with following formula:
+        <mark>overtime = worked time + excused time - daily maximum.</mark>
+        Let's break this down:
+    </p>
+    <p>
+        <u>Worked time</u> is the sum of the attendances in a single day with all "Action" fields being empty.
+        Please provide a clean timesheet where the order of sign-ins and sign-outs is correct, otherwise calculation may fail or provide incorrect numbers.
+    </p>
+    <p>
+        <i>Note</i>: Attendances with "Action" being "Outside office hours" are multiplied with <i>1.5</i>.
+    </p>
+    <p>
+        <u>Excused time</u> is the sum of the time when you are considered absent with approval.
+        Currently, excusable absences are:
+    </p>
+    <ul>
+        <li>Sick / Medical consultation</li>
+        <li>Authorities</li>
+        <li>Requested Public Service</li>
+    </ul>
+    <p>
+        <i>Note</i>: The excused time is capped at the daily maximum since this time is a "Goodie" from VSHN that you can use to avoid making undertime.
+        For example, if your daily maximum is 8h (working schedule 100%), you have worked 8h, but also you log 1h of sick leave (total logged time 9h), then the sick leave is ignored and your overtime is 0 minutes.
+        However, if you have worked 7.5h and recorded 1h sick leave (total logged time 8.5h), then your overtime is also 0 minutes as the sick leave is effectively worth 30m in this case.
+        Conversely, if you are sick the whole day, be sure to log at least 8h (or your equivalent of your schedule) of sick leave for the day.
+    </p>
+    <p>
+        <u>Daily maximum</u> is the calculated time that you have to work in a single day based on your working schedule in your contract.
+        For example, for a 100% contract this is equal to 8h, for an 80% contract it's 6h24m, for a 60% contract it's 4h48m etc.
+    </p>
+    <p>
+        <i>Note</i>: Before the introduction of the 40h-week in January 2021, the base daily max was 8h30m.
+        The calculator should reflect this correctly.
+    </p>
+    <p>
+        <i>Note</i>: All leaves (except "Unpaid") and days on weekends reduce the daily maximum by the contract-adjusted time.
+        For example, a public holiday for an 80% working schedule equals to 6h24m.
+    </p>
+</div>
 {{ end }}
