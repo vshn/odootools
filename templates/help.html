@@ -13,6 +13,7 @@
     <p>
         <u>Worked time</u> is the sum of the attendances in a single day with all "Action" fields being empty.
         Please provide a clean timesheet where the order of sign-ins and sign-outs is correct, otherwise calculation may fail or provide incorrect numbers.
+        Days without any attendance or leaves simply count towards undertime.
     </p>
     <p>
         <i>Note</i>: Attendances with "Action" being "Outside office hours" are multiplied with <i>1.5</i>.
@@ -43,6 +44,74 @@
     <p>
         <i>Note</i>: All leaves (except "Unpaid") and days on weekends reduce the daily maximum by the contract-adjusted time.
         For example, a public holiday for an 80% working schedule equals to 6h24m.
+    </p>
+</div>
+
+<div>
+    <h3>Overtime delta</h3>
+    <p>
+        The overtime delta in the monthly or yearly reports is only indicating a difference towards the theoretical target work time after deducting all applicable absences.
+        It is <strong>not</strong> indicating your current balance, but rather just showing whether you've worked more or less towards the contracted working schedule.
+    </p>
+</div>
+
+<div>
+    <h3>Overtime balance and Payslip</h3>
+     <p>
+        The overtime balance is calculated with following formula:
+        <mark>new overtime balance = overtime balance from last month's payslip + overtime delta</mark>
+    </p>
+    <p>
+        The calculator doesn't cover all edge and special cases regarding the overtime balance.
+        For example, it doesn't automatically convert remaining holiday leaves into overtime hours at New Year's Eve.
+        There might be other special occasions where PeopleOps needs to adjust the overtime balance manually.
+    </p>
+    <p>
+        For this reason, the overtime balance is stored in your payslip associated with the corresponding month.
+        This is done manually by PeopleOps.
+        That means the displayed overtime balance in the reports is merely a <strong>non-guaranteed prediction</strong> that is calculated from the last month's payslip with the overtime delta.
+        The value in the <i>payslip</i> is ultimately <i>authoritative</i> of your overtime balance.
+    </p>
+    <p>
+        <i>Note for PeopleOps</i>: Regarding the overtime balance in the payslip, please provide the overtime balance in one of the following recognized formats (you can still add arbitrary comment before or after the value).
+    </p>
+    <ul>
+        <li>hhh:mm (e.g. '15:54')</li>
+        <li>hhh:mm:ss (e.g. '153:54:45')</li>
+    </ul>
+</div>
+
+<div>
+    <h3>Viewing report for someone else</h3>
+    <p>
+        When requesting a monthly or yearly report for someone else, you need additional permissions in Odoo.
+        If the report is completely empty, it's most likely due to missing permissions.
+    </p>
+</div>
+
+<div>
+    <h3>Timezone</h3>
+    <p>
+        While Odoo saves timestamps in UTC, the calculator uses <i>Europe/Zurich</i> as its timezone to calculate the overtime.
+        This should automatically reflect daylight saving time, but it doesn't calculate the overtime correctly for people working outside this timezone.
+        This issue needs to be addressed for VSHN Canada, but it depends if and how Odoo is used in such cases.
+    </p>
+</div>
+
+<div>
+    <h3>New VSHNeers</h3>
+    <p>
+        New VSHNeers starting a few days later than first day of a month will have the first days undertime (as if they weren't present).
+    </p>
+</div>
+
+<div>
+    <h3>Short-time work in 2020</h3>
+    <p>
+        The calculator uses the contract information in Odoo to determine your working schedule.
+        During the first Corona waves in Switzerland VSHN went into short-time work where people worked at a lower schedule while still being paid 100% of their contractual schedule.
+        As a consequence, some people will see undertime calculated in their reports in 2020.
+        However, the overtime balance stored in the payslip
     </p>
 </div>
 {{ end }}
