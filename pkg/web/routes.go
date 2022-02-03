@@ -22,7 +22,7 @@ func (s *Server) setupRoutes(middleware ...echo.MiddlewareFunc) {
 	report.GET("/:employee/:year", s.OvertimeReport)
 	report.GET("/:employee/:year/:month", s.OvertimeReport)
 
-	e.GET("/help", s.helpPage)
+	e.GET("/help", s.helpPage, middleware...)
 
 	// Authentication
 	e.GET("/login", s.LoginForm)
