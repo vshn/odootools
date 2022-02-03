@@ -127,7 +127,7 @@ func (c *ReportController) searchEmployee(_ pipeline.Context) error {
 		c.Employee = e
 		return err
 	}
-	e, err := c.OdooClient.FetchEmployeeByUserID(c.UserID)
+	e, err := c.OdooClient.FetchEmployeeByUserID(c.OwnUserID)
 	c.Employee = e
 	return err
 }

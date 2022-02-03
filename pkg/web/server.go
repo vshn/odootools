@@ -69,7 +69,7 @@ func (s Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (s Server) newControllerContext(e echo.Context) *controller.Context {
 	sess := s.GetOdooSession(e)
-	return &controller.Context{Echo: e, OdooClient: model.NewOdoo(sess), UserID: sess.UID}
+	return &controller.Context{Echo: e, OdooClient: model.NewOdoo(sess), OwnUserID: sess.UID}
 }
 
 func (s Server) ShowError(e echo.Context, err error) error {
