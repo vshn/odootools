@@ -56,6 +56,7 @@ func NewServer(
 		ErrorHandler: func(err error, context echo.Context) error {
 			return context.Redirect(http.StatusTemporaryRedirect, "/login")
 		},
+		Skipper: s.unprotectedRoutes(),
 	})
 	e.Renderer = controller.NewRenderer()
 	s.setupRoutes(authMiddleware)
@@ -109,4 +110,13 @@ func (s *Server) unprotectedRoutes() middleware.Skipper {
 		}
 		return false
 	}
+}
+
+func (s *Server) helpPage(e echo.Context) error {
+	return e.Render(http.StatusOK, "help",
+		controller.Values{
+			"Nav": controller.Values{
+				"LoggedIn": true,
+			},
+		})
 }
