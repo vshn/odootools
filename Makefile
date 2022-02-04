@@ -30,7 +30,7 @@ build.bin: fmt vet templates/bootstrap.min.css ## Build binary
 
 .PHONY: build.docker
 build.docker: build.bin ## Build docker image
-	docker build -t $(CONTAINER_IMG) .
+	$(DOCKER) build -t $(CONTAINER_IMG) .
 
 .PHONY: test
 test:
@@ -55,7 +55,7 @@ run: ## Run a local instance on localhost:4200
 	go run main.go web
 
 run.docker: build.docker ## Run in docker on port 8080
-	docker run --rm -it --env "SECRET_KEY=$(LOCAL_SECRET_KEY)" --env ODOO_DB --env ODOO_URL --env "LISTEN_ADDRESS=:8080" --publish "8080:8080" $(CONTAINER_IMG) web
+	$(DOCKER) run --rm -it --env "SECRET_KEY=$(LOCAL_SECRET_KEY)" --env ODOO_DB --env ODOO_URL --env "LISTEN_ADDRESS=:8080" --publish "8080:8080" $(CONTAINER_IMG) web
 
 templates/bootstrap.min.css: generate
 
@@ -69,7 +69,7 @@ preview.template: .helmfile ## Render helmfile template for preview (also render
 
 preview.push: export CONTAINER_IMG = $(PREVIEW_IMG)
 preview.push: build.docker ## Push docker image to preview environment
-	docker push $(CONTAINER_IMG)
+	$(DOCKER) push $(CONTAINER_IMG)
 
 preview.deploy: export IMG_TAG = latest
 preview.deploy: helm_cmd = apply
