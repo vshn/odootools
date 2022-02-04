@@ -11,3 +11,5 @@ PREVIEW_IMG ?= registry.cloudscale-lpg-2.appuio.cloud/vshn-odoo-test/odootools:$
 LOCAL_SECRET_KEY ?= rQKkLcSZ1I5Skruo+jDRLK4YjFsIKbX1YmPFMAxKbWI=
 
 ENV ?= test
+
+DOCKER ?= $(shell which podman &>/dev/null && echo podman || echo docker)
