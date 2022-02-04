@@ -52,7 +52,7 @@ lint: fmt vet generate ## All-in-one linting
 run: export LISTEN_ADDRESS=localhost:4200
 run: export SECRET_KEY=$(LOCAL_SECRET_KEY)
 run: ## Run a local instance on localhost:4200
-	go run main.go web
+	go run . web
 
 run.docker: build.docker ## Run in docker on port 8080
 	docker run --rm -it --env "SECRET_KEY=$(LOCAL_SECRET_KEY)" --env ODOO_DB --env ODOO_URL --env "LISTEN_ADDRESS=:8080" --publish "8080:8080" $(CONTAINER_IMG) web
