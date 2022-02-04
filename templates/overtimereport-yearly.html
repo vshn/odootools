@@ -22,7 +22,7 @@
     {{ range .MonthlyReports }}
     <tr>
         <td><a href="{{ .DetailViewLink }}">{{ .Name }}</a></td>
-        <td>{{ .LeaveDays }}</td>
+        <td>{{ .LeaveDays }}d</td>
         <td>{{ .ExcusedHours }}</td>
         <td>{{ .WorkedHours }}</td>
         <td>{{ .OvertimeHours }}</td>
@@ -39,7 +39,7 @@
     </tr>
     <tr>
         <td></td>
-        <td>{{ .Summary.TotalLeaves }}</td>
+        <td>{{ .Summary.TotalLeaves }}d</td>
         <td>{{ .Summary.TotalExcused }}</td>
         <td>{{ .Summary.TotalWorked }}</td>
         <td>{{ .Summary.TotalOvertime }}</td>
