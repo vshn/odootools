@@ -19,6 +19,7 @@
         <label for="month" class="form-label">Month</label>
         <input type="number" class="form-control" name="month" id="month" min="1" max="12" value="1">
     </div>
+    {{- if .Roles.HRManager }}
     <div class="mb-3 form-check">
         <input class="form-check-input" type="radio" id="userselfradio" name="userscope" value="user-self-radio"
                checked>
@@ -29,12 +30,13 @@
     <div class="mb-3 form-check form-check-inline">
         <input class="form-check-input" type="radio" id="userforeignradio" name="userscope" value="user-foreign-radio">
         <label class="form-check-label" for="userforeignradio">
-            For someone else (you'll need appropriate permissions)
+            For someone else
         </label>
         <span>
             <input class="form-control" type="text" name="username" id="username" placeholder="Search Username">
         </span>
     </div>
+    {{- end }}
     <div class="mb-3">
         <button type="submit" name="monthlyReport" value="true" class="btn btn-primary">Create Monthly Report</button>
         <button type="submit" name="yearlyReport" value="true" class="btn btn-secondary">Create Yearly Report</button>

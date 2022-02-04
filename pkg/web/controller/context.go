@@ -8,5 +8,5 @@ import (
 type Context struct {
 	Echo       echo.Context
 	OdooClient *model.Odoo
-	UserID     int
+	OwnUserID  int
 }
