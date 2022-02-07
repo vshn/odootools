@@ -14,7 +14,7 @@ env:
 jobs:
   install:
     runs-on: ubuntu-latest
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'dependency') }}
+    if: ${{ !startsWith(github.head_ref, 'renovate/') }}
     environment: preview
     steps:
     - uses: actions/checkout@v2
