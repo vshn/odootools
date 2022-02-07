@@ -148,19 +148,33 @@ func TestReporter_ReduceAttendancesToShifts(t *testing.T) {
 
 func TestReporter_prepareWorkDays(t *testing.T) {
 	tests := map[string]struct {
-		givenYear    int
-		givenMonth   int
-		expectedDays []*DailySummary
-		nowF         func() time.Time
+		givenYear      int
+		givenMonth     int
+		givenContracts []model.Contract
+		expectedDays   []*DailySummary
+		expectedError  string
+		nowF           func() time.Time
 	}{
 		"GivenFullMonthInThePast_ThenReturnAllDays": {
-			givenYear:    2021,
-			givenMonth:   5,
+			givenYear:  2021,
+			givenMonth: 5,
+			givenContracts: []model.Contract{
+				{Start: odoo.MustParseDate("2021-01-01"), WorkingSchedule: &model.WorkingSchedule{Name: "100%"}},
+			},
 			expectedDays: generateMonth(t, 2021, 5, 31),
 		},
+		"GivenNoContracts_ThenExpectError": {
+			givenYear:     2021,
+			givenMonth:    5,
+			expectedDays:  generateMonth(t, 2021, 5, 31),
+			expectedError: "no contract found that covers date: 2021-05-01 00:00:00",
+		},
 		"GivenCurrentMonth_ThenReturnNoMoreThanToday": {
-			givenYear:    2021,
-			givenMonth:   3,
+			givenYear:  2021,
+			givenMonth: 3,
+			givenContracts: []model.Contract{
+				{Start: odoo.MustParseDate("2021-01-01"), WorkingSchedule: &model.WorkingSchedule{Name: "100%"}},
+			},
 			expectedDays: generateMonth(t, 2021, 3, 7),
 			nowF: func() time.Time {
 				return time.Unix(1615113136, 0) // Sunday, March 7, 2021 10:32:16
@@ -179,11 +193,17 @@ func TestReporter_prepareWorkDays(t *testing.T) {
 			}
 
 			r := &ReportBuilder{
-				year:     tt.givenYear,
-				month:    tt.givenMonth,
-				timezone: localzone(t),
+				year:      tt.givenYear,
+				month:     tt.givenMonth,
+				timezone:  localzone(t),
+				contracts: model.ContractList{Items: tt.givenContracts},
 			}
-			result := r.prepareDays()
+			result, err := r.prepareDays()
+			if tt.expectedError != "" {
+				assert.EqualError(t, err, tt.expectedError)
+				return
+			}
+			require.NoError(t, err)
 			require.Len(t, result, len(tt.expectedDays))
 			for i := range result {
 				assert.Equal(t, tt.expectedDays[i].Date, result[i].Date)

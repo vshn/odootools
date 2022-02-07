@@ -20,7 +20,7 @@ type YearlySummary struct {
 	TotalLeaves   float64
 }
 
-func (r *ReportBuilder) CalculateYearlyReport() YearlyReport {
+func (r *ReportBuilder) CalculateYearlyReport() (YearlyReport, error) {
 	reports := make([]MonthlyReport, 0)
 
 	max := 12
@@ -34,7 +34,10 @@ func (r *ReportBuilder) CalculateYearlyReport() YearlyReport {
 
 	for _, month := range makeRange(min, max) {
 		r.month = month
-		monthlyReport := r.CalculateMonthlyReport()
+		monthlyReport, err := r.CalculateMonthlyReport()
+		if err != nil {
+			return YearlyReport{}, err
+		}
 		reports = append(reports, monthlyReport)
 	}
 	yearlyReport := YearlyReport{
@@ -50,7 +53,7 @@ func (r *ReportBuilder) CalculateYearlyReport() YearlyReport {
 		summary.TotalLeaves += month.Summary.TotalLeave
 	}
 	yearlyReport.Summary = summary
-	return yearlyReport
+	return yearlyReport, nil
 }
 
 func makeRange(min, max int) []int {
