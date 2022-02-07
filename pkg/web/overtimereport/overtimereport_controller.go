@@ -104,7 +104,10 @@ func (c *ReportController) calculateMonthlyReport(_ pipeline.Context) error {
 	reporter := timesheet.NewReporter(c.Attendances, c.Leaves, c.Employee, c.Contracts).
 		SetMonth(c.Input.Year, c.Input.Month).
 		SetTimeZone("Europe/Zurich") // hardcoded for now
-	report := reporter.CalculateMonthlyReport()
+	report, err := reporter.CalculateMonthlyReport()
+	if err != nil {
+		return err
+	}
 	values := c.ReportView.GetValuesForMonthlyReport(report, c.Payslip)
 	return c.Echo.Render(http.StatusOK, monthlyReportTemplateName, values)
 }
@@ -113,7 +116,10 @@ func (c *ReportController) calculateYearlyReport(_ pipeline.Context) error {
 	reporter := timesheet.NewReporter(c.Attendances, c.Leaves, c.Employee, c.Contracts).
 		SetMonth(c.Input.Year, 1).
 		SetTimeZone("Europe/Zurich") // hardcoded for now
-	report := reporter.CalculateYearlyReport()
+	report, err := reporter.CalculateYearlyReport()
+	if err != nil {
+		return err
+	}
 	values := c.ReportView.GetValuesForYearlyReport(report)
 	return c.Echo.Render(http.StatusOK, yearlyReportTemplateName, values)
 }

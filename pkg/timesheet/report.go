@@ -1,7 +1,6 @@
 package timesheet
 
 import (
-	"fmt"
 	"sort"
 	"time"
 
@@ -100,12 +99,15 @@ func (r *ReportBuilder) SetTimeZone(zone string) *ReportBuilder {
 	return r
 }
 
-func (r *ReportBuilder) CalculateMonthlyReport() MonthlyReport {
+func (r *ReportBuilder) CalculateMonthlyReport() (MonthlyReport, error) {
 	filteredAttendances := r.filterAttendancesInMonth()
 	shifts := r.reduceAttendancesToShifts(filteredAttendances)
 	filteredLeaves := r.filterLeavesInMonth()
 	absences := r.reduceLeavesToBlocks(filteredLeaves)
-	dailySummaries := r.prepareDays()
+	dailySummaries, err := r.prepareDays()
+	if err != nil {
+		return MonthlyReport{}, err
+	}
 
 	r.addAttendanceShiftsToDailies(shifts, dailySummaries)
 	r.addAbsencesToDailies(absences, dailySummaries)
@@ -125,7 +127,7 @@ func (r *ReportBuilder) CalculateMonthlyReport() MonthlyReport {
 		Employee:       r.employee,
 		Year:           r.year,
 		Month:          r.month,
-	}
+	}, nil
 }
 
 func (r *ReportBuilder) reduceAttendancesToShifts(attendances []model.Attendance) []AttendanceShift {
@@ -161,7 +163,7 @@ func (r *ReportBuilder) reduceLeavesToBlocks(leaves []model.Leave) []AbsenceBloc
 	return blocks
 }
 
-func (r *ReportBuilder) prepareDays() []*DailySummary {
+func (r *ReportBuilder) prepareDays() ([]*DailySummary, error) {
 	days := make([]*DailySummary, 0)
 
 	firstDay := time.Date(r.year, time.Month(r.month), 1, 0, 0, 0, 0, time.UTC)
@@ -174,13 +176,12 @@ func (r *ReportBuilder) prepareDays() []*DailySummary {
 	for currentDay := firstDay; currentDay.Before(lastDay); currentDay = currentDay.AddDate(0, 0, 1) {
 		currentRatio, err := r.contracts.GetFTERatioForDay(odoo.Date(currentDay))
 		if err != nil {
-			fmt.Println(err)
-			currentRatio = 0
+			return days, err
 		}
 		days = append(days, NewDailySummary(currentRatio, currentDay.In(r.timezone)))
 	}
 
-	return days
+	return days, nil
 }
 
 func (r *ReportBuilder) getDateTomorrow() time.Time {
