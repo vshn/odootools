@@ -74,6 +74,11 @@ func (c *ReportController) parseInput(_ pipeline.Context) error {
 
 func (c *ReportController) fetchEmployeeByID(_ pipeline.Context) error {
 	employeeID := c.Input.EmployeeID
+	if c.SessionData.Employee != nil && c.SessionData.Employee.ID == employeeID {
+		c.Employee = c.SessionData.Employee
+		return nil
+	}
+
 	employee, err := c.OdooClient.FetchEmployeeByID(employeeID)
 	if employee == nil {
 		return fmt.Errorf("no employee found with given ID: %d", employeeID)
@@ -133,9 +138,11 @@ func (c *ReportController) searchEmployee(_ pipeline.Context) error {
 		c.Employee = e
 		return err
 	}
-	e, err := c.OdooClient.FetchEmployeeByUserID(c.OwnUserID)
-	c.Employee = e
-	return err
+	if c.SessionData.Employee != nil {
+		c.Employee = c.SessionData.Employee
+		return nil
+	}
+	return fmt.Errorf("no Employee found for user ID %q", c.OdooSession.UID)
 }
 
 func (c *ReportController) fetchPayslip(_ pipeline.Context) error {
