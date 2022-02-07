@@ -48,7 +48,7 @@ func NewServer(
 		Store: s.cookieStore,
 	}))
 	authMiddleware := middleware.KeyAuthWithConfig(middleware.KeyAuthConfig{
-		KeyLookup: "cookie:" + CookieSID,
+		KeyLookup: "cookie:" + SessionCookieID,
 		Validator: func(s string, context echo.Context) (bool, error) {
 			// 's' contains already the encrypted cookie value, which means we likely have a valid odoo session
 			return true, nil
@@ -69,7 +69,8 @@ func (s Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (s Server) newControllerContext(e echo.Context) *controller.Context {
 	sess := s.GetOdooSession(e)
-	return &controller.Context{Echo: e, OdooClient: model.NewOdoo(sess), OwnUserID: sess.UID}
+	data := s.GetSessionData(e)
+	return &controller.Context{Echo: e, OdooClient: model.NewOdoo(sess), OdooSession: sess, SessionData: data}
 }
 
 func (s Server) ShowError(e echo.Context, err error) error {

@@ -10,13 +10,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/vshn/odootools/pkg/odoo"
 )
 
 func TestRenderLoginForm(t *testing.T) {
 	req := httptest.NewRequest("GET", "/login", nil)
 	res := httptest.NewRecorder()
-	newServer("").ServeHTTP(res, req)
+	newTestServer("").ServeHTTP(res, req)
 	assert.Equal(t, http.StatusOK, res.Code, "status code")
 	assert.Equal(t, "text/html; charset=UTF-8", res.Header().Get("content-type"), "content-type")
 	body, err := ioutil.ReadAll(res.Body)
@@ -36,9 +35,11 @@ func TestLoginSuccess(t *testing.T) {
 		numRequests++
 		switch numRequests {
 		case 1:
-			handleLogin(t, w, r)
+			respondLogin(t, w, r)
 		case 2:
-			handleEmployeeSearch(t, w, r)
+			respondEmployeeSearch(t, w, r)
+		case 3:
+			respondGroupMembershipSearch(t, w, r)
 		default:
 			t.Fail()
 		}
@@ -52,36 +53,27 @@ func TestLoginSuccess(t *testing.T) {
 	req.Header.Set("content-type", "application/x-www-form-urlencoded")
 
 	res := httptest.NewRecorder()
-	newServer(odooMock.URL).ServeHTTP(res, req)
+	newTestServer(odooMock.URL).ServeHTTP(res, req)
 
 	assert.Equal(t, http.StatusFound, res.Code, "http status")
 	assert.Equal(t, "/report", res.Header().Get("Location"), "location header")
 
-	require.Len(t, res.Result().Cookies(), 1, "number of cookies")
-	c := res.Result().Cookies()[0]
-	assert.Equal(t, "odootools", c.Name, "cookie name")
-	assert.NotContains(t, c.Value, testLogin, "no password in cookie")
-	assert.True(t, c.HttpOnly, "cookie httpOnly flag")
-	assert.True(t, c.Secure, "cookie secure flag")
+	b, err := ioutil.ReadAll(res.Body)
+	require.NoError(t, err)
+	body := string(b)
+	assert.NotContains(t, body, `class="alert`)
+
+	require.Len(t, res.Result().Cookies(), 2, "number of cookies")
+	assertSessionCookie(t, res.Result().Cookies()[0], testLogin)
+	assertDataCookie(t, res.Result().Cookies()[1])
 	assert.Equal(t, 3, numRequests, "number of requests")
 }
 
-func handleEmployeeSearch(t *testing.T, w http.ResponseWriter, r *http.Request) {
-	assert.Equal(t, "/web/dataset/search_read", r.RequestURI)
-
-	b, err := ioutil.ReadAll(r.Body)
-	require.NoError(t, err)
-	body := string(b)
-
-	t.Log(body)
-	assert.Contains(t, body, ``)
-}
-
-func handleLogin(t *testing.T, w http.ResponseWriter, r *http.Request) {
+func respondLogin(t *testing.T, w http.ResponseWriter, r *http.Request) {
 	assert.Equal(t, "/web/session/authenticate", r.RequestURI)
 	b, err := ioutil.ReadAll(r.Body)
 	require.NoError(t, err)
-	body := string(b)
+	body := strings.TrimSpace(string(b))
 
 	t.Log(body)
 	assert.Contains(t, body, `"db":"TestDB"`)
@@ -108,11 +100,65 @@ func handleLogin(t *testing.T, w http.ResponseWriter, r *http.Request) {
 	assert.NoError(t, err)
 }
 
-func TestLoginBadCredentials(t *testing.T) {
-	var (
-		numRequests = 0
-	)
+func respondEmployeeSearch(t *testing.T, w http.ResponseWriter, r *http.Request) {
+	assert.Equal(t, "/web/dataset/search_read", r.RequestURI)
 
+	b, err := ioutil.ReadAll(r.Body)
+	require.NoError(t, err)
+	body := strings.TrimSpace(string(b))
+	assert.Contains(t, body, `"params":{"model":"hr.employee","domain":[["user_id","=",1]],"fields":["name"]}`, "search parameters")
+
+	w.Header().Set("content-type", "application/json")
+	_, err = w.Write([]byte(`{
+			"id": "1337",
+			"jsonrpc": "2.0",
+			"result": {
+				"records": [
+					{"name": "User Name", "id": 2}
+				]
+			}
+		}`))
+	assert.NoError(t, err)
+}
+
+func respondGroupMembershipSearch(t *testing.T, w http.ResponseWriter, r *http.Request) {
+	assert.Equal(t, "/web/dataset/search_read", r.RequestURI)
+
+	b, err := ioutil.ReadAll(r.Body)
+	require.NoError(t, err)
+	body := string(b)
+
+	t.Log(body)
+	assert.Contains(t, body, `"params":{"model":"res.groups","domain":[["name","=","Manager"],["category_id.name","=","Human Resources"]],"fields":["users","category_id"]}`, "search parameters")
+
+	w.Header().Set("content-type", "application/json")
+	_, err = w.Write([]byte(`{
+			"id": "1337",
+			"jsonrpc": "2.0",
+			"result": {
+				"records": [
+					{"name": "Manager", "category_id":[19,"Human Resources"],"users":[1]}
+				]
+			}
+		}`))
+	assert.NoError(t, err)
+}
+
+func assertDataCookie(t *testing.T, c *http.Cookie) {
+	assert.Equal(t, "odootools-data", c.Name, "cookie name")
+	assert.True(t, c.HttpOnly, "cookie httpOnly flag")
+	assert.True(t, c.Secure, "cookie secure flag")
+}
+
+func assertSessionCookie(t *testing.T, c *http.Cookie, testLogin string) {
+	assert.Equal(t, "odootools", c.Name, "cookie name")
+	assert.NotContains(t, c.Value, testLogin, "no cleartext in cookie")
+	assert.True(t, c.HttpOnly, "cookie httpOnly flag")
+	assert.True(t, c.Secure, "cookie secure flag")
+}
+
+func TestLoginBadCredentials(t *testing.T) {
+	numRequests := 0
 	odooMock := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		numRequests++
 		assert.Equal(t, "/web/session/authenticate", r.RequestURI, "request URI")
@@ -141,7 +187,7 @@ func TestLoginBadCredentials(t *testing.T) {
 
 	// Do request
 	res := httptest.NewRecorder()
-	newServer(odooMock.URL).ServeHTTP(res, req)
+	newTestServer(odooMock.URL).ServeHTTP(res, req)
 
 	// Verify that login failed
 	assert.Equal(t, http.StatusOK, res.Code, "http status code")
@@ -187,7 +233,7 @@ func TestLoginBadResponse(t *testing.T) {
 	req := httptest.NewRequest("POST", "/login", strings.NewReader(form.Encode()))
 	req.Header.Set("content-type", "application/x-www-form-urlencoded")
 	res := httptest.NewRecorder()
-	newServer(odooMock.URL).ServeHTTP(res, req)
+	newTestServer(odooMock.URL).ServeHTTP(res, req)
 
 	assert.Equal(t, 1, numRequests, "number of requests")
 	assert.Equal(t, http.StatusBadGateway, res.Code, "http status code")
@@ -197,25 +243,13 @@ func TestLogout(t *testing.T) {
 	req := httptest.NewRequest("GET", "/logout", nil)
 	req.AddCookie(&http.Cookie{Name: SessionCookieID, Value: "something"})
 	res := httptest.NewRecorder()
-	newServer("").ServeHTTP(res, req)
+	newTestServer("").ServeHTTP(res, req)
 
 	assert.Equal(t, http.StatusTemporaryRedirect, res.Code, "http status code")
 	assert.Equal(t, "/login", res.Header().Get("Location"), "location header")
-	require.Len(t, res.Result().Cookies(), 2, "number of cookies")
 
+	require.Len(t, res.Result().Cookies(), 2, "number of cookies")
 	c := res.Result().Cookies()[0]
 	assert.Equal(t, SessionCookieID, c.Name, "cookie name")
 	assert.Equal(t, -1, c.MaxAge, "cookie age reset")
-}
-
-func newServer(odooURL string) *Server {
-	var oc *odoo.Client
-	if odooURL != "" {
-		c, err := odoo.NewClient(odooURL, odoo.ClientOptions{})
-		if err != nil {
-			panic(err)
-		}
-		oc = c
-	}
-	return NewServer(oc, "0000000000000000000000000000000000000000000=", "TestDB")
 }

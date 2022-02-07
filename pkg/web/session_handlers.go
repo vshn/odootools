@@ -5,15 +5,16 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/gorilla/sessions"
-	"github.com/labstack/echo-contrib/session"
+	pipeline "github.com/ccremer/go-command-pipeline"
 	"github.com/labstack/echo/v4"
 	"github.com/vshn/odootools/pkg/odoo"
+	"github.com/vshn/odootools/pkg/odoo/model"
 	"github.com/vshn/odootools/pkg/web/controller"
 )
 
 const (
-	CookieSID = "odootools"
+	// SessionCookieID is the session cookie identifier.
+	SessionCookieID = "odootools"
 )
 
 // LoginForm GET /login
@@ -35,33 +36,48 @@ func (s Server) Login(e echo.Context) error {
 		e.Logger().Error(err)
 		return e.Render(http.StatusBadGateway, "error", controller.AsError(errors.New("got an error from Odoo, check logs")))
 	}
-	if err := s.SaveOdooSession(e, odooSession); err != nil {
-		return s.ShowError(e, err)
-	}
-	return e.Redirect(http.StatusFound, "/report")
+
+	return s.runPostLogin(e, odooSession)
+}
+
+func (s Server) runPostLogin(e echo.Context, odooSession *odoo.Session) error {
+	o := model.NewOdoo(odooSession)
+	sessionData := controller.SessionData{}
+	p := pipeline.NewPipeline().WithSteps(
+		pipeline.NewStepFromFunc("fetch employee", func(_ pipeline.Context) error {
+			e, err := o.FetchEmployeeByUserID(odooSession.UID)
+			sessionData.Employee = e
+			return err
+		}),
+		pipeline.NewStepFromFunc("fetch manager group", func(_ pipeline.Context) error {
+			group, err := o.FetchGroupByName("Human Resources", "Manager")
+			if group != nil {
+				for _, userID := range group.UserIDs {
+					if odooSession.UID == userID {
+						sessionData.Roles = []string{controller.HRManagerRoleKey}
+					}
+				}
+			}
+			return err
+		}),
+		pipeline.NewStepFromFunc("save session", func(_ pipeline.Context) error {
+			if err := s.SaveOdooSession(e, odooSession); err != nil {
+				return err
+			}
+			if err := s.SaveSessionData(e, sessionData); err != nil {
+				return err
+			}
+			return e.Redirect(http.StatusFound, "/report")
+		}).WithErrorHandler(func(_ pipeline.Context, err error) error {
+			return s.ShowError(e, err)
+		}),
+	)
+	return p.Run().Err
 }
 
 // Logout GET /logout
 func (s Server) Logout(e echo.Context) error {
-	e.SetCookie(&http.Cookie{Name: CookieSID, MaxAge: -1})
+	e.SetCookie(&http.Cookie{Name: SessionCookieID, MaxAge: -1})
+	e.SetCookie(&http.Cookie{Name: DataCookieID, MaxAge: -1})
 	return e.Redirect(http.StatusTemporaryRedirect, "/login")
-}
-
-func (s Server) GetOdooSession(e echo.Context) *odoo.Session {
-	sess, _ := session.Get(CookieSID, e)
-	odooSess := odoo.RestoreSession(s.odooClient, sess.Values["odoo_id"].(string), sess.Values["odoo_uid"].(int))
-	return odooSess
-}
-
-func (s Server) SaveOdooSession(e echo.Context, odooSession *odoo.Session) error {
-	sess := sessions.NewSession(s.cookieStore, CookieSID)
-	sess.Options = &sessions.Options{
-		Path:     "/",
-		MaxAge:   86400 * 7,
-		HttpOnly: true,
-		Secure:   true,
-	}
-	sess.Values["odoo_id"] = odooSession.SessionID
-	sess.Values["odoo_uid"] = odooSession.UID
-	return sess.Save(e.Request(), e.Response())
 }
