@@ -41,8 +41,6 @@ func (o Odoo) readEmployee(filters []odoo.Filter) (*Employee, error) {
 		Model:  "hr.employee",
 		Domain: filters,
 		Fields: []string{"name"},
-		Limit:  0,
-		Offset: 0,
 	}, &result)
 	if err != nil {
 		return nil, err

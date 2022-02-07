@@ -21,9 +21,9 @@ func (v *reportView) formatDailySummary(daily *timesheet.DailySummary) controlle
 		"Weekday":       daily.Date.Weekday(),
 		"Date":          daily.Date.Format(odoo.DateFormat),
 		"Workload":      daily.FTERatio * 100,
-		"ExcusedHours":  formatDurationInHours(daily.CalculateExcusedTime()),
-		"WorkedHours":   formatDurationInHours(daily.CalculateWorkingTime()),
-		"OvertimeHours": formatDurationInHours(daily.CalculateOvertime()),
+		"ExcusedHours":  FormatDurationInHours(daily.CalculateExcusedTime()),
+		"WorkedHours":   FormatDurationInHours(daily.CalculateWorkingTime()),
+		"OvertimeHours": FormatDurationInHours(daily.CalculateOvertime()),
 		"LeaveType":     "",
 	}
 	if daily.HasAbsences() {
@@ -32,10 +32,10 @@ func (v *reportView) formatDailySummary(daily *timesheet.DailySummary) controlle
 	return basic
 }
 
-// formatDurationInHours returns a human friendly "0:00"-formatted duration.
+// FormatDurationInHours returns a human friendly "0:00"-formatted duration.
 // Seconds within a minute are rounded up or down to the nearest full minute.
 // A sign ("-") is prefixed if duration is negative.
-func formatDurationInHours(d time.Duration) string {
+func FormatDurationInHours(d time.Duration) string {
 	sign := ""
 	if d.Seconds() < 0 {
 		sign = "-"
@@ -54,7 +54,7 @@ func formatFloat(v float64) string {
 
 func (v *reportView) formatMonthlySummary(s timesheet.Summary, payslip *model.Payslip) controller.Values {
 	val := controller.Values{
-		"TotalOvertime": formatDurationInHours(s.TotalOvertime),
+		"TotalOvertime": FormatDurationInHours(s.TotalOvertime),
 		"TotalLeaves":   fmt.Sprintf("%sd", formatFloat(s.TotalLeave)),
 	}
 	if payslip == nil {
@@ -67,7 +67,7 @@ func (v *reportView) formatMonthlySummary(s timesheet.Summary, payslip *model.Pa
 		if lastMonthBalance == 0 {
 			val["PayslipError"] = "No overtime saved in payslip"
 		} else {
-			val["NewOvertimeBalance"] = formatDurationInHours(lastMonthBalance + s.TotalOvertime)
+			val["NewOvertimeBalance"] = FormatDurationInHours(lastMonthBalance + s.TotalOvertime)
 		}
 	}
 	return val

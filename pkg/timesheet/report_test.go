@@ -212,6 +212,38 @@ func TestReporter_prepareWorkDays(t *testing.T) {
 	}
 }
 
+func TestReportBuilder_calculateAverageWorkload(t *testing.T) {
+	tests := map[string]struct {
+		givenDailies    []*DailySummary
+		expectedAverage float64
+	}{
+		"GivenNoDaily_ThenExpectZero": {
+			givenDailies:    []*DailySummary{},
+			expectedAverage: 0.0,
+		},
+		"GivenSingleDaily_ThenExpectEqualValue": {
+			givenDailies: []*DailySummary{
+				{FTERatio: 0.7},
+			},
+			expectedAverage: 0.7,
+		},
+		"GivenMultipleDaily_ThenExpectAverageValue": {
+			givenDailies: []*DailySummary{
+				{FTERatio: 0.5},
+				{FTERatio: 0.7},
+			},
+			expectedAverage: 0.6,
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			builder := ReportBuilder{}
+			result := builder.calculateAverageWorkload(tc.givenDailies)
+			assert.InDelta(t, tc.expectedAverage, result, 0.01, "average workload")
+		})
+	}
+}
+
 func generateMonth(t *testing.T, year, month, lastDay int) []*DailySummary {
 	days := make([]*DailySummary, lastDay)
 	for i := 0; i < lastDay; i++ {

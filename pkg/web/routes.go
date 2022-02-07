@@ -19,6 +19,7 @@ func (s *Server) setupRoutes(middleware ...echo.MiddlewareFunc) {
 	report := e.Group("/report", middleware...)
 	report.GET("", s.RequestReportForm)
 	report.POST("", s.ProcessReportInput)
+	report.GET("/employees/:year/:month", s.EmployeeReport)
 	report.GET("/:employee/:year", s.OvertimeReport)
 	report.GET("/:employee/:year/:month", s.OvertimeReport)
 

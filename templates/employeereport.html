@@ -1,0 +1,31 @@
+{{ define "main" }}
+<h1>Attendances for {{ .Month }} {{ .Year }}</h1>
+{{ with .Error }}
+<div class="alert alert-danger" role="alert">{{ . }}</div>
+{{ end }}
+{{ with .Warning }}
+<div class="alert alert-warning" role="alert">{{ . }}</div>
+{{ end }}
+<table class="table table-hover table-sm">
+    <thead>
+    <tr>
+        <th scope="col">Name</th>
+        <th scope="col">Leaves</th>
+        <th scope="col">Excused hours</th>
+        <th scope="col">Worked hours</th>
+        <th scope="col">Overtime hours</th>
+    </tr>
+    </thead>
+    <tbody>
+    {{ range .Reports }}
+    <tr>
+        <td><a href="{{ .ReportDirectLink }}">{{ .Name }}</a> ({{ .Workload }}%)</td>
+        <td>{{ .Leaves }}d</td>
+        <td>{{ .ExcusedHours }}</td>
+        <td>{{ .WorkedHours }}</td>
+        <td>{{ .OvertimeHours }}</td>
+    </tr>
+    {{ end }}
+    </tbody>
+</table>
+{{ end }}

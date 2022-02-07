@@ -72,7 +72,7 @@ func TestReportView_formatDurationHumanFriendly(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			result := formatDurationInHours(tt.givenDuration)
+			result := FormatDurationInHours(tt.givenDuration)
 			assert.Equal(t, tt.expectedOutcome, result)
 		})
 	}

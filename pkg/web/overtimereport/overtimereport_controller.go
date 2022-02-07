@@ -19,14 +19,13 @@ type ReportController struct {
 	Contracts   model.ContractList
 	Attendances model.AttendanceList
 	Leaves      model.LeaveList
-	view        *reportView
 	Payslip     *model.Payslip
 }
 
 func NewReportController(ctx *controller.Context) *ReportController {
 	return &ReportController{
-		Context: *ctx,
-		view:    &reportView{},
+		Context:    *ctx,
+		ReportView: &reportView{},
 	}
 }
 
