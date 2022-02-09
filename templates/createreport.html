@@ -9,7 +9,7 @@
 <h1>Create Report</h1>
 <form action="/report" method="POST">
     {{ with .Error }}
-    <div class="alert alert-warning" role="alert">{{ . }}</div>
+    <div class="alert alert-danger" role="alert">{{ . }}</div>
     {{ end }}
     <div class="mb-3">
         <label for="year" class="form-label">Year</label>
