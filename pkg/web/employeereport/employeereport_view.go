@@ -2,19 +2,18 @@ package employeereport
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/vshn/odootools/pkg/odoo/model"
 	"github.com/vshn/odootools/pkg/timesheet"
 	"github.com/vshn/odootools/pkg/web/controller"
-	"github.com/vshn/odootools/pkg/web/overtimereport"
 )
 
 const employeeReportTemplateName = "employeereport"
 
 type reportView struct {
+	controller.BaseView
 	year  int
 	month int
 }
@@ -40,11 +39,11 @@ func (v *reportView) getValuesForReport(report timesheet.MonthlyReport) controll
 	return controller.Values{
 		"Name":             report.Employee.Name,
 		"ReportDirectLink": fmt.Sprintf("/report/%d/%d/%d", report.Employee.ID, v.year, v.month),
-		"Workload":         formatFloat(report.Summary.AverageWorkload * 100),
+		"Workload":         v.FormatFloat(report.Summary.AverageWorkload*100, 0),
 		"Leaves":           report.Summary.TotalLeave,
-		"ExcusedHours":     overtimereport.FormatDurationInHours(report.Summary.TotalExcusedTime),
-		"WorkedHours":      overtimereport.FormatDurationInHours(report.Summary.TotalWorkedTime),
-		"OvertimeHours":    overtimereport.FormatDurationInHours(report.Summary.TotalOvertime),
+		"ExcusedHours":     v.FormatDurationInHours(report.Summary.TotalExcusedTime),
+		"WorkedHours":      v.FormatDurationInHours(report.Summary.TotalWorkedTime),
+		"OvertimeHours":    v.FormatDurationInHours(report.Summary.TotalOvertime),
 	}
 }
 
@@ -58,8 +57,4 @@ func (v *reportView) formatErrorForFailedEmployeeReports(employees []*model.Empl
 	}
 	list := strings.Join(names, ", ")
 	return fmt.Sprintf("reports failed for following employees: %v. Most probably due to missing contracts.", list)
-}
-
-func formatFloat(v float64) string {
-	return strconv.FormatFloat(v, 'f', 0, 64)
 }

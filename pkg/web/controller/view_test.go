@@ -1,4 +1,4 @@
-package overtimereport
+package controller
 
 import (
 	"testing"
@@ -72,7 +72,7 @@ func TestReportView_formatDurationHumanFriendly(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			result := FormatDurationInHours(tt.givenDuration)
+			result := BaseView{}.FormatDurationInHours(tt.givenDuration)
 			assert.Equal(t, tt.expectedOutcome, result)
 		})
 	}

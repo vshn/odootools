@@ -14,18 +14,19 @@ import (
 	"github.com/vshn/odootools/pkg/odoo/model"
 	"github.com/vshn/odootools/pkg/timesheet"
 	"github.com/vshn/odootools/pkg/web/controller"
+	"github.com/vshn/odootools/pkg/web/reportconfig"
 )
 
 type ReportController struct {
-	controller.Context
-	Input     ReportRequest
+	controller.BaseController
+	Input     reportconfig.ReportRequest
 	employees model.EmployeeList
 	reports   []*EmployeeReport
 	view      *reportView
 }
 
 type EmployeeReport struct {
-	controller.Context
+	controller.BaseController
 	Start       time.Time
 	Stop        time.Time
 	Employee    model.Employee
@@ -37,10 +38,10 @@ type EmployeeReport struct {
 	Result timesheet.MonthlyReport
 }
 
-func NewEmployeeReportController(ctx *controller.Context) *ReportController {
+func NewEmployeeReportController(ctx *controller.BaseController) *ReportController {
 	return &ReportController{
-		Context: *ctx,
-		view:    &reportView{},
+		BaseController: *ctx,
+		view:           &reportView{},
 	}
 }
 
@@ -61,10 +62,10 @@ func (c *ReportController) createPipelinesForEachEmployee(pipelines chan *pipeli
 	c.reports = make([]*EmployeeReport, len(c.employees.Items))
 	for i, employee := range c.employees.Items {
 		report := &EmployeeReport{
-			Context:  c.Context,
-			Employee: employee,
-			Start:    c.Input.getFirstDay(),
-			Stop:     c.Input.getLastDay(),
+			BaseController: c.BaseController,
+			Employee:       employee,
+			Start:          c.Input.GetFirstDay(),
+			Stop:           c.Input.GetLastDay(),
 		}
 		c.reports[i] = report
 		pipe := report.createPipeline()
@@ -95,7 +96,7 @@ func (c *ReportController) collectReports(_ pipeline.Context, results map[uint64
 }
 
 func (c *ReportController) parseInput(_ pipeline.Context) error {
-	input := ReportRequest{}
+	input := reportconfig.ReportRequest{}
 	err := input.FromRequest(c.Echo)
 	c.Input = input
 	return err

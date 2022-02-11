@@ -10,16 +10,16 @@ import (
 )
 
 type ConfigController struct {
-	controller.Context
+	controller.BaseController
 	Input    ReportRequest
 	view     *ConfigView
 	Employee *model.Employee
 }
 
-func NewConfigController(ctx *controller.Context) *ConfigController {
+func NewConfigController(ctx *controller.BaseController) *ConfigController {
 	return &ConfigController{
-		Context: *ctx,
-		view:    &ConfigView{},
+		BaseController: *ctx,
+		view:           &ConfigView{},
 	}
 }
 

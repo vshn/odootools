@@ -13,7 +13,7 @@ import (
 )
 
 type ReportController struct {
-	controller.Context
+	controller.BaseController
 	Input       reportconfig.ReportRequest
 	Employee    *model.Employee
 	ReportView  *reportView
@@ -23,10 +23,10 @@ type ReportController struct {
 	Payslip     *model.Payslip
 }
 
-func NewReportController(ctx *controller.Context) *ReportController {
+func NewReportController(ctx *controller.BaseController) *ReportController {
 	return &ReportController{
-		Context:    *ctx,
-		ReportView: &reportView{},
+		BaseController: *ctx,
+		ReportView:     &reportView{},
 	}
 }
 

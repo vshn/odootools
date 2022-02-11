@@ -34,10 +34,10 @@ func (v *reportView) GetValuesForYearlyReport(report timesheet.YearlyReport) con
 
 func (v *reportView) formatMonthlySummaryForYearlyReport(s timesheet.MonthlyReport) controller.Values {
 	val := controller.Values{
-		"OvertimeHours":  FormatDurationInHours(s.Summary.TotalOvertime),
-		"LeaveDays":      formatFloat(s.Summary.TotalLeave),
-		"ExcusedHours":   FormatDurationInHours(s.Summary.TotalExcusedTime),
-		"WorkedHours":    FormatDurationInHours(s.Summary.TotalWorkedTime),
+		"OvertimeHours":  v.FormatDurationInHours(s.Summary.TotalOvertime),
+		"LeaveDays":      v.FormatFloat(s.Summary.TotalLeave, 1),
+		"ExcusedHours":   v.FormatDurationInHours(s.Summary.TotalExcusedTime),
+		"WorkedHours":    v.FormatDurationInHours(s.Summary.TotalWorkedTime),
 		"DetailViewLink": fmt.Sprintf("/report/%d/%d/%d", s.Employee.ID, s.Year, s.Month),
 		"Name":           fmt.Sprintf("%s %d", time.Month(s.Month), s.Year),
 	}
@@ -46,9 +46,9 @@ func (v *reportView) formatMonthlySummaryForYearlyReport(s timesheet.MonthlyRepo
 
 func (v *reportView) formatYearlySummary(summary timesheet.YearlySummary) controller.Values {
 	return controller.Values{
-		"TotalExcused":  FormatDurationInHours(summary.TotalExcused),
-		"TotalWorked":   FormatDurationInHours(summary.TotalWorked),
-		"TotalOvertime": FormatDurationInHours(summary.TotalOvertime),
-		"TotalLeaves":   formatFloat(summary.TotalLeaves),
+		"TotalExcused":  v.FormatDurationInHours(summary.TotalExcused),
+		"TotalWorked":   v.FormatDurationInHours(summary.TotalWorked),
+		"TotalOvertime": v.FormatDurationInHours(summary.TotalOvertime),
+		"TotalLeaves":   v.FormatFloat(summary.TotalLeaves, 1),
 	}
 }

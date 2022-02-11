@@ -6,7 +6,7 @@ import (
 	"github.com/vshn/odootools/pkg/odoo/model"
 )
 
-type Context struct {
+type BaseController struct {
 	Echo        echo.Context
 	OdooClient  *model.Odoo
 	OdooSession *odoo.Session
