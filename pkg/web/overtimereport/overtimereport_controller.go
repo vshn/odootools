@@ -76,13 +76,13 @@ func (c *ReportController) fetchContracts(_ pipeline.Context) error {
 }
 
 func (c *ReportController) fetchAttendances(_ pipeline.Context) error {
-	attendances, err := c.OdooClient.FetchAttendancesBetweenDates(c.Employee.ID, c.Input.GetFirstDay(), c.Input.GetLastDay())
+	attendances, err := c.OdooClient.FetchAttendancesBetweenDates(c.Employee.ID, c.Input.GetLastDayFromPreviousMonth(), c.Input.GetFirstDayOfNextMonth())
 	c.Attendances = attendances
 	return err
 }
 
 func (c *ReportController) fetchLeaves(_ pipeline.Context) error {
-	leaves, err := c.OdooClient.FetchLeavesBetweenDates(c.Employee.ID, c.Input.GetFirstDay(), c.Input.GetLastDay())
+	leaves, err := c.OdooClient.FetchLeavesBetweenDates(c.Employee.ID, c.Input.GetLastDayFromPreviousMonth(), c.Input.GetFirstDayOfNextMonth())
 	c.Leaves = leaves
 	return err
 }
@@ -128,7 +128,7 @@ func (c *ReportController) searchEmployee(_ pipeline.Context) error {
 }
 
 func (c *ReportController) fetchPayslip(_ pipeline.Context) error {
-	lastMonth := c.Input.GetLastDay().AddDate(0, -1, 0)
+	lastMonth := c.Input.GetFirstDayOfNextMonth().AddDate(0, -1, 0)
 	payslip, err := c.OdooClient.FetchPayslipOfLastMonth(c.Employee.ID, lastMonth)
 	c.Payslip = payslip
 	return err

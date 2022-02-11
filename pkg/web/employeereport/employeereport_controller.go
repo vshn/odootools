@@ -64,8 +64,8 @@ func (c *ReportController) createPipelinesForEachEmployee(pipelines chan *pipeli
 		report := &EmployeeReport{
 			BaseController: c.BaseController,
 			Employee:       employee,
-			Start:          c.Input.GetFirstDay(),
-			Stop:           c.Input.GetLastDay(),
+			Start:          c.Input.GetLastDayFromPreviousMonth(),
+			Stop:           c.Input.GetFirstDayOfNextMonth(),
 		}
 		c.reports[i] = report
 		pipe := report.createPipeline()
@@ -116,11 +116,11 @@ func (c *ReportController) fetchEmployees(_ pipeline.Context) error {
 }
 
 func (c *ReportController) renderReport(_ pipeline.Context) error {
-	successfulReports := make([]timesheet.MonthlyReport, 0)
+	successfulReports := make([]*EmployeeReport, 0)
 	failedReports := make([]*model.Employee, 0)
 	for _, report := range c.reports {
 		if report.Result.DailySummaries != nil {
-			successfulReports = append(successfulReports, report.Result)
+			successfulReports = append(successfulReports, report)
 		} else {
 			failedReports = append(failedReports, report.Result.Employee)
 		}

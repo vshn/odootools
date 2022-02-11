@@ -18,10 +18,10 @@ type reportView struct {
 	month int
 }
 
-func (v *reportView) GetValuesForReports(reports []timesheet.MonthlyReport, failedEmployees []*model.Employee) controller.Values {
+func (v *reportView) GetValuesForReports(reports []*EmployeeReport, failedEmployees []*model.Employee) controller.Values {
 	reportValues := make([]controller.Values, len(reports))
 	for i, report := range reports {
-		reportValues[i] = v.getValuesForReport(report)
+		reportValues[i] = v.getValuesForReport(report.Result, report.Payslip)
 	}
 	return controller.Values{
 		"Nav": controller.Values{
@@ -35,15 +35,27 @@ func (v *reportView) GetValuesForReports(reports []timesheet.MonthlyReport, fail
 	}
 }
 
-func (v *reportView) getValuesForReport(report timesheet.MonthlyReport) controller.Values {
+func (v *reportView) getValuesForReport(report timesheet.MonthlyReport, payslip *model.Payslip) controller.Values {
+	overtimeBalance := ""
+	if payslip == nil {
+		overtimeBalance = "no payslip found"
+	} else {
+		balance, err := payslip.ParseOvertime()
+		if err != nil {
+			overtimeBalance = err.Error()
+		} else {
+			overtimeBalance = v.FormatDurationInHours(balance + report.Summary.TotalOvertime)
+		}
+	}
 	return controller.Values{
 		"Name":             report.Employee.Name,
-		"ReportDirectLink": fmt.Sprintf("/report/%d/%d/%d", report.Employee.ID, v.year, v.month),
+		"ReportDirectLink": fmt.Sprintf("/report/%d/%d/%02d", report.Employee.ID, v.year, v.month),
 		"Workload":         v.FormatFloat(report.Summary.AverageWorkload*100, 0),
 		"Leaves":           report.Summary.TotalLeave,
 		"ExcusedHours":     v.FormatDurationInHours(report.Summary.TotalExcusedTime),
 		"WorkedHours":      v.FormatDurationInHours(report.Summary.TotalWorkedTime),
 		"OvertimeHours":    v.FormatDurationInHours(report.Summary.TotalOvertime),
+		"OvertimeBalance":  overtimeBalance,
 	}
 }
 

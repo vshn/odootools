@@ -7,6 +7,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+// ReportRequest contains all relevant input data for generating reports.
 type ReportRequest struct {
 	Year                  int    `param:"year" form:"year"`
 	Month                 int    `param:"month" form:"month"`
@@ -16,6 +17,7 @@ type ReportRequest struct {
 	EmployeeID            int `param:"employee"`
 }
 
+// FromRequest parses the properties based on the given request echo.Context.
 func (i *ReportRequest) FromRequest(e echo.Context) error {
 	if err := e.Bind(i); err != nil {
 		return err
@@ -39,24 +41,27 @@ func (i *ReportRequest) FromRequest(e echo.Context) error {
 	return nil
 }
 
-func (i ReportRequest) GetFirstDay() time.Time {
+// GetFirstDayOfMonth returns the first day of the ReportRequest.Month in time.UTC at midnight.
+func (i ReportRequest) GetFirstDayOfMonth() time.Time {
 	month := i.Month
-	if month == 0 {
+	if month <= 0 {
 		month = 1
 	}
 	firstDay := time.Date(i.Year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
-	// Let's get attendances within a month with - 1 day to respect localized dates and filter them later.
-	begin := firstDay.AddDate(0, 0, -1)
-	return begin
+	return firstDay
 }
 
-func (i ReportRequest) GetLastDay() time.Time {
-	month := i.Month
-	if month == 0 {
-		month = 12
-	}
-	firstDay := time.Date(i.Year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
-	// Let's get attendances within a month with + 1 day to respect localized dates and filter them later.
-	end := firstDay.AddDate(0, 1, 0)
-	return end
+// GetLastDayOfMonth returns the last day of the ReportRequest.Month in time.UTC at midnight.
+func (i ReportRequest) GetLastDayOfMonth() time.Time {
+	return i.GetFirstDayOfNextMonth().AddDate(0, 0, -1)
+}
+
+// GetLastDayFromPreviousMonth returns GetFirstDayOfMonth subtracted by 1 day.
+func (i ReportRequest) GetLastDayFromPreviousMonth() time.Time {
+	return i.GetFirstDayOfMonth().AddDate(0, 0, -1)
+}
+
+// GetFirstDayOfNextMonth returns the last day of the ReportRequest.Month in time.UTC.
+func (i ReportRequest) GetFirstDayOfNextMonth() time.Time {
+	return i.GetFirstDayOfMonth().AddDate(0, 1, 0)
 }

@@ -14,6 +14,7 @@
         <th scope="col">Excused hours</th>
         <th scope="col">Worked hours</th>
         <th scope="col">Overtime hours</th>
+        <th scope="col">New Balance</th>
     </tr>
     </thead>
     <tbody>
@@ -24,6 +25,7 @@
         <td>{{ .ExcusedHours }}</td>
         <td>{{ .WorkedHours }}</td>
         <td>{{ .OvertimeHours }}</td>
+        <td>{{ .OvertimeBalance }}</td>
     </tr>
     {{ end }}
     </tbody>
