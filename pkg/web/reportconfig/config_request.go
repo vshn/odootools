@@ -1,4 +1,4 @@
-package overtimereport
+package reportconfig
 
 import (
 	"html"
@@ -8,11 +8,12 @@ import (
 )
 
 type ReportRequest struct {
-	Year              int    `param:"year" form:"year"`
-	Month             int    `param:"month" form:"month"`
-	SearchUser        string `form:"username"`
-	SearchUserEnabled bool
-	EmployeeID        int `param:"employee"`
+	Year                  int    `param:"year" form:"year"`
+	Month                 int    `param:"month" form:"month"`
+	SearchUser            string `form:"username"`
+	SearchUserEnabled     bool
+	EmployeeReportEnabled bool
+	EmployeeID            int `param:"employee"`
 }
 
 func (i *ReportRequest) FromRequest(e echo.Context) error {
@@ -20,6 +21,7 @@ func (i *ReportRequest) FromRequest(e echo.Context) error {
 		return err
 	}
 	i.SearchUserEnabled = e.FormValue("userscope") == "user-foreign-radio"
+	i.EmployeeReportEnabled = e.FormValue("employeeReport") == "true"
 	i.SearchUser = html.EscapeString(i.SearchUser)
 
 	if i.Month == 0 && i.Year == 0 {
@@ -37,7 +39,7 @@ func (i *ReportRequest) FromRequest(e echo.Context) error {
 	return nil
 }
 
-func (i ReportRequest) getFirstDay() time.Time {
+func (i ReportRequest) GetFirstDay() time.Time {
 	month := i.Month
 	if month == 0 {
 		month = 1
@@ -48,7 +50,7 @@ func (i ReportRequest) getFirstDay() time.Time {
 	return begin
 }
 
-func (i ReportRequest) getLastDay() time.Time {
+func (i ReportRequest) GetLastDay() time.Time {
 	month := i.Month
 	if month == 0 {
 		month = 12

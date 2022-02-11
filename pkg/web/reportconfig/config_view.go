@@ -1,4 +1,4 @@
-package overtimereport
+package reportconfig
 
 import "github.com/vshn/odootools/pkg/web/controller"
 

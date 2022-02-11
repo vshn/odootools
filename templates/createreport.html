@@ -40,6 +40,9 @@
     <div class="mb-3">
         <button type="submit" name="monthlyReport" value="true" class="btn btn-primary">Create Monthly Report</button>
         <button type="submit" name="yearlyReport" value="true" class="btn btn-secondary">Create Yearly Report</button>
+        {{- if .Roles.HRManager }}
+        <button type="submit" name="employeeReport" value="true" class="btn btn-secondary">All Employees</button>
+        {{- end }}
     </div>
 </form>
 {{ end }}
