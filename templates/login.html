@@ -4,7 +4,7 @@
 <h1>Login</h1>
 <form action="/login" method="POST">
     {{ with .Error }}
-    <div class="alert alert-warning" role="alert">{{ . }}</div>
+    <div class="alert alert-danger" role="alert">{{ . }}</div>
     {{ end }}
     <div class="mb-3">
         <label for="login">VSHN Login</label>

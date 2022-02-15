@@ -52,7 +52,8 @@ type Summary struct {
 	TotalWorkedTime  time.Duration
 	// TotalLeave is the amount of paid leave days.
 	// This value respects FTE ratio, e.g. in a 50% ratio a public holiday is still counted as '1d'.
-	TotalLeave float64
+	TotalLeave      float64
+	AverageWorkload float64
 }
 
 type MonthlyReport struct {
@@ -106,7 +107,11 @@ func (r *ReportBuilder) CalculateMonthlyReport() (MonthlyReport, error) {
 	absences := r.reduceLeavesToBlocks(filteredLeaves)
 	dailySummaries, err := r.prepareDays()
 	if err != nil {
-		return MonthlyReport{}, err
+		return MonthlyReport{
+			Employee: r.employee,
+			Year:     r.year,
+			Month:    r.month,
+		}, err
 	}
 
 	r.addAttendanceShiftsToDailies(shifts, dailySummaries)
@@ -121,6 +126,7 @@ func (r *ReportBuilder) CalculateMonthlyReport() (MonthlyReport, error) {
 			summary.TotalLeave += 1
 		}
 	}
+	summary.AverageWorkload = r.calculateAverageWorkload(dailySummaries)
 	return MonthlyReport{
 		DailySummaries: dailySummaries,
 		Summary:        summary,
@@ -147,6 +153,17 @@ func (r *ReportBuilder) reduceAttendancesToShifts(attendances []model.Attendance
 		}
 	}
 	return shifts
+}
+
+func (r *ReportBuilder) calculateAverageWorkload(dailies []*DailySummary) float64 {
+	if len(dailies) == 0 {
+		return 0.0
+	}
+	avg := 0.0
+	for _, dailySummary := range dailies {
+		avg += dailySummary.FTERatio
+	}
+	return avg / float64(len(dailies))
 }
 
 func (r *ReportBuilder) reduceLeavesToBlocks(leaves []model.Leave) []AbsenceBlock {

@@ -9,24 +9,24 @@ import (
 	"github.com/vshn/odootools/pkg/odoo/model"
 	"github.com/vshn/odootools/pkg/timesheet"
 	"github.com/vshn/odootools/pkg/web/controller"
+	"github.com/vshn/odootools/pkg/web/reportconfig"
 )
 
 type ReportController struct {
-	controller.Context
-	Input       ReportRequest
+	controller.BaseController
+	Input       reportconfig.ReportRequest
 	Employee    *model.Employee
 	ReportView  *reportView
 	Contracts   model.ContractList
 	Attendances model.AttendanceList
 	Leaves      model.LeaveList
-	view        *reportView
 	Payslip     *model.Payslip
 }
 
-func NewReportController(ctx *controller.Context) *ReportController {
+func NewReportController(ctx *controller.BaseController) *ReportController {
 	return &ReportController{
-		Context: *ctx,
-		view:    &reportView{},
+		BaseController: *ctx,
+		ReportView:     &reportView{},
 	}
 }
 
@@ -47,26 +47,8 @@ func (c *ReportController) DisplayOvertimeReport() error {
 	return result.Err
 }
 
-func (c *ReportController) ProcessInput() error {
-	root := pipeline.NewPipelineWithContext(c).
-		WithSteps(
-			pipeline.NewStepFromFunc("parse user input", c.parseInput),
-			pipeline.NewStepFromFunc("search employee", c.searchEmployee),
-			pipeline.NewStepFromFunc("redirect to report", c.redirectToReportView),
-		)
-	result := root.Run()
-	return result.Err
-}
-
-func (c *ReportController) redirectToReportView(_ pipeline.Context) error {
-	if c.Input.Month == 0 {
-		return c.Echo.Redirect(http.StatusFound, fmt.Sprintf("/report/%d/%d", c.Employee.ID, c.Input.Year))
-	}
-	return c.Echo.Redirect(http.StatusFound, fmt.Sprintf("/report/%d/%d/%02d", c.Employee.ID, c.Input.Year, c.Input.Month))
-}
-
 func (c *ReportController) parseInput(_ pipeline.Context) error {
-	input := ReportRequest{}
+	input := reportconfig.ReportRequest{}
 	err := input.FromRequest(c.Echo)
 	c.Input = input
 	return err
@@ -94,13 +76,13 @@ func (c *ReportController) fetchContracts(_ pipeline.Context) error {
 }
 
 func (c *ReportController) fetchAttendances(_ pipeline.Context) error {
-	attendances, err := c.OdooClient.FetchAttendancesBetweenDates(c.Employee.ID, c.Input.getFirstDay(), c.Input.getLastDay())
+	attendances, err := c.OdooClient.FetchAttendancesBetweenDates(c.Employee.ID, c.Input.GetLastDayFromPreviousMonth(), c.Input.GetFirstDayOfNextMonth())
 	c.Attendances = attendances
 	return err
 }
 
 func (c *ReportController) fetchLeaves(_ pipeline.Context) error {
-	leaves, err := c.OdooClient.FetchLeavesBetweenDates(c.Employee.ID, c.Input.getFirstDay(), c.Input.getLastDay())
+	leaves, err := c.OdooClient.FetchLeavesBetweenDates(c.Employee.ID, c.Input.GetLastDayFromPreviousMonth(), c.Input.GetFirstDayOfNextMonth())
 	c.Leaves = leaves
 	return err
 }
@@ -146,7 +128,7 @@ func (c *ReportController) searchEmployee(_ pipeline.Context) error {
 }
 
 func (c *ReportController) fetchPayslip(_ pipeline.Context) error {
-	lastMonth := c.Input.getLastDay().AddDate(0, -1, 0)
+	lastMonth := c.Input.GetFirstDayOfNextMonth().AddDate(0, -1, 0)
 	payslip, err := c.OdooClient.FetchPayslipOfLastMonth(c.Employee.ID, lastMonth)
 	c.Payslip = payslip
 	return err

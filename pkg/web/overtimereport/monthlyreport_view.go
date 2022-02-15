@@ -2,7 +2,6 @@ package overtimereport
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/vshn/odootools/pkg/odoo"
@@ -14,6 +13,7 @@ import (
 const monthlyReportTemplateName string = "overtimereport-monthly"
 
 type reportView struct {
+	controller.BaseView
 }
 
 func (v *reportView) formatDailySummary(daily *timesheet.DailySummary) controller.Values {
@@ -21,9 +21,9 @@ func (v *reportView) formatDailySummary(daily *timesheet.DailySummary) controlle
 		"Weekday":       daily.Date.Weekday(),
 		"Date":          daily.Date.Format(odoo.DateFormat),
 		"Workload":      daily.FTERatio * 100,
-		"ExcusedHours":  formatDurationInHours(daily.CalculateExcusedTime()),
-		"WorkedHours":   formatDurationInHours(daily.CalculateWorkingTime()),
-		"OvertimeHours": formatDurationInHours(daily.CalculateOvertime()),
+		"ExcusedHours":  v.FormatDurationInHours(daily.CalculateExcusedTime()),
+		"WorkedHours":   v.FormatDurationInHours(daily.CalculateWorkingTime()),
+		"OvertimeHours": v.FormatDurationInHours(daily.CalculateOvertime()),
 		"LeaveType":     "",
 	}
 	if daily.HasAbsences() {
@@ -32,30 +32,10 @@ func (v *reportView) formatDailySummary(daily *timesheet.DailySummary) controlle
 	return basic
 }
 
-// formatDurationInHours returns a human friendly "0:00"-formatted duration.
-// Seconds within a minute are rounded up or down to the nearest full minute.
-// A sign ("-") is prefixed if duration is negative.
-func formatDurationInHours(d time.Duration) string {
-	sign := ""
-	if d.Seconds() < 0 {
-		sign = "-"
-		d = time.Duration(d.Nanoseconds() * -1)
-	}
-	d = d.Round(time.Minute)
-	h := d / time.Hour
-	d -= h * time.Hour
-	m := d / time.Minute
-	return fmt.Sprintf("%s%d:%02d", sign, h, m)
-}
-
-func formatFloat(v float64) string {
-	return strconv.FormatFloat(v, 'f', 1, 64)
-}
-
 func (v *reportView) formatMonthlySummary(s timesheet.Summary, payslip *model.Payslip) controller.Values {
 	val := controller.Values{
-		"TotalOvertime": formatDurationInHours(s.TotalOvertime),
-		"TotalLeaves":   fmt.Sprintf("%sd", formatFloat(s.TotalLeave)),
+		"TotalOvertime": v.FormatDurationInHours(s.TotalOvertime),
+		"TotalLeaves":   fmt.Sprintf("%sd", v.FormatFloat(s.TotalLeave, 1)),
 	}
 	if payslip == nil {
 		val["PayslipError"] = "No matching payslip found"
@@ -67,7 +47,7 @@ func (v *reportView) formatMonthlySummary(s timesheet.Summary, payslip *model.Pa
 		if lastMonthBalance == 0 {
 			val["PayslipError"] = "No overtime saved in payslip"
 		} else {
-			val["NewOvertimeBalance"] = formatDurationInHours(lastMonthBalance + s.TotalOvertime)
+			val["NewOvertimeBalance"] = v.FormatDurationInHours(lastMonthBalance + s.TotalOvertime)
 		}
 	}
 	return val
@@ -81,8 +61,8 @@ func (v *reportView) GetValuesForMonthlyReport(report timesheet.MonthlyReport, p
 		}
 		formatted = append(formatted, v.formatDailySummary(summary))
 	}
-	nextYear, nextMonth := getNextMonth(report)
-	prevYear, prevMonth := getPreviousMonth(report)
+	nextYear, nextMonth := v.GetNextMonth(report.Year, report.Month)
+	prevYear, prevMonth := v.GetPreviousMonth(report.Year, report.Month)
 	linkFormat := "/report/%d/%d/%02d"
 	return controller.Values{
 		"Attendances": formatted,
@@ -96,18 +76,4 @@ func (v *reportView) GetValuesForMonthlyReport(report timesheet.MonthlyReport, p
 		},
 		"Username": report.Employee.Name,
 	}
-}
-
-func getNextMonth(r timesheet.MonthlyReport) (int, int) {
-	if r.Month >= 12 {
-		return r.Year + 1, 1
-	}
-	return r.Year, r.Month + 1
-}
-
-func getPreviousMonth(r timesheet.MonthlyReport) (int, int) {
-	if r.Month <= 1 {
-		return r.Year - 1, 12
-	}
-	return r.Year, r.Month - 1
 }

@@ -1,7 +1,7 @@
 {{ define "main" }}
 <h1>Attendance for {{ .Username }}</h1>
 {{ with .Error }}
-<div class="alert alert-warning" role="alert">{{ . }}</div>
+<div class="alert alert-danger" role="alert">{{ . }}</div>
 {{ end }}
 <p>
     <a href="{{ .Nav.PreviousMonthLink }}" class="btn btn-secondary">Previous</a>
@@ -50,7 +50,7 @@
         <td>{{ .Summary.TotalLeaves }}</td>
         <td></td>
         <td>{{ .Summary.TotalOvertime }}</td>
-        <td>{{ if .Summary.PayslipError }}{{ .Summary.PayslipError }}{{ else }}{{ .Summary.NewOvertimeBalance }}{{ end }}</td>
+        <td>{{ .Summary.NewOvertimeBalance }}</td>
     </tr>
     </tfoot>
 </table>
