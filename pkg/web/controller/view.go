@@ -30,3 +30,21 @@ func (v BaseView) FormatDurationInHours(d time.Duration) string {
 func (v BaseView) FormatFloat(value float64, precision int) string {
 	return strconv.FormatFloat(value, 'f', precision, 64)
 }
+
+// GetNextMonth returns the numerical next month of the given input (month 1-12)
+// The year is increased if month is >= 12.
+func (v BaseView) GetNextMonth(year, month int) (int, int) {
+	if month >= 12 {
+		return year + 1, 1
+	}
+	return year, month + 1
+}
+
+// GetPreviousMonth returns the numerical previous month of the given input (month 1-12)
+// The year is decreased if month is <= 1.
+func (v BaseView) GetPreviousMonth(year, month int) (int, int) {
+	if month <= 1 {
+		return year - 1, 12
+	}
+	return year, month - 1
+}

@@ -83,3 +83,53 @@ func parseDuration(t *testing.T, format string) time.Duration {
 	require.NoError(t, err)
 	return d
 }
+
+func TestBaseView_GetNextMonth(t *testing.T) {
+	tests := map[string]struct {
+		givenYear     int
+		givenMonth    int
+		expectedYear  int
+		expectedMonth int
+	}{
+		"WithinYear": {
+			givenYear: 2022, givenMonth: 1,
+			expectedYear: 2022, expectedMonth: 2,
+		},
+		"OverlappingYear": {
+			givenYear: 2022, givenMonth: 12,
+			expectedYear: 2023, expectedMonth: 1,
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			resultYear, resultMonth := BaseView{}.GetNextMonth(tc.givenYear, tc.givenMonth)
+			assert.Equal(t, tc.expectedYear, resultYear)
+			assert.Equal(t, tc.expectedMonth, resultMonth)
+		})
+	}
+}
+
+func TestBaseView_GetPreviousMonth(t *testing.T) {
+	tests := map[string]struct {
+		givenYear     int
+		givenMonth    int
+		expectedYear  int
+		expectedMonth int
+	}{
+		"WithinYear": {
+			givenYear: 2022, givenMonth: 2,
+			expectedYear: 2022, expectedMonth: 1,
+		},
+		"OverlappingYear": {
+			givenYear: 2022, givenMonth: 1,
+			expectedYear: 2021, expectedMonth: 12,
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			resultYear, resultMonth := BaseView{}.GetPreviousMonth(tc.givenYear, tc.givenMonth)
+			assert.Equal(t, tc.expectedYear, resultYear)
+			assert.Equal(t, tc.expectedMonth, resultMonth)
+		})
+	}
+}

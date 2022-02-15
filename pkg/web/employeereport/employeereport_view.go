@@ -23,10 +23,16 @@ func (v *reportView) GetValuesForReports(reports []*EmployeeReport, failedEmploy
 	for i, report := range reports {
 		reportValues[i] = v.getValuesForReport(report.Result, report.Payslip)
 	}
+	nextYear, nextMonth := v.GetNextMonth(v.year, v.month)
+	prevYear, prevMonth := v.GetPreviousMonth(v.year, v.month)
+	linkFormat := "/report/employees/%d/%02d"
 	return controller.Values{
 		"Nav": controller.Values{
-			"LoggedIn":   true,
-			"ActiveView": employeeReportTemplateName,
+			"LoggedIn":          true,
+			"ActiveView":        employeeReportTemplateName,
+			"PreviousMonthLink": fmt.Sprintf(linkFormat, prevYear, prevMonth),
+			"NextMonthLink":     fmt.Sprintf(linkFormat, nextYear, nextMonth),
+			"CurrentMonthLink":  fmt.Sprintf(linkFormat, time.Now().Year(), time.Now().Month()),
 		},
 		"Reports": reportValues,
 		"Warning": v.formatErrorForFailedEmployeeReports(failedEmployees),

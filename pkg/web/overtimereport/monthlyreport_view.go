@@ -61,8 +61,8 @@ func (v *reportView) GetValuesForMonthlyReport(report timesheet.MonthlyReport, p
 		}
 		formatted = append(formatted, v.formatDailySummary(summary))
 	}
-	nextYear, nextMonth := getNextMonth(report)
-	prevYear, prevMonth := getPreviousMonth(report)
+	nextYear, nextMonth := v.GetNextMonth(report.Year, report.Month)
+	prevYear, prevMonth := v.GetPreviousMonth(report.Year, report.Month)
 	linkFormat := "/report/%d/%d/%02d"
 	return controller.Values{
 		"Attendances": formatted,
@@ -76,18 +76,4 @@ func (v *reportView) GetValuesForMonthlyReport(report timesheet.MonthlyReport, p
 		},
 		"Username": report.Employee.Name,
 	}
-}
-
-func getNextMonth(r timesheet.MonthlyReport) (int, int) {
-	if r.Month >= 12 {
-		return r.Year + 1, 1
-	}
-	return r.Year, r.Month + 1
-}
-
-func getPreviousMonth(r timesheet.MonthlyReport) (int, int) {
-	if r.Month <= 1 {
-		return r.Year - 1, 12
-	}
-	return r.Year, r.Month - 1
 }
