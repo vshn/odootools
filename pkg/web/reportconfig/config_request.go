@@ -53,7 +53,7 @@ func (i ReportRequest) GetFirstDayOfMonth() time.Time {
 
 // GetLastDayOfMonth returns the last day of the ReportRequest.Month in time.UTC at midnight.
 func (i ReportRequest) GetLastDayOfMonth() time.Time {
-	return i.GetFirstDayOfNextMonth().AddDate(0, 0, -1)
+	return i.GetFirstDayOfNextMonth().AddDate(0, 1, -1)
 }
 
 // GetLastDayFromPreviousMonth returns GetFirstDayOfMonth subtracted by 1 day.
@@ -61,7 +61,7 @@ func (i ReportRequest) GetLastDayFromPreviousMonth() time.Time {
 	return i.GetFirstDayOfMonth().AddDate(0, 0, -1)
 }
 
-// GetFirstDayOfNextMonth returns the last day of the ReportRequest.Month in time.UTC.
+// GetFirstDayOfNextMonth returns the first day returned by GetFirstDayOfMonth of the next month.
 func (i ReportRequest) GetFirstDayOfNextMonth() time.Time {
 	return i.GetFirstDayOfMonth().AddDate(0, 1, 0)
 }
