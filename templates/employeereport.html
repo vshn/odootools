@@ -4,7 +4,10 @@
 <div class="alert alert-danger" role="alert">{{ . }}</div>
 {{ end }}
 {{ with .Warning }}
-<div class="alert alert-warning" role="alert">{{ . }}</div>
+<div class="alert alert-warning alert-dismissible" role="alert">
+    {{ . }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
 {{ end }}
 <p>
     <a href="{{ .Nav.PreviousMonthLink }}" class="btn btn-secondary">Previous</a>
