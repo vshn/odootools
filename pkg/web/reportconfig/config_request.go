@@ -65,3 +65,27 @@ func (i ReportRequest) GetLastDayFromPreviousMonth() time.Time {
 func (i ReportRequest) GetFirstDayOfNextMonth() time.Time {
 	return i.GetFirstDayOfMonth().AddDate(0, 1, 0)
 }
+
+// GetFirstDayOfYear returns the first day of the ReportRequest.Year in time.UTC at midnight.
+func (i ReportRequest) GetFirstDayOfYear() time.Time {
+	return time.Date(i.Year, time.January, 1, 0, 0, 0, 0, time.UTC)
+}
+
+// GetFirstDayOfNextYear returns the first day of the year after ReportRequest.Year in time.UTC at midnight.
+func (i ReportRequest) GetFirstDayOfNextYear() time.Time {
+	return time.Date(i.Year+1, time.January, 1, 0, 0, 0, 0, time.UTC)
+}
+
+// GetLastDayFromPreviousYear returns GetFirstDayOfYear subtracted by 1 day.
+func (i ReportRequest) GetLastDayFromPreviousYear() time.Time {
+	return i.GetFirstDayOfYear().AddDate(0, 0, -1)
+}
+
+// GetDateRange returns the appropriate `begin` and `end` dates, taking into account yearly reports.
+func (i ReportRequest) GetDateRange() (time.Time, time.Time) {
+	if i.Month == 0 {
+		return i.GetLastDayFromPreviousYear(), i.GetFirstDayOfNextYear()
+	}
+
+	return i.GetLastDayFromPreviousMonth(), i.GetFirstDayOfNextMonth()
+}

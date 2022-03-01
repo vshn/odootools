@@ -76,13 +76,15 @@ func (c *ReportController) fetchContracts(_ pipeline.Context) error {
 }
 
 func (c *ReportController) fetchAttendances(_ pipeline.Context) error {
-	attendances, err := c.OdooClient.FetchAttendancesBetweenDates(c.Employee.ID, c.Input.GetLastDayFromPreviousMonth(), c.Input.GetFirstDayOfNextMonth())
+	begin, end := c.Input.GetDateRange()
+	attendances, err := c.OdooClient.FetchAttendancesBetweenDates(c.Employee.ID, begin, end)
 	c.Attendances = attendances
 	return err
 }
 
 func (c *ReportController) fetchLeaves(_ pipeline.Context) error {
-	leaves, err := c.OdooClient.FetchLeavesBetweenDates(c.Employee.ID, c.Input.GetLastDayFromPreviousMonth(), c.Input.GetFirstDayOfNextMonth())
+	begin, end := c.Input.GetDateRange()
+	leaves, err := c.OdooClient.FetchLeavesBetweenDates(c.Employee.ID, begin, end)
 	c.Leaves = leaves
 	return err
 }
