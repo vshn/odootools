@@ -18,11 +18,11 @@ type Payslip struct {
 	DateTo   odoo.Date   `json:"date_to"`
 }
 
-func (o Odoo) FetchPayslipOfLastMonth(ctx context.Context, employeeID int, lastDayOfMonth time.Time) (*Payslip, error) {
+func (o Odoo) FetchPayslipInMonth(employeeID int, firstDayOfMonth time.Time) (*Payslip, error) {
 	payslips, err := o.readPayslips(ctx, []odoo.Filter{
 		[]interface{}{"employee_id", "=", employeeID},
-		[]string{"date_to", "<=", lastDayOfMonth.Format(odoo.DateFormat)},
-		[]string{"date_from", ">=", lastDayOfMonth.AddDate(0, -1, -1).Format(odoo.DateFormat)},
+		[]string{"date_from", ">=", firstDayOfMonth.AddDate(0, 0, -1).Format(odoo.DateFormat)},
+		[]string{"date_to", "<=", firstDayOfMonth.AddDate(0, 1, -1).Format(odoo.DateFormat)},
 	})
 	for _, payslip := range payslips.Items {
 		if strings.Contains(payslip.Name, "Pikett") {
