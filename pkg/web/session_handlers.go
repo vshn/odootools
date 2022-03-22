@@ -44,12 +44,12 @@ func (s Server) runPostLogin(e echo.Context, odooSession *odoo.Session) error {
 	o := model.NewOdoo(odooSession)
 	sessionData := controller.SessionData{}
 	p := pipeline.NewPipeline().WithSteps(
-		pipeline.NewStepFromFunc("fetch employee", func(_ pipeline.Context) error {
+		pipeline.NewStepFromFunc("fetch employee", func(ctx context.Context) error {
 			e, err := o.FetchEmployeeByUserID(odooSession.UID)
 			sessionData.Employee = e
 			return err
 		}),
-		pipeline.NewStepFromFunc("fetch manager group", func(_ pipeline.Context) error {
+		pipeline.NewStepFromFunc("fetch manager group", func(ctx context.Context) error {
 			group, err := o.FetchGroupByName("Human Resources", "Manager")
 			if group != nil {
 				for _, userID := range group.UserIDs {
@@ -60,7 +60,7 @@ func (s Server) runPostLogin(e echo.Context, odooSession *odoo.Session) error {
 			}
 			return err
 		}),
-		pipeline.NewStepFromFunc("save session", func(_ pipeline.Context) error {
+		pipeline.NewStepFromFunc("save session", func(ctx context.Context) error {
 			if err := s.SaveOdooSession(e, odooSession); err != nil {
 				return err
 			}
@@ -68,11 +68,11 @@ func (s Server) runPostLogin(e echo.Context, odooSession *odoo.Session) error {
 				return err
 			}
 			return e.Redirect(http.StatusFound, "/report")
-		}).WithErrorHandler(func(_ pipeline.Context, err error) error {
+		}).WithErrorHandler(func(ctx context.Context, err error) error {
 			return s.ShowError(e, err)
 		}),
 	)
-	return p.Run().Err
+	return p.RunWithContext(e.Request().Context()).Err()
 }
 
 // Logout GET /logout

@@ -1,6 +1,7 @@
 package reportconfig
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -29,24 +30,24 @@ func (c *ConfigController) ShowConfigurationForm() error {
 }
 
 func (c *ConfigController) ProcessInput() error {
-	root := pipeline.NewPipelineWithContext(c).
+	root := pipeline.NewPipeline().
 		WithSteps(
 			pipeline.NewStepFromFunc("parse user input", c.parseInput),
 			pipeline.NewStepFromFunc("search employee", c.searchEmployee),
 			pipeline.NewStepFromFunc("redirect to report", c.redirectToReportView),
 		)
-	result := root.Run()
-	return result.Err
+	result := root.RunWithContext(c.Echo.Request().Context())
+	return result.Err()
 }
 
-func (c *ConfigController) parseInput(_ pipeline.Context) error {
+func (c *ConfigController) parseInput(_ context.Context) error {
 	input := ReportRequest{}
 	err := input.FromRequest(c.Echo)
 	c.Input = input
 	return err
 }
 
-func (c *ConfigController) searchEmployee(_ pipeline.Context) error {
+func (c *ConfigController) searchEmployee(_ context.Context) error {
 	if c.Input.SearchUserEnabled {
 		e, err := c.OdooClient.SearchEmployee(c.Input.SearchUser)
 		if e == nil {
@@ -62,7 +63,7 @@ func (c *ConfigController) searchEmployee(_ pipeline.Context) error {
 	return fmt.Errorf("no Employee found for user ID %q", c.OdooSession.UID)
 }
 
-func (c *ConfigController) redirectToReportView(_ pipeline.Context) error {
+func (c *ConfigController) redirectToReportView(_ context.Context) error {
 	if c.Input.EmployeeReportEnabled {
 		return c.Echo.Redirect(http.StatusFound, fmt.Sprintf("/report/employees/%d/%02d", c.Input.Year, c.Input.Month))
 	}

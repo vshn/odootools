@@ -8,7 +8,6 @@ import (
 	"time"
 
 	pipeline "github.com/ccremer/go-command-pipeline"
-	"github.com/ccremer/go-command-pipeline/parallel"
 	"github.com/hashicorp/go-multierror"
 	"github.com/vshn/odootools/pkg/odoo"
 	"github.com/vshn/odootools/pkg/odoo/model"
@@ -50,26 +49,31 @@ func (c *ReportController) DisplayEmployeeReport() error {
 	root := pipeline.NewPipeline().WithOptions(pipeline.DisableErrorWrapping).WithSteps(
 		pipeline.NewStepFromFunc("parse user input", c.parseInput),
 		pipeline.NewStepFromFunc("fetch employees", c.fetchEmployees),
-		parallel.NewWorkerPoolStep("generate reports for each employee", 4, c.createPipelinesForEachEmployee, c.collectReports),
+		pipeline.NewWorkerPoolStep("generate reports for each employee", 4, c.createPipelinesForEachEmployee, c.collectReports),
 		pipeline.NewStepFromFunc("render report", c.renderReport),
 	)
-	result := root.Run()
-	return result.Err
+	result := root.RunWithContext(c.Echo.Request().Context())
+	return result.Err()
 }
 
-func (c *ReportController) createPipelinesForEachEmployee(pipelines chan *pipeline.Pipeline) {
+func (c *ReportController) createPipelinesForEachEmployee(ctx context.Context, pipelines chan *pipeline.Pipeline) {
 	defer close(pipelines)
 	c.reports = make([]*EmployeeReport, len(c.employees.Items))
 	for i, employee := range c.employees.Items {
-		report := &EmployeeReport{
-			BaseController: c.BaseController,
-			Employee:       employee,
-			Start:          c.Input.GetLastDayFromPreviousMonth(),
-			Stop:           c.Input.GetFirstDayOfNextMonth(),
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			report := &EmployeeReport{
+				BaseController: c.BaseController,
+				Employee:       employee,
+				Start:          c.Input.GetLastDayFromPreviousMonth(),
+				Stop:           c.Input.GetFirstDayOfNextMonth(),
+			}
+			c.reports[i] = report
+			pipe := report.createPipeline()
+			pipelines <- pipe
 		}
-		c.reports[i] = report
-		pipe := report.createPipeline()
-		pipelines <- pipe
 	}
 }
 
@@ -85,24 +89,24 @@ func (c *EmployeeReport) createPipeline() *pipeline.Pipeline {
 	return p
 }
 
-func (c *ReportController) collectReports(_ pipeline.Context, results map[uint64]pipeline.Result) pipeline.Result {
+func (c *ReportController) collectReports(_ context.Context, results map[uint64]pipeline.Result) error {
 	var combined error
 	for _, result := range results {
 		if result.IsFailed() {
-			combined = multierror.Append(combined, result.Err)
+			combined = multierror.Append(combined, result.Err())
 		}
 	}
-	return pipeline.Result{Err: combined}
+	return combined
 }
 
-func (c *ReportController) parseInput(_ pipeline.Context) error {
+func (c *ReportController) parseInput(_ context.Context) error {
 	input := reportconfig.ReportRequest{}
 	err := input.FromRequest(c.Echo)
 	c.Input = input
 	return err
 }
 
-func (c *ReportController) fetchEmployees(_ pipeline.Context) error {
+func (c *ReportController) fetchEmployees(_ context.Context) error {
 	list := model.EmployeeList{}
 	err := c.OdooSession.SearchGenericModel(context.Background(), odoo.SearchReadModel{
 		Model: "hr.employee",
@@ -115,7 +119,7 @@ func (c *ReportController) fetchEmployees(_ pipeline.Context) error {
 	return err
 }
 
-func (c *ReportController) renderReport(_ pipeline.Context) error {
+func (c *ReportController) renderReport(_ context.Context) error {
 	successfulReports := make([]*EmployeeReport, 0)
 	failedReports := make([]*model.Employee, 0)
 	for _, report := range c.reports {
@@ -129,25 +133,25 @@ func (c *ReportController) renderReport(_ pipeline.Context) error {
 	return c.Echo.Render(http.StatusOK, employeeReportTemplateName, c.view.GetValuesForReports(successfulReports, failedReports))
 }
 
-func (c *EmployeeReport) fetchContracts(_ pipeline.Context) error {
+func (c *EmployeeReport) fetchContracts(_ context.Context) error {
 	contracts, err := c.OdooClient.FetchAllContracts(c.Employee.ID)
 	c.Contracts = contracts
 	return err
 }
 
-func (c *EmployeeReport) fetchAttendances(_ pipeline.Context) error {
+func (c *EmployeeReport) fetchAttendances(_ context.Context) error {
 	attendances, err := c.OdooClient.FetchAttendancesBetweenDates(c.Employee.ID, c.Start, c.Stop)
 	c.Attendances = attendances
 	return err
 }
 
-func (c *EmployeeReport) fetchLeaves(_ pipeline.Context) error {
+func (c *EmployeeReport) fetchLeaves(_ context.Context) error {
 	leaves, err := c.OdooClient.FetchLeavesBetweenDates(c.Employee.ID, c.Start, c.Stop)
 	c.Leaves = leaves
 	return err
 }
 
-func (c *EmployeeReport) calculateMonthlyReport(_ pipeline.Context) error {
+func (c *EmployeeReport) calculateMonthlyReport(_ context.Context) error {
 	start := c.Start.AddDate(0, 0, 1)
 	reporter := timesheet.NewReporter(c.Attendances, c.Leaves, &c.Employee, c.Contracts).
 		SetMonth(start.Year(), int(start.Month())).
@@ -157,7 +161,7 @@ func (c *EmployeeReport) calculateMonthlyReport(_ pipeline.Context) error {
 	return err
 }
 
-func (c *EmployeeReport) fetchPayslip(_ pipeline.Context) error {
+func (c *EmployeeReport) fetchPayslip(_ context.Context) error {
 	// TODO: verify timestamp
 	lastMonth := c.Start
 	payslip, err := c.OdooClient.FetchPayslipOfLastMonth(c.Employee.ID, lastMonth)
@@ -165,7 +169,7 @@ func (c *EmployeeReport) fetchPayslip(_ pipeline.Context) error {
 	return err
 }
 
-func (c *EmployeeReport) ignoreNoContractFound(ctx pipeline.Context, err error) error {
+func (c *EmployeeReport) ignoreNoContractFound(_ context.Context, err error) error {
 	if strings.Contains(err.Error(), "no contract found that covers date") {
 		return nil
 	}
