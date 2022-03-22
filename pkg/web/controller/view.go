@@ -19,11 +19,13 @@ func (v BaseView) FormatDurationInHours(d time.Duration) string {
 		sign = "-"
 		d = time.Duration(d.Nanoseconds() * -1)
 	}
-	d = d.Round(time.Minute)
+	d = d.Round(time.Second)
 	h := d / time.Hour
 	d -= h * time.Hour
 	m := d / time.Minute
-	return fmt.Sprintf("%s%d:%02d", sign, h, m)
+	d -= m * time.Minute
+	s := d / time.Second
+	return fmt.Sprintf("%s%d:%02d:%02d", sign, h, m, s)
 }
 
 // FormatFloat returns a string of the given float with desired digits after comma.
