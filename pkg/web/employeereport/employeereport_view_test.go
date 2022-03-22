@@ -7,83 +7,152 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/vshn/odootools/pkg/odoo/model"
-	"github.com/vshn/odootools/pkg/timesheet"
 )
 
-func TestReportView_getOvertimeBalancePreview(t *testing.T) {
+func TestReportView_getButtonText(t *testing.T) {
 	tests := map[string]struct {
-		givenReport                        timesheet.MonthlyReport
-		givenPreviousPayslip               *model.Payslip
-		givenNextPayslip                   *model.Payslip
-		expectedOvertimeBalance            string
-		expectedOvertimeBalanceEditPreview string
-		expectedButtonText                 string
+		givenNextPayslip   *model.Payslip
+		expectedButtonText string
 	}{
-		"GivenNewEmployee_WhenNoNextPayslipFound_ThenExpectError": {
-			givenReport:                        dummyReport(t),
-			givenPreviousPayslip:               nil,
-			givenNextPayslip:                   nil,
-			expectedOvertimeBalance:            "1:02",
-			expectedOvertimeBalanceEditPreview: "1:02",
-			expectedButtonText:                 "Save (New)",
+		"GivenNoPayslip_ThenExpectSaveNew": {
+			givenNextPayslip:   nil,
+			expectedButtonText: "Save (New)",
 		},
-		"GivenNewEmployee_WhenNextPayslipExists_ThenUsePreviewValue": {
-			givenReport:                        dummyReport(t),
-			givenPreviousPayslip:               nil,
-			givenNextPayslip:                   &model.Payslip{},
-			expectedOvertimeBalance:            "1:02:03",
-			expectedOvertimeBalanceEditPreview: "1:02:03",
-			expectedButtonText:                 "Save (New)",
+		"GivenPayslip_WhenNoOvertimeSaved_ThenExpectSaveNew": {
+			givenNextPayslip:   &model.Payslip{},
+			expectedButtonText: "Save (New)",
 		},
-		"GivenNewEmployee_WhenNextPayslipExistsWithExistingValue_ThenUseExistingValue": {
-			givenReport:                        dummyReport(t),
-			givenPreviousPayslip:               nil,
-			givenNextPayslip:                   &model.Payslip{Overtime: "2:00:00"},
-			expectedOvertimeBalance:            "1:02",
-			expectedOvertimeBalanceEditPreview: "2:00:00",
-			expectedButtonText:                 "Save (Update)",
-		},
-		"GivenExistingEmployeeWithoutOvertime_WhenNextPayslipExistsWithExistingValue_ThenUseExistingValue": {
-			givenReport:                        dummyReport(t),
-			givenPreviousPayslip:               &model.Payslip{},
-			givenNextPayslip:                   &model.Payslip{Overtime: "2:00:00"},
-			expectedOvertimeBalance:            "1:02:03",
-			expectedOvertimeBalanceEditPreview: "2:00:00",
-			expectedButtonText:                 "Save (Update)",
-		},
-		"GivenExistingEmployeeWithOvertime_WhenNextPayslipExistsWithExistingValue_ThenUseExistingValue": {
-			givenReport:                        dummyReport(t),
-			givenPreviousPayslip:               &model.Payslip{Overtime: "1:00:00"},
-			givenNextPayslip:                   &model.Payslip{Overtime: "-5:00:00"},
-			expectedOvertimeBalance:            "2:02:03",
-			expectedOvertimeBalanceEditPreview: "-5:00:00",
-			expectedButtonText:                 "Save (Update)",
-		},
-		"GivenExistingEmployeeWithOvertime_WhenNextPayslipExistsWithNoValue_ThenUsePredictedValue": {
-			givenReport:                        dummyReport(t),
-			givenPreviousPayslip:               &model.Payslip{Overtime: "1:00:00"},
-			givenNextPayslip:                   &model.Payslip{},
-			expectedOvertimeBalance:            "2:02:03",
-			expectedOvertimeBalanceEditPreview: "2:02:03",
-			expectedButtonText:                 "Save (New)",
+		"GivenPayslip_WhenOvertimeSaved_ThenExpectSaveUpdate": {
+			givenNextPayslip:   &model.Payslip{Overtime: "2:00:00"},
+			expectedButtonText: "Save (Update)",
 		},
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			v := reportView{}
-			actualOvertimeBalance, actualOvertimeBalanceEditPreview := v.getOvertimeBalancePreview(tc.givenReport, tc.givenPreviousPayslip, tc.givenNextPayslip)
-			assert.Equal(t, tc.expectedOvertimeBalance, actualOvertimeBalance, "overtime balance")
-			assert.Equal(t, tc.expectedOvertimeBalanceEditPreview, actualOvertimeBalanceEditPreview, "overtime balance edit preview")
+			result := v.getButtonText(tc.givenNextPayslip)
+			assert.Equal(t, tc.expectedButtonText, result, "button text")
 		})
 	}
 }
 
-func dummyReport(t *testing.T) timesheet.MonthlyReport {
-	duration, err := time.ParseDuration("1h2m3s")
-	require.NoError(t, err)
-	return timesheet.MonthlyReport{
-		Summary: timesheet.Summary{
-			TotalOvertime: duration,
+func TestReportView_getPreviousBalance(t *testing.T) {
+	tests := map[string]struct {
+		givenPreviousPayslip *model.Payslip
+		expectedCell         string
+		expectedBalance      time.Duration
+	}{
+		"GivenNoPayslip_ThenExpectNoPayslipFound": {
+			givenPreviousPayslip: nil,
+			expectedCell:         "<no payslip found>",
+			expectedBalance:      0,
+		},
+		"GivenPayslip_WhenNoOvertimeSaved_ThenExpectNoOvertimeSaved": {
+			givenPreviousPayslip: &model.Payslip{},
+			expectedCell:         "<no overtime saved>",
+			expectedBalance:      0,
+		},
+		"GivenPayslip_WhenOvertimeSaved_ThenExpectParsedValue": {
+			givenPreviousPayslip: &model.Payslip{Overtime: "2:00:00 incl holidays"},
+			expectedCell:         "2:00:00 incl holidays",
+			expectedBalance:      mustParseDuration(t, "2h"),
+		},
+		"GivenPayslip_WhenOvertimeCannotParse_ThenExpectErrorText": {
+			givenPreviousPayslip: &model.Payslip{Overtime: "2 hours"},
+			expectedCell:         "<format not parseable: 2 hours>",
+			expectedBalance:      0,
 		},
 	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			v := reportView{}
+			cellText, balance := v.getPreviousBalance(tc.givenPreviousPayslip)
+			assert.Equal(t, tc.expectedCell, cellText, "cell text")
+			assert.Equal(t, tc.expectedBalance, balance, "previous balance")
+		})
+	}
+}
+
+func TestReportView_getNextBalance(t *testing.T) {
+	tests := map[string]struct {
+		givenNextPayslip     *model.Payslip
+		givenProposedBalance time.Duration
+		expectedCell         string
+		expectedBalance      time.Duration
+	}{
+		"GivenNoPayslip_ThenExpectNoPayslipFound": {
+			givenNextPayslip:     nil,
+			givenProposedBalance: 0,
+			expectedCell:         "<no payslip found>",
+			expectedBalance:      0,
+		},
+		"GivenPayslip_WhenNoOvertimeSaved_ThenExpectEmptyCell": {
+			givenNextPayslip:     &model.Payslip{},
+			givenProposedBalance: mustParseDuration(t, "2h"),
+			expectedCell:         "",
+			expectedBalance:      mustParseDuration(t, "2h"),
+		},
+		"GivenPayslip_WhenOvertimeSaved_ThenExpectCellValueVerbatim": {
+			givenNextPayslip:     &model.Payslip{Overtime: "2:00:00 with holidays"},
+			givenProposedBalance: mustParseDuration(t, "4h"),
+			expectedCell:         "2:00:00 with holidays",
+			expectedBalance:      mustParseDuration(t, "2h"),
+		},
+		"GivenPayslip_WhenOvertimeCannotParse_ThenExpectErrorTextAndUnchangedProposedBalance": {
+			givenNextPayslip:     &model.Payslip{Overtime: "2 hours"},
+			givenProposedBalance: mustParseDuration(t, "4h"),
+			expectedCell:         "<format not parseable: 2 hours>",
+			expectedBalance:      mustParseDuration(t, "4h"),
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			v := reportView{}
+			cellText, balance := v.getNextBalance(tc.givenProposedBalance, tc.givenNextPayslip)
+			assert.Equal(t, tc.expectedCell, cellText, "cell text")
+			assert.Equal(t, tc.expectedBalance, balance, "next balance")
+		})
+	}
+}
+
+func TestReportView_getOvertimeBalanceEditPreview(t *testing.T) {
+	tests := map[string]struct {
+		givenNextPayslip                   *model.Payslip
+		givenProposedBalance               time.Duration
+		expectedOvertimeBalanceEditPreview string
+	}{
+		"GivenNoPayslip_WhenProposedBalanceZero_ThenExpectZero": {
+			givenNextPayslip:                   nil,
+			givenProposedBalance:               0,
+			expectedOvertimeBalanceEditPreview: "0:00:00",
+		},
+		"GivenNoPayslip_WhenProposedBalanceNotZero_ThenExpectProposedBalance": {
+			givenNextPayslip:                   nil,
+			givenProposedBalance:               mustParseDuration(t, "2h"),
+			expectedOvertimeBalanceEditPreview: "2:00:00",
+		},
+		"GivenNoPayslip_WhenNoOvertimeSaved_ThenExpectProposedBalance": {
+			givenNextPayslip:                   &model.Payslip{},
+			givenProposedBalance:               mustParseDuration(t, "2h"),
+			expectedOvertimeBalanceEditPreview: "2:00:00",
+		},
+		"GivenNoPayslip_WhenOvertimeExists_ThenUseExistingValue": {
+			givenNextPayslip:                   &model.Payslip{Overtime: "2:00:00"},
+			givenProposedBalance:               mustParseDuration(t, "4h"),
+			expectedOvertimeBalanceEditPreview: "2:00:00",
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			v := reportView{}
+			result := v.getOvertimeBalanceEditPreview(tc.givenNextPayslip, tc.givenProposedBalance)
+			assert.Equal(t, tc.expectedOvertimeBalanceEditPreview, result, "overtime balance edit preview")
+		})
+	}
+}
+
+func mustParseDuration(t *testing.T, fmt string) time.Duration {
+	duration, err := time.ParseDuration(fmt)
+	require.NoError(t, err)
+	return duration
 }

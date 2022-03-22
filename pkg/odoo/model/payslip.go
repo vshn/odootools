@@ -47,6 +47,9 @@ func (o Odoo) readPayslips(ctx context.Context, domainFilters []odoo.Filter) (od
 
 // GetOvertime returns the plain field value as string.
 func (p Payslip) GetOvertime() string {
+	if p.Overtime == nil {
+		return ""
+	}
 	if _, ok := p.Overtime.(bool); ok {
 		return ""
 	}

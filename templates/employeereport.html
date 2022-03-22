@@ -53,9 +53,9 @@
         <th scope="col">Worked hours</th>
         <th scope="col">{{ .LastMonth }} Payslip</th>
         <th scope="col">Overtime delta</th>
-        <th scope="col">Balance Prediction</th>
+        <th scope="col">Proposed balance</th>
         <th scope="col">{{ .Month }} Payslip</th>
-        <th scope="col">Save in Payslip</th>
+        <th scope="col">Save in {{ .Month }} Payslip</th>
     </tr>
     </thead>
     <tbody>
@@ -67,12 +67,12 @@
         <td>{{ .WorkedHours }}</td>
         <td>{{ .PreviousBalance }}</td>
         <td>{{ .OvertimeHours }}</td>
-        <td>{{ .PredictedBalance }}</td>
+        <td>{{ .ProposedBalance }}</td>
         <td>{{ .NextBalance }}</td>
         <td>
             {{- if .OvertimeBalanceEditEnabled }}
             <div class="mb-3">
-                <input id="input-edit-{{ .EmployeeID }}" type="text" class="form-control" value="{{ .OvertimeBalanceEditPreviewValue }}" placeholder="{{ .PredictedBalance }}">
+                <input id="input-edit-{{ .EmployeeID }}" type="text" class="form-control" value="{{ .OvertimeBalanceEditPreviewValue }}" placeholder="{{ .ProposedBalance }}">
                 <button type="button" class="btn btn-secondary btn-sm" id="btn-edit-{{ .EmployeeID }}" onclick="saveOvertimeBalance({{ .EmployeeID }})">{{ .ButtonText }}</button>
             </div>
             {{- else }}
