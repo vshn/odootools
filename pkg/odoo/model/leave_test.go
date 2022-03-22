@@ -14,7 +14,7 @@ func TestLeave_SplitByDay(t *testing.T) {
 			ID:       1,
 			DateFrom: odoo.MustParseDateTime("2021-02-03 07:00:00"),
 			DateTo:   odoo.MustParseDateTime("2021-02-03 19:00:00"),
-			Type:     &odoo.LeaveType{ID: 1, Name: "SomeType"},
+			Type:     &LeaveType{ID: 1, Name: "SomeType"},
 			State:    "validated",
 		}
 		result := givenLeave.SplitByDay()

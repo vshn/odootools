@@ -18,8 +18,8 @@ type GroupList struct {
 	Items []Group `json:"records,omitempty"`
 }
 
-func (o Odoo) FetchGroupByName(category, name string) (*Group, error) {
-	groups, err := o.searchGroups([]odoo.Filter{
+func (o Odoo) FetchGroupByName(ctx context.Context, category, name string) (*Group, error) {
+	groups, err := o.searchGroups(ctx, []odoo.Filter{
 		[]string{"name", "=", name},
 		[]interface{}{"category_id.name", "=", category},
 	})
@@ -32,9 +32,9 @@ func (o Odoo) FetchGroupByName(category, name string) (*Group, error) {
 	return nil, nil
 }
 
-func (o Odoo) searchGroups(domainFilters []odoo.Filter) (GroupList, error) {
+func (o Odoo) searchGroups(ctx context.Context, domainFilters []odoo.Filter) (GroupList, error) {
 	result := GroupList{}
-	err := o.querier.SearchGenericModel(context.Background(), odoo.SearchReadModel{
+	err := o.querier.SearchGenericModel(ctx, odoo.SearchReadModel{
 		Model:  "res.groups",
 		Domain: domainFilters,
 		Fields: []string{"users", "category_id"},

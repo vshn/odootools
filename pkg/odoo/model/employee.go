@@ -19,25 +19,25 @@ type EmployeeList struct {
 // SearchEmployee searches for an Employee with the given searchString in the Employee.Name.
 // If multiple employees are found, the first is returned.
 // Returns nil if none found.
-func (o Odoo) SearchEmployee(searchString string) (*Employee, error) {
-	return o.readEmployee([]odoo.Filter{[]string{"name", "ilike", searchString}})
+func (o Odoo) SearchEmployee(ctx context.Context, searchString string) (*Employee, error) {
+	return o.readEmployee(ctx, []odoo.Filter{[]string{"name", "ilike", searchString}})
 }
 
 // FetchEmployeeByID fetches an Employee for the given employee ID.
 // Returns nil if not found.
-func (o Odoo) FetchEmployeeByID(employeeID int) (*Employee, error) {
-	return o.readEmployee([]odoo.Filter{[]interface{}{"resource_id", "=", employeeID}})
+func (o Odoo) FetchEmployeeByID(ctx context.Context, employeeID int) (*Employee, error) {
+	return o.readEmployee(ctx, []odoo.Filter{[]interface{}{"resource_id", "=", employeeID}})
 }
 
 // FetchEmployeeByUserID fetches the Employee for the given user ID (which might not be the same as Employee.ID.
 // Returns nil if not found.
-func (o Odoo) FetchEmployeeByUserID(userID int) (*Employee, error) {
-	return o.readEmployee([]odoo.Filter{[]interface{}{"user_id", "=", userID}})
+func (o Odoo) FetchEmployeeByUserID(ctx context.Context, userID int) (*Employee, error) {
+	return o.readEmployee(ctx, []odoo.Filter{[]interface{}{"user_id", "=", userID}})
 }
 
-func (o Odoo) readEmployee(filters []odoo.Filter) (*Employee, error) {
+func (o Odoo) readEmployee(ctx context.Context, filters []odoo.Filter) (*Employee, error) {
 	result := EmployeeList{}
-	err := o.querier.SearchGenericModel(context.Background(), odoo.SearchReadModel{
+	err := o.querier.SearchGenericModel(ctx, odoo.SearchReadModel{
 		Model:  "hr.employee",
 		Domain: filters,
 		Fields: []string{"name"},

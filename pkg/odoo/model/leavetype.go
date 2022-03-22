@@ -1,4 +1,4 @@
-package odoo
+package model
 
 import "encoding/json"
 

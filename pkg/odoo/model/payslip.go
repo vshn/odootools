@@ -23,8 +23,8 @@ type PayslipList struct {
 	Items []Payslip `json:"records,omitempty"`
 }
 
-func (o Odoo) FetchPayslipOfLastMonth(employeeID int, lastDayOfMonth time.Time) (*Payslip, error) {
-	payslips, err := o.readPayslips([]odoo.Filter{
+func (o Odoo) FetchPayslipOfLastMonth(ctx context.Context, employeeID int, lastDayOfMonth time.Time) (*Payslip, error) {
+	payslips, err := o.readPayslips(ctx, []odoo.Filter{
 		[]interface{}{"employee_id", "=", employeeID},
 		[]string{"date_to", "<=", lastDayOfMonth.Format(odoo.DateFormat)},
 		[]string{"date_from", ">=", lastDayOfMonth.AddDate(0, -1, -1).Format(odoo.DateFormat)},
@@ -40,9 +40,9 @@ func (o Odoo) FetchPayslipOfLastMonth(employeeID int, lastDayOfMonth time.Time) 
 	return nil, err
 }
 
-func (o Odoo) readPayslips(domainFilters []odoo.Filter) (PayslipList, error) {
+func (o Odoo) readPayslips(ctx context.Context, domainFilters []odoo.Filter) (PayslipList, error) {
 	result := PayslipList{}
-	err := o.querier.SearchGenericModel(context.Background(), odoo.SearchReadModel{
+	err := o.querier.SearchGenericModel(ctx, odoo.SearchReadModel{
 		Model:  "hr.payslip",
 		Domain: domainFilters,
 		Fields: []string{"date_from", "date_to", "x_overtime", "name"},
