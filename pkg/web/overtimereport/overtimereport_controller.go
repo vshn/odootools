@@ -132,7 +132,7 @@ func (c *ReportController) searchEmployee(ctx context.Context) error {
 
 func (c *ReportController) fetchPayslip(ctx context.Context) error {
 	lastMonth := c.Input.GetFirstDayOfMonth().AddDate(0, -1, 0)
-	payslip, err := c.OdooClient.FetchPayslipInMonth(c.Employee.ID, lastMonth)
+	payslip, err := c.OdooClient.FetchPayslipInMonth(ctx, c.Employee.ID, lastMonth)
 	c.Payslip = payslip
 	return err
 }

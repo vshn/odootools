@@ -18,7 +18,7 @@ type Payslip struct {
 	DateTo   odoo.Date   `json:"date_to"`
 }
 
-func (o Odoo) FetchPayslipInMonth(employeeID int, firstDayOfMonth time.Time) (*Payslip, error) {
+func (o Odoo) FetchPayslipInMonth(ctx context.Context, employeeID int, firstDayOfMonth time.Time) (*Payslip, error) {
 	payslips, err := o.readPayslips(ctx, []odoo.Filter{
 		[]interface{}{"employee_id", "=", employeeID},
 		[]string{"date_from", ">=", firstDayOfMonth.AddDate(0, 0, -1).Format(odoo.DateFormat)},

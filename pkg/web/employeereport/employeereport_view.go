@@ -50,7 +50,7 @@ func (v *reportView) getValuesForReport(report timesheet.MonthlyReport, previous
 		"ReportDirectLink":                fmt.Sprintf("/report/%d/%d/%02d", report.Employee.ID, v.year, v.month),
 		"OvertimeBalanceEditEnabled":      nextPayslip != nil,
 		"OvertimeBalanceEditPreviewValue": overtimeBalanceEditPreview,
-		"ButtonText":                      v.getButtonText(previousPayslip, nextPayslip),
+		"ButtonText":                      v.getButtonText(nextPayslip),
 		"Workload":                        v.FormatFloat(report.Summary.AverageWorkload*100, 0),
 		"Leaves":                          report.Summary.TotalLeave,
 		"ExcusedHours":                    v.FormatDurationInHours(report.Summary.TotalExcusedTime),
@@ -78,8 +78,6 @@ func (v *reportView) getOvertimeBalancePreview(report timesheet.MonthlyReport, p
 	}
 	// we have new valid overtime balance
 	overtimeBalance = v.FormatDurationInHours(balance + report.Summary.TotalOvertime)
-	// edit preview to be determined next
-	overtimeBalanceEditPreview = "create payslip first"
 	if nextPayslip != nil {
 		// next payslip exists
 		if existingValue := nextPayslip.GetOvertime(); existingValue == "" {
@@ -93,8 +91,8 @@ func (v *reportView) getOvertimeBalancePreview(report timesheet.MonthlyReport, p
 	return
 }
 
-func (v *reportView) getButtonText(previousPayslip *model.Payslip, nextPayslip *model.Payslip) string {
-	if previousPayslip == nil || nextPayslip.GetOvertime() == "" {
+func (v *reportView) getButtonText(nextPayslip *model.Payslip) string {
+	if nextPayslip == nil || nextPayslip.GetOvertime() == "" {
 		return "Save (New)"
 	}
 	return "Save (Update)"
@@ -121,7 +119,7 @@ func (v *reportView) getPreviousBalance(payslip *model.Payslip) string {
 
 func (v *reportView) getNextBalance(payslip *model.Payslip) string {
 	if payslip == nil {
-		return "create payslip first"
+		return "no payslip found"
 	}
 	return payslip.GetOvertime()
 }

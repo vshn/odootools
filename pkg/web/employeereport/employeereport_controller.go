@@ -68,8 +68,8 @@ func (c *ReportController) createPipelinesForEachEmployee(ctx context.Context, p
 			report := &EmployeeReport{
 				BaseController: c.BaseController,
 				Employee:       employee,
-			Start:          c.Input.GetFirstDayOfMonth(),
-			Stop:           c.Input.GetLastDayOfMonth(),
+				Start:          c.Input.GetFirstDayOfMonth(),
+				Stop:           c.Input.GetLastDayOfMonth(),
 			}
 			c.reports[i] = report
 			pipe := report.createPipeline()
@@ -145,7 +145,7 @@ func (c *EmployeeReport) fetchAttendances(ctx context.Context) error {
 	// extend date range for timezone correction
 	start := c.Start.AddDate(0, 0, -1)
 	stop := c.Start.AddDate(0, 1, 0)
-	attendances, err := c.OdooClient.FetchAttendancesBetweenDates(c.Employee.ID, start, stop)
+	attendances, err := c.OdooClient.FetchAttendancesBetweenDates(ctx, c.Employee.ID, start, stop)
 	c.Attendances = attendances
 	return err
 }
@@ -154,7 +154,7 @@ func (c *EmployeeReport) fetchLeaves(ctx context.Context) error {
 	// extend date range for timezone correction
 	start := c.Start.AddDate(0, 0, -1)
 	stop := c.Start.AddDate(0, 1, 0)
-	leaves, err := c.OdooClient.FetchLeavesBetweenDates(c.Employee.ID, start, stop)
+	leaves, err := c.OdooClient.FetchLeavesBetweenDates(ctx, c.Employee.ID, start, stop)
 	c.Leaves = leaves
 	return err
 }
@@ -169,17 +169,17 @@ func (c *EmployeeReport) calculateMonthlyReport(_ context.Context) error {
 	return err
 }
 
-func (c *EmployeeReport) fetchPayslip(ctx context.Context) error {
+func (c *EmployeeReport) fetchPreviousPayslip(ctx context.Context) error {
 	// TODO: verify timestamp
 	firstDayOfLastMonth := c.Start.AddDate(0, -1, 0)
-	payslip, err := c.OdooClient.FetchPayslipInMonth(c.Employee.ID, firstDayOfLastMonth)
+	payslip, err := c.OdooClient.FetchPayslipInMonth(ctx, c.Employee.ID, firstDayOfLastMonth)
 	c.PreviousPayslip = payslip
 	return err
 }
 
-func (c *EmployeeReport) fetchNextPayslip(_ pipeline.Context) error {
+func (c *EmployeeReport) fetchNextPayslip(ctx context.Context) error {
 	thisMonth := c.Start
-	payslip, err := c.OdooClient.FetchPayslipInMonth(c.Employee.ID, thisMonth)
+	payslip, err := c.OdooClient.FetchPayslipInMonth(ctx, c.Employee.ID, thisMonth)
 	c.NextPayslip = payslip
 	return err
 }

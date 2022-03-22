@@ -74,7 +74,6 @@ func TestReportView_getOvertimeBalancePreview(t *testing.T) {
 			actualOvertimeBalance, actualOvertimeBalanceEditPreview := v.getOvertimeBalancePreview(tc.givenReport, tc.givenPreviousPayslip, tc.givenNextPayslip)
 			assert.Equal(t, tc.expectedOvertimeBalance, actualOvertimeBalance, "overtime balance")
 			assert.Equal(t, tc.expectedOvertimeBalanceEditPreview, actualOvertimeBalanceEditPreview, "overtime balance edit preview")
-			assert.Equal(t, tc.expectedButtonText, actualButtonText, "button text")
 		})
 	}
 }
