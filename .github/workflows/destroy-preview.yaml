@@ -49,7 +49,7 @@ jobs:
       run: oc -n ${{ env.NAMESPACE }} delete imagestreamtags odootools:${{ env.IMG_TAG }} --ignore-not-found
 
     - name: Notify on success
-      uses: peter-evans/create-or-update-comment@v1
+      uses: peter-evans/create-or-update-comment@v2
       with:
         issue-number: ${{ github.event.number }}
         body: |
@@ -61,7 +61,7 @@ jobs:
           **Cluster** | ${{ env.OPENSHIFT_API }}
 
     - name: Notify on failure
-      uses: peter-evans/create-or-update-comment@v1
+      uses: peter-evans/create-or-update-comment@v2
       if: ${{ failure() }}
       with:
         issue-number: ${{ github.event.number }}
