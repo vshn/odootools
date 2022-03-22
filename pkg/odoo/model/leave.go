@@ -2,7 +2,6 @@ package model
 
 import (
 	"context"
-	"strconv"
 	"time"
 
 	"github.com/vshn/odootools/pkg/odoo"
@@ -21,7 +20,7 @@ type Leave struct {
 	DateTo *odoo.Date `json:"date_to"`
 
 	// Type describes the "leave type" from Odoo.
-	Type *odoo.LeaveType `json:"holiday_status_id,omitempty"`
+	Type *LeaveType `json:"holiday_status_id,omitempty"`
 
 	// State is the leave request state.
 	// Example raw values returned from Odoo:
@@ -36,17 +35,10 @@ type LeaveList struct {
 	Items []Leave `json:"records,omitempty"`
 }
 
-func (o Odoo) FetchAllLeaves(employeeID int) (LeaveList, error) {
-	return o.readLeaves([]odoo.Filter{
-		[]string{"employee_id", "=", strconv.Itoa(employeeID)},
-		[]string{"type", "=", "remove"}, // Only return used leaves. With type = "add" we would get leaves that add days to holiday budget
-	})
-}
-
-func (o Odoo) FetchLeavesBetweenDates(employeeID int, begin, end time.Time) (LeaveList, error) {
+func (o Odoo) FetchLeavesBetweenDates(ctx context.Context, employeeID int, begin, end time.Time) (LeaveList, error) {
 	beginStr := begin.Format(odoo.DateFormat)
 	endStr := end.Format(odoo.DateFormat)
-	return o.readLeaves([]odoo.Filter{
+	return o.readLeaves(ctx, []odoo.Filter{
 		[]string{"type", "=", "remove"}, // Only return used leaves. With type = "add" we would get leaves that add days to holiday budget
 		[]interface{}{"employee_id", "=", employeeID},
 		"|",
@@ -63,9 +55,9 @@ func (o Odoo) FetchLeavesBetweenDates(employeeID int, begin, end time.Time) (Lea
 	})
 }
 
-func (o Odoo) readLeaves(domainFilters []odoo.Filter) (LeaveList, error) {
+func (o Odoo) readLeaves(ctx context.Context, domainFilters []odoo.Filter) (LeaveList, error) {
 	result := LeaveList{}
-	err := o.querier.SearchGenericModel(context.Background(), odoo.SearchReadModel{
+	err := o.querier.SearchGenericModel(ctx, odoo.SearchReadModel{
 		Model:  "hr.holidays",
 		Domain: domainFilters,
 		Fields: []string{"date_from", "date_to", "holiday_status_id", "state"},

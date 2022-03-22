@@ -29,23 +29,18 @@ type AttendanceList struct {
 	Items []Attendance `json:"records,omitempty"`
 }
 
-// FetchAllAttendances retrieves all attendances associated with the given employee.
-func (o Odoo) FetchAllAttendances(_ string, employeeID int) (AttendanceList, error) {
-	return o.fetchAttendances([]odoo.Filter{[]interface{}{"employee_id", "=", employeeID}})
-}
-
 // FetchAttendancesBetweenDates retrieves all attendances associated with the given employee between 2 dates (inclusive each).
-func (o Odoo) FetchAttendancesBetweenDates(employeeID int, begin, end time.Time) (AttendanceList, error) {
-	return o.fetchAttendances([]odoo.Filter{
+func (o Odoo) FetchAttendancesBetweenDates(ctx context.Context, employeeID int, begin, end time.Time) (AttendanceList, error) {
+	return o.fetchAttendances(ctx, []odoo.Filter{
 		[]interface{}{"employee_id", "=", employeeID},
 		[]string{"name", ">=", begin.Format(odoo.DateFormat)},
 		[]string{"name", "<=", end.Format(odoo.DateFormat)},
 	})
 }
 
-func (o Odoo) fetchAttendances(domainFilters []odoo.Filter) (AttendanceList, error) {
+func (o Odoo) fetchAttendances(ctx context.Context, domainFilters []odoo.Filter) (AttendanceList, error) {
 	result := AttendanceList{}
-	err := o.querier.SearchGenericModel(context.Background(), odoo.SearchReadModel{
+	err := o.querier.SearchGenericModel(ctx, odoo.SearchReadModel{
 		Model:  "hr.attendance",
 		Domain: domainFilters,
 		Fields: []string{"employee_id", "name", "action", "action_desc"},

@@ -44,15 +44,15 @@ func (l ContractList) GetFTERatioForDay(day odoo.Date) (float64, error) {
 	return 0, fmt.Errorf("no contract found that covers date: %s", day.String())
 }
 
-func (o Odoo) FetchAllContracts(employeeID int) (ContractList, error) {
-	return o.readContracts([]odoo.Filter{
+func (o Odoo) FetchAllContracts(ctx context.Context, employeeID int) (ContractList, error) {
+	return o.readContracts(ctx, []odoo.Filter{
 		[]interface{}{"employee_id", "=", employeeID},
 	})
 }
 
-func (o Odoo) readContracts(domainFilters []odoo.Filter) (ContractList, error) {
+func (o Odoo) readContracts(ctx context.Context, domainFilters []odoo.Filter) (ContractList, error) {
 	result := ContractList{}
-	err := o.querier.SearchGenericModel(context.Background(), odoo.SearchReadModel{
+	err := o.querier.SearchGenericModel(ctx, odoo.SearchReadModel{
 		Model:  "hr.contract",
 		Domain: domainFilters,
 		Fields: []string{"date_start", "date_end", "working_hours"},
