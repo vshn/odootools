@@ -47,9 +47,9 @@ func (c *ConfigController) parseInput(_ context.Context) error {
 	return err
 }
 
-func (c *ConfigController) searchEmployee(_ context.Context) error {
+func (c *ConfigController) searchEmployee(ctx context.Context) error {
 	if c.Input.SearchUserEnabled {
-		e, err := c.OdooClient.SearchEmployee(c.Input.SearchUser)
+		e, err := c.OdooClient.SearchEmployee(ctx, c.Input.SearchUser)
 		if e == nil {
 			return fmt.Errorf("no user matching '%s' found", c.Input.SearchUser)
 		}

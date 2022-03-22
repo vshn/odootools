@@ -54,14 +54,14 @@ func (c *ReportController) parseInput(_ context.Context) error {
 	return err
 }
 
-func (c *ReportController) fetchEmployeeByID(_ context.Context) error {
+func (c *ReportController) fetchEmployeeByID(ctx context.Context) error {
 	employeeID := c.Input.EmployeeID
 	if c.SessionData.Employee != nil && c.SessionData.Employee.ID == employeeID {
 		c.Employee = c.SessionData.Employee
 		return nil
 	}
 
-	employee, err := c.OdooClient.FetchEmployeeByID(employeeID)
+	employee, err := c.OdooClient.FetchEmployeeByID(ctx, employeeID)
 	if employee == nil {
 		return fmt.Errorf("no employee found with given ID: %d", employeeID)
 	}
@@ -69,22 +69,22 @@ func (c *ReportController) fetchEmployeeByID(_ context.Context) error {
 	return err
 }
 
-func (c *ReportController) fetchContracts(_ context.Context) error {
-	contracts, err := c.OdooClient.FetchAllContracts(c.Employee.ID)
+func (c *ReportController) fetchContracts(ctx context.Context) error {
+	contracts, err := c.OdooClient.FetchAllContracts(ctx, c.Employee.ID)
 	c.Contracts = contracts
 	return err
 }
 
-func (c *ReportController) fetchAttendances(_ context.Context) error {
+func (c *ReportController) fetchAttendances(ctx context.Context) error {
 	begin, end := c.Input.GetDateRange()
-	attendances, err := c.OdooClient.FetchAttendancesBetweenDates(c.Employee.ID, begin, end)
+	attendances, err := c.OdooClient.FetchAttendancesBetweenDates(ctx, c.Employee.ID, begin, end)
 	c.Attendances = attendances
 	return err
 }
 
-func (c *ReportController) fetchLeaves(_ context.Context) error {
+func (c *ReportController) fetchLeaves(ctx context.Context) error {
 	begin, end := c.Input.GetDateRange()
-	leaves, err := c.OdooClient.FetchLeavesBetweenDates(c.Employee.ID, begin, end)
+	leaves, err := c.OdooClient.FetchLeavesBetweenDates(ctx, c.Employee.ID, begin, end)
 	c.Leaves = leaves
 	return err
 }
@@ -113,9 +113,9 @@ func (c *ReportController) calculateYearlyReport(_ context.Context) error {
 	return c.Echo.Render(http.StatusOK, yearlyReportTemplateName, values)
 }
 
-func (c *ReportController) searchEmployee(_ context.Context) error {
+func (c *ReportController) searchEmployee(ctx context.Context) error {
 	if c.Input.SearchUserEnabled {
-		e, err := c.OdooClient.SearchEmployee(c.Input.SearchUser)
+		e, err := c.OdooClient.SearchEmployee(ctx, c.Input.SearchUser)
 		if e == nil {
 			return fmt.Errorf("no user matching '%s' found", c.Input.SearchUser)
 		}
@@ -129,9 +129,9 @@ func (c *ReportController) searchEmployee(_ context.Context) error {
 	return fmt.Errorf("no Employee found for user ID %q", c.OdooSession.UID)
 }
 
-func (c *ReportController) fetchPayslip(_ context.Context) error {
+func (c *ReportController) fetchPayslip(ctx context.Context) error {
 	lastMonth := c.Input.GetFirstDayOfNextMonth().AddDate(0, -1, 0)
-	payslip, err := c.OdooClient.FetchPayslipOfLastMonth(c.Employee.ID, lastMonth)
+	payslip, err := c.OdooClient.FetchPayslipOfLastMonth(ctx, c.Employee.ID, lastMonth)
 	c.Payslip = payslip
 	return err
 }

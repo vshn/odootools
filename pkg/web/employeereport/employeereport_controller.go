@@ -106,9 +106,9 @@ func (c *ReportController) parseInput(_ context.Context) error {
 	return err
 }
 
-func (c *ReportController) fetchEmployees(_ context.Context) error {
+func (c *ReportController) fetchEmployees(ctx context.Context) error {
 	list := model.EmployeeList{}
-	err := c.OdooSession.SearchGenericModel(context.Background(), odoo.SearchReadModel{
+	err := c.OdooSession.SearchGenericModel(ctx, odoo.SearchReadModel{
 		Model: "hr.employee",
 		Domain: []odoo.Filter{
 			[]string{"work_email", "ilike", "@vshn.ch"},
@@ -133,20 +133,20 @@ func (c *ReportController) renderReport(_ context.Context) error {
 	return c.Echo.Render(http.StatusOK, employeeReportTemplateName, c.view.GetValuesForReports(successfulReports, failedReports))
 }
 
-func (c *EmployeeReport) fetchContracts(_ context.Context) error {
-	contracts, err := c.OdooClient.FetchAllContracts(c.Employee.ID)
+func (c *EmployeeReport) fetchContracts(ctx context.Context) error {
+	contracts, err := c.OdooClient.FetchAllContracts(ctx, c.Employee.ID)
 	c.Contracts = contracts
 	return err
 }
 
-func (c *EmployeeReport) fetchAttendances(_ context.Context) error {
-	attendances, err := c.OdooClient.FetchAttendancesBetweenDates(c.Employee.ID, c.Start, c.Stop)
+func (c *EmployeeReport) fetchAttendances(ctx context.Context) error {
+	attendances, err := c.OdooClient.FetchAttendancesBetweenDates(ctx, c.Employee.ID, c.Start, c.Stop)
 	c.Attendances = attendances
 	return err
 }
 
-func (c *EmployeeReport) fetchLeaves(_ context.Context) error {
-	leaves, err := c.OdooClient.FetchLeavesBetweenDates(c.Employee.ID, c.Start, c.Stop)
+func (c *EmployeeReport) fetchLeaves(ctx context.Context) error {
+	leaves, err := c.OdooClient.FetchLeavesBetweenDates(ctx, c.Employee.ID, c.Start, c.Stop)
 	c.Leaves = leaves
 	return err
 }
@@ -161,10 +161,10 @@ func (c *EmployeeReport) calculateMonthlyReport(_ context.Context) error {
 	return err
 }
 
-func (c *EmployeeReport) fetchPayslip(_ context.Context) error {
+func (c *EmployeeReport) fetchPayslip(ctx context.Context) error {
 	// TODO: verify timestamp
 	lastMonth := c.Start
-	payslip, err := c.OdooClient.FetchPayslipOfLastMonth(c.Employee.ID, lastMonth)
+	payslip, err := c.OdooClient.FetchPayslipOfLastMonth(ctx, c.Employee.ID, lastMonth)
 	c.Payslip = payslip
 	return err
 }

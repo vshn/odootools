@@ -45,12 +45,12 @@ func (s Server) runPostLogin(e echo.Context, odooSession *odoo.Session) error {
 	sessionData := controller.SessionData{}
 	p := pipeline.NewPipeline().WithSteps(
 		pipeline.NewStepFromFunc("fetch employee", func(ctx context.Context) error {
-			e, err := o.FetchEmployeeByUserID(odooSession.UID)
+			e, err := o.FetchEmployeeByUserID(ctx, odooSession.UID)
 			sessionData.Employee = e
 			return err
 		}),
 		pipeline.NewStepFromFunc("fetch manager group", func(ctx context.Context) error {
-			group, err := o.FetchGroupByName("Human Resources", "Manager")
+			group, err := o.FetchGroupByName(ctx, "Human Resources", "Manager")
 			if group != nil {
 				for _, userID := range group.UserIDs {
 					if odooSession.UID == userID {
