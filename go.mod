@@ -1,6 +1,6 @@
 module github.com/vshn/odootools
 
-go 1.17
+go 1.18
 
 require (
 	github.com/ccremer/go-command-pipeline v0.13.0
