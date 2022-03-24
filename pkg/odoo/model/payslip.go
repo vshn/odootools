@@ -18,11 +18,6 @@ type Payslip struct {
 	DateTo   odoo.Date   `json:"date_to"`
 }
 
-// PayslipList contains a slice of Payslip.
-type PayslipList struct {
-	Items []Payslip `json:"records,omitempty"`
-}
-
 func (o Odoo) FetchPayslipOfLastMonth(ctx context.Context, employeeID int, lastDayOfMonth time.Time) (*Payslip, error) {
 	payslips, err := o.readPayslips(ctx, []odoo.Filter{
 		[]interface{}{"employee_id", "=", employeeID},
@@ -40,8 +35,8 @@ func (o Odoo) FetchPayslipOfLastMonth(ctx context.Context, employeeID int, lastD
 	return nil, err
 }
 
-func (o Odoo) readPayslips(ctx context.Context, domainFilters []odoo.Filter) (PayslipList, error) {
-	result := PayslipList{}
+func (o Odoo) readPayslips(ctx context.Context, domainFilters []odoo.Filter) (odoo.List[Payslip], error) {
+	result := odoo.List[Payslip]{}
 	err := o.querier.SearchGenericModel(ctx, odoo.SearchReadModel{
 		Model:  "hr.payslip",
 		Domain: domainFilters,
