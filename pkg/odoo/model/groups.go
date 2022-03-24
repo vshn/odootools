@@ -13,11 +13,6 @@ type Group struct {
 	UserIDs  []int         `json:"users"`
 }
 
-// GroupList contains a slice of Group.
-type GroupList struct {
-	Items []Group `json:"records,omitempty"`
-}
-
 func (o Odoo) FetchGroupByName(ctx context.Context, category, name string) (*Group, error) {
 	groups, err := o.searchGroups(ctx, []odoo.Filter{
 		[]string{"name", "=", name},
@@ -26,14 +21,14 @@ func (o Odoo) FetchGroupByName(ctx context.Context, category, name string) (*Gro
 	if err != nil {
 		return nil, err
 	}
-	if len(groups.Items) > 0 {
+	if groups.Len() > 0 {
 		return &groups.Items[0], nil
 	}
 	return nil, nil
 }
 
-func (o Odoo) searchGroups(ctx context.Context, domainFilters []odoo.Filter) (GroupList, error) {
-	result := GroupList{}
+func (o Odoo) searchGroups(ctx context.Context, domainFilters []odoo.Filter) (odoo.List[Group], error) {
+	result := odoo.List[Group]{}
 	err := o.querier.SearchGenericModel(ctx, odoo.SearchReadModel{
 		Model:  "res.groups",
 		Domain: domainFilters,
