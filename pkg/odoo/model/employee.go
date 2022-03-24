@@ -11,11 +11,6 @@ type Employee struct {
 	Name string `json:"name"`
 }
 
-// EmployeeList contains a slice of Employee.
-type EmployeeList struct {
-	Items []Employee `json:"records,omitempty"`
-}
-
 // SearchEmployee searches for an Employee with the given searchString in the Employee.Name.
 // If multiple employees are found, the first is returned.
 // Returns nil if none found.
@@ -36,7 +31,7 @@ func (o Odoo) FetchEmployeeByUserID(ctx context.Context, userID int) (*Employee,
 }
 
 func (o Odoo) readEmployee(ctx context.Context, filters []odoo.Filter) (*Employee, error) {
-	result := EmployeeList{}
+	result := odoo.List[Employee]{}
 	err := o.querier.SearchGenericModel(ctx, odoo.SearchReadModel{
 		Model:  "hr.employee",
 		Domain: filters,
@@ -45,7 +40,7 @@ func (o Odoo) readEmployee(ctx context.Context, filters []odoo.Filter) (*Employe
 	if err != nil {
 		return nil, err
 	}
-	if len(result.Items) > 0 {
+	if result.Len() > 0 {
 		return &result.Items[0], nil
 	}
 	// not found
