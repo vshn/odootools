@@ -19,7 +19,7 @@ type ReportController struct {
 	Employee    *model.Employee
 	ReportView  *reportView
 	Contracts   model.ContractList
-	Attendances model.AttendanceList
+	Attendances odoo.List[model.Attendance]
 	Leaves      odoo.List[model.Leave]
 	Payslip     *model.Payslip
 }

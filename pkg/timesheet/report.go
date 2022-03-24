@@ -65,7 +65,7 @@ type MonthlyReport struct {
 }
 
 type ReportBuilder struct {
-	attendances model.AttendanceList
+	attendances odoo.List[model.Attendance]
 	leaves      odoo.List[model.Leave]
 	employee    *model.Employee
 	year        int
@@ -74,7 +74,7 @@ type ReportBuilder struct {
 	timezone    *time.Location
 }
 
-func NewReporter(attendances model.AttendanceList, leaves odoo.List[model.Leave], employee *model.Employee, contracts model.ContractList) *ReportBuilder {
+func NewReporter(attendances odoo.List[model.Attendance], leaves odoo.List[model.Leave], employee *model.Employee, contracts model.ContractList) *ReportBuilder {
 	return &ReportBuilder{
 		attendances: attendances,
 		leaves:      leaves,
