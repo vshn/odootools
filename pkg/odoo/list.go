@@ -6,14 +6,10 @@ type List[T any] struct {
 }
 
 // Len returns the length of List.Items.
+// This is a pure utility/shortcut function for `len(l.Items)` with nil check.
 func (l *List[T]) Len() int {
-	// for some reason len(l.Items) doesn't compile?
 	if l == nil || l.Items == nil {
 		return 0
 	}
-	i := 0
-	for range l.Items {
-		i++
-	}
-	return i
+	return len(l.Items)
 }

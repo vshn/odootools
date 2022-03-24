@@ -25,7 +25,7 @@ type ContractList odoo.List[Contract]
 // All involved dates are expected to be in UTC.
 func (l ContractList) GetFTERatioForDay(day odoo.Date) (float64, error) {
 	date := day.ToTime()
-	for _, contract := range l.TypedItems() {
+	for _, contract := range l.Items {
 		start := contract.Start.ToTime().Add(-1 * time.Second)
 		if contract.End.IsZero() {
 			// current contract
@@ -40,19 +40,6 @@ func (l ContractList) GetFTERatioForDay(day odoo.Date) (float64, error) {
 		}
 	}
 	return 0, fmt.Errorf("no contract found that covers date: %s", day.String())
-}
-
-func (l ContractList) TypedItems() []Contract {
-	list := make([]Contract, 0)
-	for _, c := range l.Items {
-		// For some reason `range ContractList.Items` doesn't expose Contract methods and properties if ContractList is a
-		// type alias for odoo.List[Contract], so we have to type switch.
-		switch t := any(c).(type) {
-		case Contract:
-			list = append(list, t)
-		}
-	}
-	return list
 }
 
 func (o Odoo) FetchAllContracts(ctx context.Context, employeeID int) (ContractList, error) {

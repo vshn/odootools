@@ -27,10 +27,6 @@ func TestList_Len(t *testing.T) {
 			givenList:   &List[interface{}]{Items: []interface{}{1}},
 			expectedLen: 1,
 		},
-		"GivenMultipleItems_ThenExpectTwo": {
-			givenList:   &List[interface{}]{Items: []interface{}{1, 2}},
-			expectedLen: 2,
-		},
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
