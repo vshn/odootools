@@ -67,7 +67,7 @@ func makeRange(min, max int) []int {
 func (r *ReportBuilder) getEarliestStartContractDate() (time.Time, bool) {
 	n := now()
 	start := n
-	for _, contract := range r.contracts.Items {
+	for _, contract := range r.contracts.TypedItems() {
 		if contract.Start.ToTime().Before(start) {
 			start = contract.Start.ToTime()
 		}
