@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/vshn/odootools/pkg/odoo"
 	"github.com/vshn/odootools/pkg/odoo/model"
 )
 
@@ -28,7 +29,7 @@ func TestReportBuilder_getEarliestStartContractDate(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			r := NewReporter(model.AttendanceList{}, model.LeaveList{}, nil, tt.givenContracts)
+			r := NewReporter(model.AttendanceList{}, odoo.List[model.Leave]{}, nil, tt.givenContracts)
 			resultDate, found := r.getEarliestStartContractDate()
 			assert.Equal(t, tt.expectedFound, found)
 			if tt.expectedFound {
