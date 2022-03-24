@@ -19,15 +19,20 @@ type Contract struct {
 }
 
 // ContractList contains a slice of Contract.
-type ContractList struct {
-	Items []Contract `json:"records,omitempty"`
-}
+type ContractList odoo.List[Contract]
 
 // GetFTERatioForDay returns the workload ratio that is active for the given day.
 // All involved dates are expected to be in UTC.
 func (l ContractList) GetFTERatioForDay(day odoo.Date) (float64, error) {
 	date := day.ToTime()
-	for _, contract := range l.Items {
+	for _, c := range l.Items {
+		// For some reason ContractList.Items() is not properly recognized as Contract if ContractList is a
+		// type alias for odoo.List[Contract], so we have to type switch.
+		var contract Contract
+		switch t := any(c).(type) {
+		case Contract:
+			contract = t
+		}
 		start := contract.Start.ToTime().Add(-1 * time.Second)
 		if contract.End.IsZero() {
 			// current contract
