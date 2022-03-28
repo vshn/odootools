@@ -36,7 +36,7 @@ func (c *ConfigController) ProcessInput() error {
 			pipeline.NewStepFromFunc("search employee", c.searchEmployee),
 			pipeline.NewStepFromFunc("redirect to report", c.redirectToReportView),
 		)
-	result := root.RunWithContext(c.Echo.Request().Context())
+	result := root.RunWithContext(c.RequestContext)
 	return result.Err()
 }
 

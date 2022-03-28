@@ -1,16 +1,19 @@
 package controller
 
 import (
+	"context"
+
 	"github.com/labstack/echo/v4"
 	"github.com/vshn/odootools/pkg/odoo"
 	"github.com/vshn/odootools/pkg/odoo/model"
 )
 
 type BaseController struct {
-	Echo        echo.Context
-	OdooClient  *model.Odoo
-	OdooSession *odoo.Session
-	SessionData SessionData
+	Echo           echo.Context
+	OdooClient     *model.Odoo
+	OdooSession    *odoo.Session
+	SessionData    SessionData
+	RequestContext context.Context
 }
 
 const HRManagerRoleKey = "HRManager"

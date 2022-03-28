@@ -30,7 +30,7 @@ func (c *UpdatePayslipController) UpdatePayslipOfEmployee() error {
 		pipeline.NewStepFromFunc("fetch employee", c.fetchEmployeeByID).WithErrorHandler(c.badRequest),
 		pipeline.NewStepFromFunc("fetch current month's payslip", c.fetchNextPayslip).WithErrorHandler(c.badRequest),
 	)
-	result := root.RunWithContext(c.Echo.Request().Context())
+	result := root.RunWithContext(c.RequestContext)
 	return result.Err()
 }
 

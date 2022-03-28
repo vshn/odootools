@@ -44,7 +44,7 @@ func (c *ReportController) DisplayOvertimeReport() error {
 			pipeline.If(pipeline.Not(c.noMonthGiven), pipeline.NewStepFromFunc("calculate monthly report", c.calculateMonthlyReport)),
 			pipeline.If(c.noMonthGiven, pipeline.NewStepFromFunc("calculate yearly report", c.calculateYearlyReport)),
 		)
-	result := root.RunWithContext(c.Echo.Request().Context())
+	result := root.RunWithContext(c.RequestContext)
 	return result.Err()
 }
 

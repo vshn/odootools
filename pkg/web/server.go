@@ -2,9 +2,12 @@ package web
 
 import (
 	"encoding/base64"
+	"fmt"
 	"log"
 	"net/http"
 
+	"github.com/go-logr/logr"
+	"github.com/go-logr/logr/funcr"
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
@@ -70,7 +73,11 @@ func (s Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (s Server) newControllerContext(e echo.Context) *controller.BaseController {
 	sess := s.GetOdooSession(e)
 	data := s.GetSessionData(e)
-	return &controller.BaseController{Echo: e, OdooClient: model.NewOdoo(sess), OdooSession: sess, SessionData: data}
+	logCtx := logr.NewContext(e.Request().Context(), funcr.NewJSON(func(obj string) {
+		// TODO: Integrate with echo logger?
+		fmt.Println(obj)
+	}, funcr.Options{Verbosity: 2}))
+	return &controller.BaseController{Echo: e, OdooClient: model.NewOdoo(sess), OdooSession: sess, SessionData: data, RequestContext: logCtx}
 }
 
 func (s Server) ShowError(e echo.Context, err error) error {

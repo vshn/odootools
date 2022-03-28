@@ -35,6 +35,11 @@ func (o Odoo) FetchPayslipInMonth(ctx context.Context, employeeID int, firstDayO
 	return nil, err
 }
 
+func (o Odoo) UpdatePayslip(ctx context.Context, payslip *Payslip) error {
+	err := o.querier.UpdateGenericModel(ctx, "hr.payslip", payslip.ID, payslip)
+	return err
+}
+
 func (o Odoo) readPayslips(ctx context.Context, domainFilters []odoo.Filter) (odoo.List[Payslip], error) {
 	result := odoo.List[Payslip]{}
 	err := o.querier.SearchGenericModel(ctx, odoo.SearchReadModel{

@@ -30,8 +30,8 @@ type EmployeeReport struct {
 	Stop            time.Time
 	Employee        model.Employee
 	Contracts       model.ContractList
-	Attendances odoo.List[model.Attendance]
-	Leaves      odoo.List[model.Leave]
+	Attendances     odoo.List[model.Attendance]
+	Leaves          odoo.List[model.Leave]
 	PreviousPayslip *model.Payslip
 	NextPayslip     *model.Payslip
 
@@ -53,7 +53,7 @@ func (c *ReportController) DisplayEmployeeReport() error {
 		pipeline.NewWorkerPoolStep("generate reports for each employee", 4, c.createPipelinesForEachEmployee, c.collectReports),
 		pipeline.NewStepFromFunc("render report", c.renderReport),
 	)
-	result := root.RunWithContext(c.Echo.Request().Context())
+	result := root.RunWithContext(c.RequestContext)
 	return result.Err()
 }
 
