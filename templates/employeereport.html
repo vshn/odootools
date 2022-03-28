@@ -12,6 +12,23 @@
     let saveOvertimeBalance = function (employeeID) {
         let input = document.getElementById("input-edit-" + employeeID).value
         console.log(input)
+        let xhr = new XMLHttpRequest()
+        xhr.onreadystatechange = function () {
+            if (this.readyState !== 4) return
+            if (this.status === 200) {
+                createAlert("Payslip successfully updated", "success")
+                return
+            }
+            let response = JSON.parse(this.responseText)
+            let errorMessage = "Payslip could not be updated: " + response.errorMessage
+            createAlert(errorMessage, "danger")
+        }
+        let data = "overtime=" + input
+        let url = "{{ .UpdateBaseUrl }}".replace(":employee", employeeID)
+        xhr.open("POST", url, true)
+        xhr.setRequestHeader('Accept', 'application/json')
+        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
+        xhr.send(data)
     }
 
     window.onload = function () {

@@ -34,11 +34,12 @@ func (v *reportView) GetValuesForReports(reports []*EmployeeReport, failedEmploy
 			"NextMonthLink":     fmt.Sprintf(linkFormat, nextYear, nextMonth),
 			"CurrentMonthLink":  fmt.Sprintf(linkFormat, time.Now().Year(), time.Now().Month()),
 		},
-		"Reports":   reportValues,
-		"Warning":   v.formatErrorForFailedEmployeeReports(failedEmployees),
-		"Year":      v.year,
-		"Month":     time.Month(v.month).String(),
-		"LastMonth": time.Month(prevMonth).String(),
+		"Reports":       reportValues,
+		"Warning":       v.formatErrorForFailedEmployeeReports(failedEmployees),
+		"Year":          v.year,
+		"Month":         time.Month(v.month).String(),
+		"LastMonth":     time.Month(prevMonth).String(),
+		"UpdateBaseUrl": fmt.Sprintf("/report/employee/:employee/%d/%02d", v.year, v.month),
 	}
 }
 

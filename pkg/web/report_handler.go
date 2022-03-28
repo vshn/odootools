@@ -39,3 +39,10 @@ func (s Server) EmployeeReport(e echo.Context) error {
 	}
 	return nil
 }
+
+// EmployeeReportUpdate POST /report/employee/:employee/:year/:month.
+// Updates the payslip with the overtime value of the given month.
+func (s Server) EmployeeReportUpdate(e echo.Context) error {
+	ctrl := employeereport.NewUpdatePayslipController(s.newControllerContext(e))
+	return ctrl.UpdatePayslipOfEmployee()
+}
