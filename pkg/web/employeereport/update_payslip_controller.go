@@ -72,7 +72,11 @@ func (c *UpdatePayslipController) fetchNextPayslip(ctx context.Context) error {
 }
 
 func (c *UpdatePayslipController) badRequest(_ context.Context, err error) error {
-	return c.Echo.JSON(http.StatusBadRequest, UpdateResponse{ErrorMessage: err.Error()})
+	jsonErr := c.Echo.JSON(http.StatusBadRequest, UpdateResponse{ErrorMessage: err.Error()})
+	if jsonErr != nil {
+		return jsonErr
+	}
+	return err
 }
 
 func (c *UpdatePayslipController) savePayslip(ctx context.Context) error {
@@ -89,5 +93,9 @@ func (c *UpdatePayslipController) savePayslip(ctx context.Context) error {
 }
 
 func (c *UpdatePayslipController) serverError(_ context.Context, err error) error {
-	return c.Echo.JSON(http.StatusInternalServerError, UpdateResponse{ErrorMessage: err.Error()})
+	jsonErr := c.Echo.JSON(http.StatusInternalServerError, UpdateResponse{ErrorMessage: err.Error()})
+	if jsonErr != nil {
+		return jsonErr
+	}
+	return err
 }

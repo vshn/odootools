@@ -33,6 +33,8 @@
                     let errorMessage = "Payslip could not be updated: " + json.errorMessage
                     createAlert(errorMessage, "danger")
                 }
+            }).catch(err => {
+                console.debug("cannot parse json response:", err)
             })
         }).catch(err => {
             console.debug("cannot send request:", err)
