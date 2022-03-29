@@ -30,12 +30,7 @@ type Leave struct {
 	State string `json:"state,omitempty"`
 }
 
-// LeaveList contains a slice of Leave.
-type LeaveList struct {
-	Items []Leave `json:"records,omitempty"`
-}
-
-func (o Odoo) FetchLeavesBetweenDates(ctx context.Context, employeeID int, begin, end time.Time) (LeaveList, error) {
+func (o Odoo) FetchLeavesBetweenDates(ctx context.Context, employeeID int, begin, end time.Time) (odoo.List[Leave], error) {
 	beginStr := begin.Format(odoo.DateFormat)
 	endStr := end.Format(odoo.DateFormat)
 	return o.readLeaves(ctx, []odoo.Filter{
@@ -55,8 +50,8 @@ func (o Odoo) FetchLeavesBetweenDates(ctx context.Context, employeeID int, begin
 	})
 }
 
-func (o Odoo) readLeaves(ctx context.Context, domainFilters []odoo.Filter) (LeaveList, error) {
-	result := LeaveList{}
+func (o Odoo) readLeaves(ctx context.Context, domainFilters []odoo.Filter) (odoo.List[Leave], error) {
+	result := odoo.List[Leave]{}
 	err := o.querier.SearchGenericModel(ctx, odoo.SearchReadModel{
 		Model:  "hr.holidays",
 		Domain: domainFilters,

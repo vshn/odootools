@@ -19,9 +19,7 @@ type Contract struct {
 }
 
 // ContractList contains a slice of Contract.
-type ContractList struct {
-	Items []Contract `json:"records,omitempty"`
-}
+type ContractList odoo.List[Contract]
 
 // GetFTERatioForDay returns the workload ratio that is active for the given day.
 // All involved dates are expected to be in UTC.

@@ -19,7 +19,7 @@ import (
 type ReportController struct {
 	controller.BaseController
 	Input     reportconfig.ReportRequest
-	employees model.EmployeeList
+	employees odoo.List[model.Employee]
 	reports   []*EmployeeReport
 	view      *reportView
 }
@@ -30,8 +30,8 @@ type EmployeeReport struct {
 	Stop        time.Time
 	Employee    model.Employee
 	Contracts   model.ContractList
-	Attendances model.AttendanceList
-	Leaves      model.LeaveList
+	Attendances odoo.List[model.Attendance]
+	Leaves      odoo.List[model.Leave]
 	Payslip     *model.Payslip
 
 	Result timesheet.MonthlyReport
@@ -58,7 +58,7 @@ func (c *ReportController) DisplayEmployeeReport() error {
 
 func (c *ReportController) createPipelinesForEachEmployee(ctx context.Context, pipelines chan *pipeline.Pipeline) {
 	defer close(pipelines)
-	c.reports = make([]*EmployeeReport, len(c.employees.Items))
+	c.reports = make([]*EmployeeReport, c.employees.Len())
 	for i, employee := range c.employees.Items {
 		select {
 		case <-ctx.Done():
@@ -107,7 +107,7 @@ func (c *ReportController) parseInput(_ context.Context) error {
 }
 
 func (c *ReportController) fetchEmployees(ctx context.Context) error {
-	list := model.EmployeeList{}
+	list := odoo.List[model.Employee]{}
 	err := c.OdooSession.SearchGenericModel(ctx, odoo.SearchReadModel{
 		Model: "hr.employee",
 		Domain: []odoo.Filter{

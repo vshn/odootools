@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	pipeline "github.com/ccremer/go-command-pipeline"
+	"github.com/vshn/odootools/pkg/odoo"
 	"github.com/vshn/odootools/pkg/odoo/model"
 	"github.com/vshn/odootools/pkg/timesheet"
 	"github.com/vshn/odootools/pkg/web/controller"
@@ -18,8 +19,8 @@ type ReportController struct {
 	Employee    *model.Employee
 	ReportView  *reportView
 	Contracts   model.ContractList
-	Attendances model.AttendanceList
-	Leaves      model.LeaveList
+	Attendances odoo.List[model.Attendance]
+	Leaves      odoo.List[model.Leave]
 	Payslip     *model.Payslip
 }
 

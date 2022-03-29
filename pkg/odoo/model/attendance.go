@@ -24,13 +24,8 @@ type Attendance struct {
 	Reason *ActionReason `json:"action_desc,omitempty"`
 }
 
-// AttendanceList list contains a slice of Attendance.
-type AttendanceList struct {
-	Items []Attendance `json:"records,omitempty"`
-}
-
 // FetchAttendancesBetweenDates retrieves all attendances associated with the given employee between 2 dates (inclusive each).
-func (o Odoo) FetchAttendancesBetweenDates(ctx context.Context, employeeID int, begin, end time.Time) (AttendanceList, error) {
+func (o Odoo) FetchAttendancesBetweenDates(ctx context.Context, employeeID int, begin, end time.Time) (odoo.List[Attendance], error) {
 	return o.fetchAttendances(ctx, []odoo.Filter{
 		[]interface{}{"employee_id", "=", employeeID},
 		[]string{"name", ">=", begin.Format(odoo.DateFormat)},
@@ -38,8 +33,8 @@ func (o Odoo) FetchAttendancesBetweenDates(ctx context.Context, employeeID int, 
 	})
 }
 
-func (o Odoo) fetchAttendances(ctx context.Context, domainFilters []odoo.Filter) (AttendanceList, error) {
-	result := AttendanceList{}
+func (o Odoo) fetchAttendances(ctx context.Context, domainFilters []odoo.Filter) (odoo.List[Attendance], error) {
+	result := odoo.List[Attendance]{}
 	err := o.querier.SearchGenericModel(ctx, odoo.SearchReadModel{
 		Model:  "hr.attendance",
 		Domain: domainFilters,
