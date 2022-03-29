@@ -7,6 +7,7 @@
         alert.innerText = message
         alert.innerHTML += '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>'
         alertContainer.appendChild(alert)
+        console.debug("added alert", alert)
     }
 
     let saveOvertimeBalance = function (employeeID) {
@@ -21,17 +22,20 @@
             },
             body: data
         }).then(res => {
-            console.log("Request complete! response:", res)
-            if (res.status === 200) {
-                createAlert("Payslip successfully updated", "success")
-                return
-            }
+            console.debug("Request complete! response:", res)
             res.json().then(json => {
-                let errorMessage = "Payslip could not be updated: " + json.errorMessage
-                createAlert(errorMessage, "danger")
+                console.debug("Response payload", json)
+                if (json.errorMessage === "") {
+                    createAlert("Payslip successfully updated for " + json.employee.name, "success")
+                    let nextBalanceCell = document.getElementById("td-nextbalance-" + json.employee.id)
+                    nextBalanceCell.innerText = json.overtime
+                } else {
+                    let errorMessage = "Payslip could not be updated: " + json.errorMessage
+                    createAlert(errorMessage, "danger")
+                }
             })
         }).catch(err => {
-            console.log("cannot send request:", err)
+            console.debug("cannot send request:", err)
             createAlert("server seems unavailable: " + err, "danger")
         })
     }
@@ -86,7 +90,7 @@
         <td>{{ .PreviousBalance }}</td>
         <td>{{ .OvertimeHours }}</td>
         <td>{{ .ProposedBalance }}</td>
-        <td>{{ .NextBalance }}</td>
+        <td id="td-nextbalance-{{ .EmployeeID }}">{{ .NextBalance }}</td>
         <td>
             {{- if .OvertimeBalanceEditEnabled }}
             <div class="mb-3">

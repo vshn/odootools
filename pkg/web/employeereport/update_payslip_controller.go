@@ -29,6 +29,7 @@ func (c *UpdatePayslipController) UpdatePayslipOfEmployee() error {
 		pipeline.NewStepFromFunc("parse user input", c.parseInput).WithErrorHandler(c.badRequest),
 		pipeline.NewStepFromFunc("fetch employee", c.fetchEmployeeByID).WithErrorHandler(c.badRequest),
 		pipeline.NewStepFromFunc("fetch current month's payslip", c.fetchNextPayslip).WithErrorHandler(c.badRequest),
+		pipeline.NewStepFromFunc("save payslip", c.savePayslip).WithErrorHandler(c.serverError),
 	)
 	result := root.RunWithContext(c.RequestContext)
 	return result.Err()
@@ -72,4 +73,21 @@ func (c *UpdatePayslipController) fetchNextPayslip(ctx context.Context) error {
 
 func (c *UpdatePayslipController) badRequest(_ context.Context, err error) error {
 	return c.Echo.JSON(http.StatusBadRequest, UpdateResponse{ErrorMessage: err.Error()})
+}
+
+func (c *UpdatePayslipController) savePayslip(ctx context.Context) error {
+	payslip := c.NextPayslip
+	payslip.Overtime = c.Input.Overtime
+	err := c.OdooClient.UpdatePayslip(ctx, payslip)
+	if err != nil {
+		return err
+	}
+	return c.Echo.JSON(http.StatusOK, UpdateResponse{
+		Overtime: c.Input.Overtime,
+		Employee: c.Employee,
+	})
+}
+
+func (c *UpdatePayslipController) serverError(_ context.Context, err error) error {
+	return c.Echo.JSON(http.StatusInternalServerError, UpdateResponse{ErrorMessage: err.Error()})
 }

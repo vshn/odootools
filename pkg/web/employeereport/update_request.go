@@ -5,6 +5,7 @@ import (
 	"html"
 
 	"github.com/labstack/echo/v4"
+	"github.com/vshn/odootools/pkg/odoo/model"
 	"github.com/vshn/odootools/pkg/web/reportconfig"
 )
 
@@ -15,7 +16,9 @@ type UpdateRequest struct {
 }
 
 type UpdateResponse struct {
-	ErrorMessage string `json:"errorMessage"`
+	ErrorMessage string          `json:"errorMessage"`
+	Overtime     string          `json:"overtime"`
+	Employee     *model.Employee `json:"employee"`
 }
 
 // FromRequest parses the properties based on the given request echo.Context.
