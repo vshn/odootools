@@ -20,6 +20,7 @@ func (s *Server) setupRoutes(middleware ...echo.MiddlewareFunc) {
 	report.GET("", s.RequestReportForm)
 	report.POST("", s.ProcessReportInput)
 	report.GET("/employees/:year/:month", s.EmployeeReport)
+	report.POST("/employee/:employee/:year/:month", s.EmployeeReportUpdate)
 	report.GET("/:employee/:year", s.OvertimeReport)
 	report.GET("/:employee/:year/:month", s.OvertimeReport)
 

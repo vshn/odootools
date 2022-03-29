@@ -44,7 +44,7 @@ func (c *ReportController) DisplayOvertimeReport() error {
 			pipeline.If(pipeline.Not(c.noMonthGiven), pipeline.NewStepFromFunc("calculate monthly report", c.calculateMonthlyReport)),
 			pipeline.If(c.noMonthGiven, pipeline.NewStepFromFunc("calculate yearly report", c.calculateYearlyReport)),
 		)
-	result := root.RunWithContext(c.Echo.Request().Context())
+	result := root.RunWithContext(c.RequestContext)
 	return result.Err()
 }
 
@@ -131,8 +131,8 @@ func (c *ReportController) searchEmployee(ctx context.Context) error {
 }
 
 func (c *ReportController) fetchPayslip(ctx context.Context) error {
-	lastMonth := c.Input.GetFirstDayOfNextMonth().AddDate(0, -1, 0)
-	payslip, err := c.OdooClient.FetchPayslipOfLastMonth(ctx, c.Employee.ID, lastMonth)
+	lastMonth := c.Input.GetFirstDayOfMonth().AddDate(0, -1, 0)
+	payslip, err := c.OdooClient.FetchPayslipInMonth(ctx, c.Employee.ID, lastMonth)
 	c.Payslip = payslip
 	return err
 }

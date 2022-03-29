@@ -16,9 +16,13 @@ help: ## Show this help
 
 # Note: We only use package.json for Renovate support
 
+generate: base_url = https://cdn.jsdelivr.net/npm/bootstrap
+generate: version = $(shell jq --raw-output '.packages."node_modules/bootstrap".version' package-lock.json)
 generate: ## Generate code and assets
-	curl -sSLo templates/bootstrap.min.css https://cdn.jsdelivr.net/npm/bootstrap@$(shell jq --raw-output '.packages."node_modules/bootstrap".version' package-lock.json)/dist/css/bootstrap.min.css
-	curl -sSLo templates/bootstrap.min.css.map https://cdn.jsdelivr.net/npm/bootstrap@$(shell jq --raw-output '.packages."node_modules/bootstrap".version' package-lock.json)/dist/css/bootstrap.min.css.map
+	curl -sSLo templates/bootstrap.min.css $(base_url)@$(version)/dist/css/bootstrap.min.css
+	curl -sSLo templates/bootstrap.min.css.map $(base_url)@$(version)/dist/css/bootstrap.min.css.map
+	curl -sSLo templates/bootstrap.min.js $(base_url)@$(version)/dist/js/bootstrap.min.js
+	curl -sSLo templates/bootstrap.min.js.map $(base_url)@$(version)/dist/js/bootstrap.min.js.map
 
 .PHONY: build
 build: build.bin build.docker ## All-in-one build

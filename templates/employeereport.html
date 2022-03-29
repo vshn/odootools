@@ -1,11 +1,68 @@
 {{ define "main" }}
+<script defer>
+    let createAlert = function (message, level) {
+        let alertContainer = document.getElementById('alerts')
+        let alert = document.createElement("div")
+        alert.className = "alert alert-dismissible alert-" + level
+        alert.innerText = message
+        alert.innerHTML += '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>'
+        alertContainer.appendChild(alert)
+        console.debug("added alert", alert)
+    }
+
+    let saveOvertimeBalance = function (employeeID) {
+        let input = document.getElementById("input-edit-" + employeeID).value
+        let url = "{{ .UpdateBaseUrl }}".replace(":employee", employeeID)
+        let data = "overtime=" + input
+        fetch(url, {
+            method: "POST",
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: data
+        }).then(res => {
+            console.debug("Request complete! response:", res)
+            res.json().then(json => {
+                console.debug("Response payload", json)
+                if (json.errorMessage === "") {
+                    createAlert("Payslip successfully updated for " + json.employee.name, "success")
+                    let nextBalanceCell = document.getElementById("td-nextbalance-" + json.employee.id)
+                    nextBalanceCell.innerText = json.overtime
+                } else {
+                    let errorMessage = "Payslip could not be updated: " + json.errorMessage
+                    createAlert(errorMessage, "danger")
+                }
+            }).catch(err => {
+                console.debug("cannot parse json response:", err)
+            })
+        }).catch(err => {
+            console.debug("cannot send request:", err)
+            createAlert("server seems unavailable: " + err, "danger")
+        })
+    }
+
+</script>
+<style>
+    /* Fix header on top when scrolling */
+    .table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+</style>
 <h1>Attendances for {{ .Month }} {{ .Year }}</h1>
-{{ with .Error }}
-<div class="alert alert-danger" role="alert">{{ . }}</div>
-{{ end }}
-{{ with .Warning }}
-<div class="alert alert-warning" role="alert">{{ . }}</div>
-{{ end }}
+<div id="alerts">
+    {{ with .Error }}
+    <div class="alert alert-danger" role="alert">{{ . }}</div>
+    {{ end }}
+    {{ with .Warning }}
+    <div class="alert alert-warning alert-dismissible" role="alert">
+        {{ . }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {{ end }}
+</div>
 <p>
     <a href="{{ .Nav.PreviousMonthLink }}" class="btn btn-secondary">Previous</a>
     <a href="{{ .Nav.CurrentMonthLink }}" class="btn btn-primary">Current</a>
@@ -13,13 +70,16 @@
 </p>
 <table class="table table-hover table-sm">
     <thead>
-    <tr>
+    <tr class="table-secondary">
         <th scope="col">Name</th>
         <th scope="col">Leaves</th>
         <th scope="col">Excused hours</th>
         <th scope="col">Worked hours</th>
-        <th scope="col">Overtime hours</th>
-        <th scope="col">New Balance</th>
+        <th scope="col">{{ .LastMonth }} Payslip</th>
+        <th scope="col">Overtime delta</th>
+        <th scope="col">Proposed balance</th>
+        <th scope="col">{{ .Month }} Payslip</th>
+        <th scope="col">Save in {{ .Month }} Payslip</th>
     </tr>
     </thead>
     <tbody>
@@ -29,8 +89,20 @@
         <td>{{ .Leaves }}d</td>
         <td>{{ .ExcusedHours }}</td>
         <td>{{ .WorkedHours }}</td>
+        <td>{{ .PreviousBalance }}</td>
         <td>{{ .OvertimeHours }}</td>
-        <td>{{ .OvertimeBalance }}</td>
+        <td>{{ .ProposedBalance }}</td>
+        <td id="td-nextbalance-{{ .EmployeeID }}">{{ .NextBalance }}</td>
+        <td>
+            {{- if .OvertimeBalanceEditEnabled }}
+            <div class="mb-3">
+                <input id="input-edit-{{ .EmployeeID }}" type="text" class="form-control" value="{{ .OvertimeBalanceEditPreviewValue }}" placeholder="{{ .ProposedBalance }}">
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-edit-{{ .EmployeeID }}" onclick="saveOvertimeBalance({{ .EmployeeID }})">{{ .ButtonText }}</button>
+            </div>
+            {{- else }}
+            Create payslip first
+            {{- end }}
+        </td>
     </tr>
     {{ end }}
     </tbody>

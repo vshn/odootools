@@ -26,13 +26,14 @@ type ReportController struct {
 
 type EmployeeReport struct {
 	controller.BaseController
-	Start       time.Time
-	Stop        time.Time
-	Employee    model.Employee
-	Contracts   model.ContractList
-	Attendances odoo.List[model.Attendance]
-	Leaves      odoo.List[model.Leave]
-	Payslip     *model.Payslip
+	Start           time.Time
+	Stop            time.Time
+	Employee        model.Employee
+	Contracts       model.ContractList
+	Attendances     odoo.List[model.Attendance]
+	Leaves          odoo.List[model.Leave]
+	PreviousPayslip *model.Payslip
+	NextPayslip     *model.Payslip
 
 	Result timesheet.MonthlyReport
 }
@@ -52,7 +53,7 @@ func (c *ReportController) DisplayEmployeeReport() error {
 		pipeline.NewWorkerPoolStep("generate reports for each employee", 4, c.createPipelinesForEachEmployee, c.collectReports),
 		pipeline.NewStepFromFunc("render report", c.renderReport),
 	)
-	result := root.RunWithContext(c.Echo.Request().Context())
+	result := root.RunWithContext(c.RequestContext)
 	return result.Err()
 }
 
@@ -67,8 +68,8 @@ func (c *ReportController) createPipelinesForEachEmployee(ctx context.Context, p
 			report := &EmployeeReport{
 				BaseController: c.BaseController,
 				Employee:       employee,
-				Start:          c.Input.GetLastDayFromPreviousMonth(),
-				Stop:           c.Input.GetFirstDayOfNextMonth(),
+				Start:          c.Input.GetFirstDayOfMonth(),
+				Stop:           c.Input.GetLastDayOfMonth(),
 			}
 			c.reports[i] = report
 			pipe := report.createPipeline()
@@ -83,7 +84,8 @@ func (c *EmployeeReport) createPipeline() *pipeline.Pipeline {
 		pipeline.NewStepFromFunc("fetch contracts", c.fetchContracts),
 		pipeline.NewStepFromFunc("fetch attendances", c.fetchAttendances),
 		pipeline.NewStepFromFunc("fetch leaves", c.fetchLeaves),
-		pipeline.NewStepFromFunc("fetch last issued payslip", c.fetchPayslip),
+		pipeline.NewStepFromFunc("fetch last issued payslip", c.fetchPreviousPayslip),
+		pipeline.NewStepFromFunc("fetch current month's payslip", c.fetchNextPayslip),
 		pipeline.NewStepFromFunc("calculate monthly report", c.calculateMonthlyReport).WithErrorHandler(c.ignoreNoContractFound),
 	))
 	return p
@@ -140,19 +142,25 @@ func (c *EmployeeReport) fetchContracts(ctx context.Context) error {
 }
 
 func (c *EmployeeReport) fetchAttendances(ctx context.Context) error {
-	attendances, err := c.OdooClient.FetchAttendancesBetweenDates(ctx, c.Employee.ID, c.Start, c.Stop)
+	// extend date range for timezone correction
+	start := c.Start.AddDate(0, 0, -1)
+	stop := c.Start.AddDate(0, 1, 0)
+	attendances, err := c.OdooClient.FetchAttendancesBetweenDates(ctx, c.Employee.ID, start, stop)
 	c.Attendances = attendances
 	return err
 }
 
 func (c *EmployeeReport) fetchLeaves(ctx context.Context) error {
-	leaves, err := c.OdooClient.FetchLeavesBetweenDates(ctx, c.Employee.ID, c.Start, c.Stop)
+	// extend date range for timezone correction
+	start := c.Start.AddDate(0, 0, -1)
+	stop := c.Start.AddDate(0, 1, 0)
+	leaves, err := c.OdooClient.FetchLeavesBetweenDates(ctx, c.Employee.ID, start, stop)
 	c.Leaves = leaves
 	return err
 }
 
 func (c *EmployeeReport) calculateMonthlyReport(_ context.Context) error {
-	start := c.Start.AddDate(0, 0, 1)
+	start := c.Start
 	reporter := timesheet.NewReporter(c.Attendances, c.Leaves, &c.Employee, c.Contracts).
 		SetMonth(start.Year(), int(start.Month())).
 		SetTimeZone("Europe/Zurich") // hardcoded for now
@@ -161,11 +169,18 @@ func (c *EmployeeReport) calculateMonthlyReport(_ context.Context) error {
 	return err
 }
 
-func (c *EmployeeReport) fetchPayslip(ctx context.Context) error {
+func (c *EmployeeReport) fetchPreviousPayslip(ctx context.Context) error {
 	// TODO: verify timestamp
-	lastMonth := c.Start
-	payslip, err := c.OdooClient.FetchPayslipOfLastMonth(ctx, c.Employee.ID, lastMonth)
-	c.Payslip = payslip
+	firstDayOfLastMonth := c.Start.AddDate(0, -1, 0)
+	payslip, err := c.OdooClient.FetchPayslipInMonth(ctx, c.Employee.ID, firstDayOfLastMonth)
+	c.PreviousPayslip = payslip
+	return err
+}
+
+func (c *EmployeeReport) fetchNextPayslip(ctx context.Context) error {
+	thisMonth := c.Start
+	payslip, err := c.OdooClient.FetchPayslipInMonth(ctx, c.Employee.ID, thisMonth)
+	c.NextPayslip = payslip
 	return err
 }
 

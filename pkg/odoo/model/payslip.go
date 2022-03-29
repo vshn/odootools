@@ -18,11 +18,11 @@ type Payslip struct {
 	DateTo   odoo.Date   `json:"date_to"`
 }
 
-func (o Odoo) FetchPayslipOfLastMonth(ctx context.Context, employeeID int, lastDayOfMonth time.Time) (*Payslip, error) {
+func (o Odoo) FetchPayslipInMonth(ctx context.Context, employeeID int, firstDayOfMonth time.Time) (*Payslip, error) {
 	payslips, err := o.readPayslips(ctx, []odoo.Filter{
 		[]interface{}{"employee_id", "=", employeeID},
-		[]string{"date_to", "<=", lastDayOfMonth.Format(odoo.DateFormat)},
-		[]string{"date_from", ">=", lastDayOfMonth.AddDate(0, -1, -1).Format(odoo.DateFormat)},
+		[]string{"date_from", ">=", firstDayOfMonth.AddDate(0, 0, -1).Format(odoo.DateFormat)},
+		[]string{"date_to", "<=", firstDayOfMonth.AddDate(0, 1, -1).Format(odoo.DateFormat)},
 	})
 	for _, payslip := range payslips.Items {
 		if strings.Contains(payslip.Name, "Pikett") {
@@ -33,6 +33,11 @@ func (o Odoo) FetchPayslipOfLastMonth(ctx context.Context, employeeID int, lastD
 		}
 	}
 	return nil, err
+}
+
+func (o Odoo) UpdatePayslip(ctx context.Context, payslip *Payslip) error {
+	err := o.querier.UpdateGenericModel(ctx, "hr.payslip", payslip.ID, payslip)
+	return err
 }
 
 func (o Odoo) readPayslips(ctx context.Context, domainFilters []odoo.Filter) (odoo.List[Payslip], error) {
@@ -47,6 +52,9 @@ func (o Odoo) readPayslips(ctx context.Context, domainFilters []odoo.Filter) (od
 
 // GetOvertime returns the plain field value as string.
 func (p Payslip) GetOvertime() string {
+	if p.Overtime == nil {
+		return ""
+	}
 	if _, ok := p.Overtime.(bool); ok {
 		return ""
 	}
