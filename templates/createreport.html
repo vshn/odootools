@@ -6,6 +6,56 @@
         document.getElementById("month").value = new Date().getMonth() + 1;
     }
 </script>
+
+<h1>This week at a glance</h1>
+<table class="table table-hover table-sm">
+    <thead>
+    <tr>
+        <th scope="col">Weekday</th>
+        <th scope="col">Leaves</th>
+        <th scope="col">Excused hours</th>
+        <th scope="col">Worked hours</th>
+        <th scope="col">Overtime hours</th>
+    </tr>
+    </thead>
+    <tbody>
+    {{ range .Attendances }}
+    <tr>
+        <td>{{ .Weekday }}</td>
+        <td>{{ .LeaveType }}</td>
+        <td>{{ .ExcusedHours }}</td>
+        <td>{{ .WorkedHours }}</td>
+        <td>{{ .OvertimeHours }}</td>
+    </tr>
+    {{ end }}
+    </tbody>
+    <tfoot>
+    <tr>
+        <th scope="col"></th>
+        <th scope="col">Total Leaves</th>
+        <th scope="col"></th>
+        <th scope="col">Total Worked</th>
+        <th scope="col">This week's Overtime</th>
+    </tr>
+    <tr>
+        <td></td>
+        <td>{{ .Summary.TotalLeaves }}</td>
+        <td></td>
+        <td>{{ .Summary.TotalWorked }}</td>
+        <td>{{ .Summary.TotalOvertime }}</td>
+    </tr>
+    {{ if .IsSignedIn }}
+    <tr>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td>Don't forget to sign out!</td>
+    </tr>
+    {{ end }}
+    </tfoot>
+</table>
+
 <h1>Create Report</h1>
 <form action="/report" method="POST">
     {{ with .Error }}
