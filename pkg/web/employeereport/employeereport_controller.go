@@ -138,7 +138,7 @@ func (c *ReportController) renderReport(_ context.Context) error {
 }
 
 func (c *EmployeeReport) fetchContracts(ctx context.Context) error {
-	contracts, err := c.OdooClient.FetchAllContracts(ctx, c.Employee.ID)
+	contracts, err := c.OdooClient.FetchAllContractsOfEmployee(ctx, c.Employee.ID)
 	c.Contracts = contracts
 	return err
 }
