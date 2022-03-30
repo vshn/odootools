@@ -68,6 +68,14 @@ func (d Date) IsWithinMonth(year, month int) bool {
 	return isBetween || date.Unix() == firstDayOfMonth.Unix()
 }
 
+func (d Date) IsWithinTimeRange(from, to time.Time) bool {
+	date := d.ToTime()
+	// time.After doesn't return true if the unix seconds are the same.
+	// Yet some users record attendances exactly midnight 00:00:00 and that causes same-timestamp issues.
+	isBetween := date.After(from) && date.Before(to)
+	return isBetween || date.Unix() == from.Unix()
+}
+
 // MustParseDateTime parses the given value in DateTimeFormat or panics if it fails.
 func MustParseDateTime(value string) *Date {
 	tm, err := time.Parse(DateTimeFormat, value)

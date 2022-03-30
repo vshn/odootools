@@ -56,20 +56,22 @@ type Summary struct {
 	AverageWorkload float64
 }
 
-type MonthlyReport struct {
+type Report struct {
 	DailySummaries []*DailySummary
 	Summary        Summary
 	Employee       *model.Employee
-	Year           int
-	Month          int
+	// From is the first day (inclusive) of the time range
+	From time.Time
+	// To is the last day (inclusive) of the time range
+	To time.Time
 }
 
 type ReportBuilder struct {
 	attendances odoo.List[model.Attendance]
 	leaves      odoo.List[model.Leave]
 	employee    *model.Employee
-	year        int
-	month       int
+	from        time.Time
+	to          time.Time
 	contracts   model.ContractList
 	timezone    *time.Location
 }
@@ -79,16 +81,16 @@ func NewReporter(attendances odoo.List[model.Attendance], leaves odoo.List[model
 		attendances: attendances,
 		leaves:      leaves,
 		employee:    employee,
-		year:        now().UTC().Year(),
-		month:       int(now().UTC().Month()),
 		contracts:   contracts,
 		timezone:    time.Local,
 	}
 }
 
-func (r *ReportBuilder) SetMonth(year, month int) *ReportBuilder {
-	r.year = year
-	r.month = month
+// SetRange sets the time range in which the report should consider calculations.
+// For example, to build a monthly report, set `from` to the first day of the month from midnight, and `to` to the first day of the next month at midnight.
+func (r *ReportBuilder) SetRange(from, to time.Time) *ReportBuilder {
+	r.from = from
+	r.to = to
 	return r
 }
 
@@ -100,17 +102,17 @@ func (r *ReportBuilder) SetTimeZone(zone string) *ReportBuilder {
 	return r
 }
 
-func (r *ReportBuilder) CalculateMonthlyReport() (MonthlyReport, error) {
-	filteredAttendances := r.filterAttendancesInMonth()
+func (r *ReportBuilder) CalculateReport() (Report, error) {
+	filteredAttendances := r.filterAttendancesInTimeRange()
 	shifts := r.reduceAttendancesToShifts(filteredAttendances)
-	filteredLeaves := r.filterLeavesInMonth()
+	filteredLeaves := r.filterLeavesInTimeRange()
 	absences := r.reduceLeavesToBlocks(filteredLeaves)
 	dailySummaries, err := r.prepareDays()
 	if err != nil {
-		return MonthlyReport{
+		return Report{
 			Employee: r.employee,
-			Year:     r.year,
-			Month:    r.month,
+			From:     r.from,
+			To:       r.to,
 		}, err
 	}
 
@@ -127,12 +129,12 @@ func (r *ReportBuilder) CalculateMonthlyReport() (MonthlyReport, error) {
 		}
 	}
 	summary.AverageWorkload = r.calculateAverageWorkload(dailySummaries)
-	return MonthlyReport{
+	return Report{
 		DailySummaries: dailySummaries,
 		Summary:        summary,
 		Employee:       r.employee,
-		Year:           r.year,
-		Month:          r.month,
+		From:           r.from,
+		To:             r.to,
 	}, nil
 }
 
@@ -183,8 +185,8 @@ func (r *ReportBuilder) reduceLeavesToBlocks(leaves []model.Leave) []AbsenceBloc
 func (r *ReportBuilder) prepareDays() ([]*DailySummary, error) {
 	days := make([]*DailySummary, 0)
 
-	firstDay := time.Date(r.year, time.Month(r.month), 1, 0, 0, 0, 0, time.UTC)
-	lastDay := firstDay.AddDate(0, 1, 0)
+	firstDay := r.from
+	lastDay := r.to
 
 	if lastDay.After(now().In(r.timezone)) {
 		lastDay = r.getDateTomorrow()
@@ -231,23 +233,23 @@ func sortAttendances(filtered []model.Attendance) {
 	})
 }
 
-func (r *ReportBuilder) filterAttendancesInMonth() []model.Attendance {
+func (r *ReportBuilder) filterAttendancesInTimeRange() []model.Attendance {
 	filteredAttendances := make([]model.Attendance, 0)
 	for _, attendance := range r.attendances.Items {
-		if attendance.DateTime.WithLocation(r.timezone).IsWithinMonth(r.year, r.month) {
+		if attendance.DateTime.WithLocation(r.timezone).IsWithinTimeRange(r.from, r.to) {
 			filteredAttendances = append(filteredAttendances, attendance)
 		}
 	}
 	return filteredAttendances
 }
 
-func (r *ReportBuilder) filterLeavesInMonth() []model.Leave {
+func (r *ReportBuilder) filterLeavesInTimeRange() []model.Leave {
 	filteredLeaves := make([]model.Leave, 0)
 	for _, leave := range r.leaves.Items {
 		splits := leave.SplitByDay()
 		for _, split := range splits {
 			date := split.DateFrom.WithLocation(r.timezone)
-			if date.IsWithinMonth(r.year, r.month) && date.ToTime().Weekday() != time.Sunday && date.ToTime().Weekday() != time.Saturday {
+			if date.IsWithinTimeRange(r.from, r.to) && date.ToTime().Weekday() != time.Sunday && date.ToTime().Weekday() != time.Saturday {
 				filteredLeaves = append(filteredLeaves, split)
 			}
 		}

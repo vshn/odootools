@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	pipeline "github.com/ccremer/go-command-pipeline"
 	"github.com/vshn/odootools/pkg/odoo"
@@ -91,10 +92,12 @@ func (c *ReportController) fetchLeaves(ctx context.Context) error {
 }
 
 func (c *ReportController) calculateMonthlyReport(_ context.Context) error {
+	start := time.Date(c.Input.Year, time.Month(c.Input.Month), 1, 0, 0, 0, 0, time.UTC)
+	end := start.AddDate(0, 1, 0)
 	reporter := timesheet.NewReporter(c.Attendances, c.Leaves, c.Employee, c.Contracts).
-		SetMonth(c.Input.Year, c.Input.Month).
+		SetRange(start, end).
 		SetTimeZone("Europe/Zurich") // hardcoded for now
-	report, err := reporter.CalculateMonthlyReport()
+	report, err := reporter.CalculateReport()
 	if err != nil {
 		return err
 	}
@@ -103,9 +106,9 @@ func (c *ReportController) calculateMonthlyReport(_ context.Context) error {
 }
 
 func (c *ReportController) calculateYearlyReport(_ context.Context) error {
-	reporter := timesheet.NewReporter(c.Attendances, c.Leaves, c.Employee, c.Contracts).
-		SetMonth(c.Input.Year, 1).
-		SetTimeZone("Europe/Zurich") // hardcoded for now
+	reporter := timesheet.NewYearlyReporter(c.Attendances, c.Leaves, c.Employee, c.Contracts).
+		SetYear(c.Input.Year)
+	reporter.SetTimeZone("Europe/Zurich") // hardcoded for now
 	report, err := reporter.CalculateYearlyReport()
 	if err != nil {
 		return err

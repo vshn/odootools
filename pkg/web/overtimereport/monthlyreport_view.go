@@ -53,7 +53,7 @@ func (v *reportView) formatMonthlySummary(s timesheet.Summary, payslip *model.Pa
 	return val
 }
 
-func (v *reportView) GetValuesForMonthlyReport(report timesheet.MonthlyReport, payslip *model.Payslip) controller.Values {
+func (v *reportView) GetValuesForMonthlyReport(report timesheet.Report, payslip *model.Payslip) controller.Values {
 	formatted := make([]controller.Values, 0)
 	for _, summary := range report.DailySummaries {
 		if summary.IsWeekend() && summary.CalculateWorkingTime() == 0 {
@@ -61,8 +61,8 @@ func (v *reportView) GetValuesForMonthlyReport(report timesheet.MonthlyReport, p
 		}
 		formatted = append(formatted, v.formatDailySummary(summary))
 	}
-	nextYear, nextMonth := v.GetNextMonth(report.Year, report.Month)
-	prevYear, prevMonth := v.GetPreviousMonth(report.Year, report.Month)
+	nextYear, nextMonth := v.GetNextMonth(report.From.Year(), int(report.From.Month()))
+	prevYear, prevMonth := v.GetPreviousMonth(report.From.Year(), int(report.From.Month()))
 	linkFormat := "/report/%d/%d/%02d"
 	return controller.Values{
 		"Attendances": formatted,
