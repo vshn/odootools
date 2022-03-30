@@ -144,7 +144,8 @@ func TestReporter_ReduceAttendancesToShifts(t *testing.T) {
 				to:       end,
 				timezone: localzone(t),
 			}
-			result := r.reduceAttendancesToShifts(tt.givenAttendances)
+			list := model.AttendanceList{Items: tt.givenAttendances}
+			result := r.reduceAttendancesToShifts(list)
 
 			assert.Equal(t, tt.expectedShifts, result)
 		})

@@ -32,7 +32,7 @@ type EmployeeReport struct {
 	Stop            time.Time
 	Employee        model.Employee
 	Contracts       model.ContractList
-	Attendances     odoo.List[model.Attendance]
+	Attendances     model.AttendanceList
 	Leaves          odoo.List[model.Leave]
 	PreviousPayslip *model.Payslip
 	NextPayslip     *model.Payslip

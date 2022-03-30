@@ -2,6 +2,7 @@ package model
 
 import (
 	"context"
+	"sort"
 	"time"
 
 	"github.com/vshn/odootools/pkg/odoo"
@@ -24,8 +25,10 @@ type Attendance struct {
 	Reason *ActionReason `json:"action_desc,omitempty"`
 }
 
+type AttendanceList odoo.List[Attendance]
+
 // FetchAttendancesBetweenDates retrieves all attendances associated with the given employee between 2 dates (inclusive each).
-func (o Odoo) FetchAttendancesBetweenDates(ctx context.Context, employeeID int, begin, end time.Time) (odoo.List[Attendance], error) {
+func (o Odoo) FetchAttendancesBetweenDates(ctx context.Context, employeeID int, begin, end time.Time) (AttendanceList, error) {
 	return o.fetchAttendances(ctx, []odoo.Filter{
 		[]interface{}{"employee_id", "=", employeeID},
 		[]string{"name", ">=", begin.Format(odoo.DateFormat)},
@@ -33,8 +36,8 @@ func (o Odoo) FetchAttendancesBetweenDates(ctx context.Context, employeeID int, 
 	})
 }
 
-func (o Odoo) fetchAttendances(ctx context.Context, domainFilters []odoo.Filter) (odoo.List[Attendance], error) {
-	result := odoo.List[Attendance]{}
+func (o Odoo) fetchAttendances(ctx context.Context, domainFilters []odoo.Filter) (AttendanceList, error) {
+	result := AttendanceList{}
 	err := o.querier.SearchGenericModel(ctx, odoo.SearchReadModel{
 		Model:  "hr.attendance",
 		Domain: domainFilters,
@@ -43,4 +46,27 @@ func (o Odoo) fetchAttendances(ctx context.Context, domainFilters []odoo.Filter)
 		Offset: 0,
 	}, &result)
 	return result, err
+}
+
+// SortByDate sorts the attendances by date ascending (oldest first).
+func (l AttendanceList) SortByDate() {
+	items := l.Items
+	sort.Slice(l.Items, func(i, j int) bool {
+		return items[i].DateTime.ToTime().Unix() < items[j].DateTime.ToTime().Unix()
+	})
+}
+
+// FilterAttendanceBetweenDates returns a new list that only contains items within the specified time range.
+// It uses `from`'s location to set the timezone.
+func (l AttendanceList) FilterAttendanceBetweenDates(from, to time.Time) AttendanceList {
+	filteredAttendances := AttendanceList{}
+	if l.Items != nil {
+		filteredAttendances.Items = []Attendance{}
+	}
+	for _, attendance := range l.Items {
+		if attendance.DateTime.WithLocation(from.Location()).IsWithinTimeRange(from, to) {
+			filteredAttendances.Items = append(filteredAttendances.Items, attendance)
+		}
+	}
+	return filteredAttendances
 }

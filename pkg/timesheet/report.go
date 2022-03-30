@@ -1,7 +1,6 @@
 package timesheet
 
 import (
-	"sort"
 	"time"
 
 	"github.com/vshn/odootools/pkg/odoo"
@@ -67,7 +66,7 @@ type Report struct {
 }
 
 type ReportBuilder struct {
-	attendances odoo.List[model.Attendance]
+	attendances model.AttendanceList
 	leaves      odoo.List[model.Leave]
 	employee    *model.Employee
 	from        time.Time
@@ -76,7 +75,7 @@ type ReportBuilder struct {
 	timezone    *time.Location
 }
 
-func NewReporter(attendances odoo.List[model.Attendance], leaves odoo.List[model.Leave], employee *model.Employee, contracts model.ContractList) *ReportBuilder {
+func NewReporter(attendances model.AttendanceList, leaves odoo.List[model.Leave], employee *model.Employee, contracts model.ContractList) *ReportBuilder {
 	return &ReportBuilder{
 		attendances: attendances,
 		leaves:      leaves,
@@ -103,7 +102,7 @@ func (r *ReportBuilder) SetTimeZone(zone string) *ReportBuilder {
 }
 
 func (r *ReportBuilder) CalculateReport() (Report, error) {
-	filteredAttendances := r.filterAttendancesInTimeRange()
+	filteredAttendances := r.attendances.FilterAttendanceBetweenDates(r.from.In(r.timezone), r.to)
 	shifts := r.reduceAttendancesToShifts(filteredAttendances)
 	filteredLeaves := r.filterLeavesInTimeRange()
 	absences := r.reduceLeavesToBlocks(filteredLeaves)
@@ -138,11 +137,11 @@ func (r *ReportBuilder) CalculateReport() (Report, error) {
 	}, nil
 }
 
-func (r *ReportBuilder) reduceAttendancesToShifts(attendances []model.Attendance) []AttendanceShift {
-	sortAttendances(attendances)
+func (r *ReportBuilder) reduceAttendancesToShifts(attendances model.AttendanceList) []AttendanceShift {
+	attendances.SortByDate()
 	shifts := make([]AttendanceShift, 0)
 	var tmpShift AttendanceShift
-	for _, attendance := range attendances {
+	for _, attendance := range attendances.Items {
 		if attendance.Action == ActionSignIn {
 			tmpShift = AttendanceShift{
 				Start:  attendance.DateTime.ToTime().In(r.timezone),
@@ -225,22 +224,6 @@ func (r *ReportBuilder) addAbsencesToDailies(absences []AbsenceBlock, summaries 
 			continue
 		}
 	}
-}
-
-func sortAttendances(filtered []model.Attendance) {
-	sort.Slice(filtered, func(i, j int) bool {
-		return filtered[i].DateTime.ToTime().Unix() < filtered[j].DateTime.ToTime().Unix()
-	})
-}
-
-func (r *ReportBuilder) filterAttendancesInTimeRange() []model.Attendance {
-	filteredAttendances := make([]model.Attendance, 0)
-	for _, attendance := range r.attendances.Items {
-		if attendance.DateTime.WithLocation(r.timezone).IsWithinTimeRange(r.from, r.to) {
-			filteredAttendances = append(filteredAttendances, attendance)
-		}
-	}
-	return filteredAttendances
 }
 
 func (r *ReportBuilder) filterLeavesInTimeRange() []model.Leave {

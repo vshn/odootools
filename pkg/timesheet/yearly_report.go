@@ -26,7 +26,7 @@ type YearlyReportBuilder struct {
 	year int
 }
 
-func NewYearlyReporter(attendances odoo.List[model.Attendance], leaves odoo.List[model.Leave], employee *model.Employee, contracts model.ContractList) *YearlyReportBuilder {
+func NewYearlyReporter(attendances model.AttendanceList, leaves odoo.List[model.Leave], employee *model.Employee, contracts model.ContractList) *YearlyReportBuilder {
 	return &YearlyReportBuilder{
 		ReportBuilder: ReportBuilder{
 			attendances: attendances,
