@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"strconv"
 	"time"
+
+	"github.com/vshn/odootools/pkg/odoo"
+	"github.com/vshn/odootools/pkg/timesheet"
 )
 
 // BaseView contains some utility methods.
@@ -49,4 +52,21 @@ func (v BaseView) GetPreviousMonth(year, month int) (int, int) {
 		return year - 1, 12
 	}
 	return year, month - 1
+}
+
+// FormatDailySummary returns Values with sensible format.
+func (v BaseView) FormatDailySummary(daily *timesheet.DailySummary) Values {
+	basic := Values{
+		"Weekday":       daily.Date.Weekday(),
+		"Date":          daily.Date.Format(odoo.DateFormat),
+		"Workload":      daily.FTERatio * 100,
+		"ExcusedHours":  v.FormatDurationInHours(daily.CalculateExcusedTime()),
+		"WorkedHours":   v.FormatDurationInHours(daily.CalculateWorkingTime()),
+		"OvertimeHours": v.FormatDurationInHours(daily.CalculateOvertime()),
+		"LeaveType":     "",
+	}
+	if daily.HasAbsences() {
+		basic["LeaveType"] = daily.Absences[0].Reason
+	}
+	return basic
 }
