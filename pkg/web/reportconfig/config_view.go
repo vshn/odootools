@@ -1,8 +1,6 @@
 package reportconfig
 
 import (
-	"fmt"
-
 	"github.com/vshn/odootools/pkg/timesheet"
 	"github.com/vshn/odootools/pkg/web/controller"
 )
@@ -25,7 +23,6 @@ func (v *ConfigView) GetConfigurationValues(report timesheet.Report) controller.
 	}
 	summary := controller.Values{
 		"TotalOvertime": v.FormatDurationInHours(report.Summary.TotalOvertime),
-		"TotalLeaves":   fmt.Sprintf("%sd", v.FormatFloat(report.Summary.TotalLeave, 1)),
 		"TotalWorked":   v.FormatDurationInHours(report.Summary.TotalWorkedTime),
 	}
 	vals := controller.Values{
