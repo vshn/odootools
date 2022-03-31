@@ -1,7 +1,6 @@
 package timesheet
 
 import (
-	"sort"
 	"time"
 
 	"github.com/vshn/odootools/pkg/odoo"
@@ -56,39 +55,43 @@ type Summary struct {
 	AverageWorkload float64
 }
 
-type MonthlyReport struct {
+type Report struct {
 	DailySummaries []*DailySummary
 	Summary        Summary
 	Employee       *model.Employee
-	Year           int
-	Month          int
+	// From is the first day (inclusive) of the time range
+	From time.Time
+	// To is the last day (inclusive) of the time range
+	To time.Time
 }
 
 type ReportBuilder struct {
-	attendances odoo.List[model.Attendance]
+	attendances model.AttendanceList
 	leaves      odoo.List[model.Leave]
 	employee    *model.Employee
-	year        int
-	month       int
+	from        time.Time
+	to          time.Time
 	contracts   model.ContractList
 	timezone    *time.Location
+	clampToNow  bool
 }
 
-func NewReporter(attendances odoo.List[model.Attendance], leaves odoo.List[model.Leave], employee *model.Employee, contracts model.ContractList) *ReportBuilder {
+func NewReporter(attendances model.AttendanceList, leaves odoo.List[model.Leave], employee *model.Employee, contracts model.ContractList) *ReportBuilder {
 	return &ReportBuilder{
 		attendances: attendances,
 		leaves:      leaves,
 		employee:    employee,
-		year:        now().UTC().Year(),
-		month:       int(now().UTC().Month()),
 		contracts:   contracts,
 		timezone:    time.Local,
+		clampToNow:  true,
 	}
 }
 
-func (r *ReportBuilder) SetMonth(year, month int) *ReportBuilder {
-	r.year = year
-	r.month = month
+// SetRange sets the time range in which the report should consider calculations.
+// For example, to build a monthly report, set `from` to the first day of the month from midnight, and `to` to the first day of the next month at midnight.
+func (r *ReportBuilder) SetRange(from, to time.Time) *ReportBuilder {
+	r.from = from
+	r.to = to
 	return r
 }
 
@@ -100,17 +103,24 @@ func (r *ReportBuilder) SetTimeZone(zone string) *ReportBuilder {
 	return r
 }
 
-func (r *ReportBuilder) CalculateMonthlyReport() (MonthlyReport, error) {
-	filteredAttendances := r.filterAttendancesInMonth()
+// SkipClampingToNow ignores the current time when preparing the daily summaries within the time range.
+// By default, the reporter doesn't include days that are happening in the future and thus calculate overtime wrongly.
+func (r *ReportBuilder) SkipClampingToNow(skip bool) *ReportBuilder {
+	r.clampToNow = !skip
+	return r
+}
+
+func (r *ReportBuilder) CalculateReport() (Report, error) {
+	filteredAttendances := r.attendances.FilterAttendanceBetweenDates(r.from.In(r.timezone), r.to)
 	shifts := r.reduceAttendancesToShifts(filteredAttendances)
-	filteredLeaves := r.filterLeavesInMonth()
+	filteredLeaves := r.filterLeavesInTimeRange()
 	absences := r.reduceLeavesToBlocks(filteredLeaves)
 	dailySummaries, err := r.prepareDays()
 	if err != nil {
-		return MonthlyReport{
+		return Report{
 			Employee: r.employee,
-			Year:     r.year,
-			Month:    r.month,
+			From:     r.from,
+			To:       r.to,
 		}, err
 	}
 
@@ -127,20 +137,20 @@ func (r *ReportBuilder) CalculateMonthlyReport() (MonthlyReport, error) {
 		}
 	}
 	summary.AverageWorkload = r.calculateAverageWorkload(dailySummaries)
-	return MonthlyReport{
+	return Report{
 		DailySummaries: dailySummaries,
 		Summary:        summary,
 		Employee:       r.employee,
-		Year:           r.year,
-		Month:          r.month,
+		From:           r.from,
+		To:             r.to,
 	}, nil
 }
 
-func (r *ReportBuilder) reduceAttendancesToShifts(attendances []model.Attendance) []AttendanceShift {
-	sortAttendances(attendances)
+func (r *ReportBuilder) reduceAttendancesToShifts(attendances model.AttendanceList) []AttendanceShift {
+	attendances.SortByDate()
 	shifts := make([]AttendanceShift, 0)
 	var tmpShift AttendanceShift
-	for _, attendance := range attendances {
+	for _, attendance := range attendances.Items {
 		if attendance.Action == ActionSignIn {
 			tmpShift = AttendanceShift{
 				Start:  attendance.DateTime.ToTime().In(r.timezone),
@@ -183,10 +193,10 @@ func (r *ReportBuilder) reduceLeavesToBlocks(leaves []model.Leave) []AbsenceBloc
 func (r *ReportBuilder) prepareDays() ([]*DailySummary, error) {
 	days := make([]*DailySummary, 0)
 
-	firstDay := time.Date(r.year, time.Month(r.month), 1, 0, 0, 0, 0, time.UTC)
-	lastDay := firstDay.AddDate(0, 1, 0)
+	firstDay := r.from
+	lastDay := r.to
 
-	if lastDay.After(now().In(r.timezone)) {
+	if r.clampToNow && lastDay.After(now().In(r.timezone)) {
 		lastDay = r.getDateTomorrow()
 	}
 
@@ -225,29 +235,13 @@ func (r *ReportBuilder) addAbsencesToDailies(absences []AbsenceBlock, summaries 
 	}
 }
 
-func sortAttendances(filtered []model.Attendance) {
-	sort.Slice(filtered, func(i, j int) bool {
-		return filtered[i].DateTime.ToTime().Unix() < filtered[j].DateTime.ToTime().Unix()
-	})
-}
-
-func (r *ReportBuilder) filterAttendancesInMonth() []model.Attendance {
-	filteredAttendances := make([]model.Attendance, 0)
-	for _, attendance := range r.attendances.Items {
-		if attendance.DateTime.WithLocation(r.timezone).IsWithinMonth(r.year, r.month) {
-			filteredAttendances = append(filteredAttendances, attendance)
-		}
-	}
-	return filteredAttendances
-}
-
-func (r *ReportBuilder) filterLeavesInMonth() []model.Leave {
+func (r *ReportBuilder) filterLeavesInTimeRange() []model.Leave {
 	filteredLeaves := make([]model.Leave, 0)
 	for _, leave := range r.leaves.Items {
 		splits := leave.SplitByDay()
 		for _, split := range splits {
 			date := split.DateFrom.WithLocation(r.timezone)
-			if date.IsWithinMonth(r.year, r.month) && date.ToTime().Weekday() != time.Sunday && date.ToTime().Weekday() != time.Saturday {
+			if date.IsWithinTimeRange(r.from, r.to) && date.ToTime().Weekday() != time.Sunday && date.ToTime().Weekday() != time.Saturday {
 				filteredLeaves = append(filteredLeaves, split)
 			}
 		}

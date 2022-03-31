@@ -13,7 +13,7 @@ const yearlyReportTemplateName string = "overtimereport-yearly"
 func (v *reportView) GetValuesForYearlyReport(report timesheet.YearlyReport) controller.Values {
 	formatted := make([]controller.Values, 0)
 	for _, month := range report.MonthlyReports {
-		formatted = append(formatted, v.formatMonthlySummaryForYearlyReport(month))
+		formatted = append(formatted, v.formatMonthlySummaryForYearlyReport(month, report.Year))
 	}
 	nextYear := report.Year + 1
 	prevYear := report.Year - 1
@@ -32,14 +32,14 @@ func (v *reportView) GetValuesForYearlyReport(report timesheet.YearlyReport) con
 	}
 }
 
-func (v *reportView) formatMonthlySummaryForYearlyReport(s timesheet.MonthlyReport) controller.Values {
+func (v *reportView) formatMonthlySummaryForYearlyReport(s timesheet.Report, year int) controller.Values {
 	val := controller.Values{
 		"OvertimeHours":  v.FormatDurationInHours(s.Summary.TotalOvertime),
 		"LeaveDays":      v.FormatFloat(s.Summary.TotalLeave, 1),
 		"ExcusedHours":   v.FormatDurationInHours(s.Summary.TotalExcusedTime),
 		"WorkedHours":    v.FormatDurationInHours(s.Summary.TotalWorkedTime),
-		"DetailViewLink": fmt.Sprintf("/report/%d/%d/%d", s.Employee.ID, s.Year, s.Month),
-		"Name":           fmt.Sprintf("%s %d", time.Month(s.Month), s.Year),
+		"DetailViewLink": fmt.Sprintf("/report/%d/%d/%d", s.Employee.ID, year, s.From.Month()),
+		"Name":           fmt.Sprintf("%s %d", s.From.Month(), year),
 	}
 	return val
 }

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/vshn/odootools/pkg/odoo"
 	"github.com/vshn/odootools/pkg/odoo/model"
 	"github.com/vshn/odootools/pkg/timesheet"
 	"github.com/vshn/odootools/pkg/web/controller"
@@ -14,22 +13,6 @@ const monthlyReportTemplateName string = "overtimereport-monthly"
 
 type reportView struct {
 	controller.BaseView
-}
-
-func (v *reportView) formatDailySummary(daily *timesheet.DailySummary) controller.Values {
-	basic := controller.Values{
-		"Weekday":       daily.Date.Weekday(),
-		"Date":          daily.Date.Format(odoo.DateFormat),
-		"Workload":      daily.FTERatio * 100,
-		"ExcusedHours":  v.FormatDurationInHours(daily.CalculateExcusedTime()),
-		"WorkedHours":   v.FormatDurationInHours(daily.CalculateWorkingTime()),
-		"OvertimeHours": v.FormatDurationInHours(daily.CalculateOvertime()),
-		"LeaveType":     "",
-	}
-	if daily.HasAbsences() {
-		basic["LeaveType"] = daily.Absences[0].Reason
-	}
-	return basic
 }
 
 func (v *reportView) formatMonthlySummary(s timesheet.Summary, payslip *model.Payslip) controller.Values {
@@ -53,16 +36,16 @@ func (v *reportView) formatMonthlySummary(s timesheet.Summary, payslip *model.Pa
 	return val
 }
 
-func (v *reportView) GetValuesForMonthlyReport(report timesheet.MonthlyReport, payslip *model.Payslip) controller.Values {
+func (v *reportView) GetValuesForMonthlyReport(report timesheet.Report, payslip *model.Payslip) controller.Values {
 	formatted := make([]controller.Values, 0)
 	for _, summary := range report.DailySummaries {
 		if summary.IsWeekend() && summary.CalculateWorkingTime() == 0 {
 			continue
 		}
-		formatted = append(formatted, v.formatDailySummary(summary))
+		formatted = append(formatted, v.FormatDailySummary(summary))
 	}
-	nextYear, nextMonth := v.GetNextMonth(report.Year, report.Month)
-	prevYear, prevMonth := v.GetPreviousMonth(report.Year, report.Month)
+	nextYear, nextMonth := v.GetNextMonth(report.From.Year(), int(report.From.Month()))
+	prevYear, prevMonth := v.GetPreviousMonth(report.From.Year(), int(report.From.Month()))
 	linkFormat := "/report/%d/%d/%02d"
 	return controller.Values{
 		"Attendances": formatted,

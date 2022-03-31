@@ -26,16 +26,18 @@ type ReportController struct {
 
 type EmployeeReport struct {
 	controller.BaseController
-	Start           time.Time
+	// Start is the first day of the month
+	Start time.Time
+	// Stop is the last day of the month
 	Stop            time.Time
 	Employee        model.Employee
 	Contracts       model.ContractList
-	Attendances     odoo.List[model.Attendance]
+	Attendances     model.AttendanceList
 	Leaves          odoo.List[model.Leave]
 	PreviousPayslip *model.Payslip
 	NextPayslip     *model.Payslip
 
-	Result timesheet.MonthlyReport
+	Result timesheet.Report
 }
 
 func NewEmployeeReportController(ctx *controller.BaseController) *ReportController {
@@ -136,7 +138,7 @@ func (c *ReportController) renderReport(_ context.Context) error {
 }
 
 func (c *EmployeeReport) fetchContracts(ctx context.Context) error {
-	contracts, err := c.OdooClient.FetchAllContracts(ctx, c.Employee.ID)
+	contracts, err := c.OdooClient.FetchAllContractsOfEmployee(ctx, c.Employee.ID)
 	c.Contracts = contracts
 	return err
 }
@@ -160,11 +162,10 @@ func (c *EmployeeReport) fetchLeaves(ctx context.Context) error {
 }
 
 func (c *EmployeeReport) calculateMonthlyReport(_ context.Context) error {
-	start := c.Start
 	reporter := timesheet.NewReporter(c.Attendances, c.Leaves, &c.Employee, c.Contracts).
-		SetMonth(start.Year(), int(start.Month())).
+		SetRange(c.Start, c.Stop.AddDate(0, 0, 1)).
 		SetTimeZone("Europe/Zurich") // hardcoded for now
-	report, err := reporter.CalculateMonthlyReport()
+	report, err := reporter.CalculateReport()
 	c.Result = report
 	return err
 }

@@ -43,7 +43,7 @@ func (v *reportView) GetValuesForReports(reports []*EmployeeReport, failedEmploy
 	}
 }
 
-func (v *reportView) getValuesForReport(report timesheet.MonthlyReport, previousPayslip, nextPayslip *model.Payslip) controller.Values {
+func (v *reportView) getValuesForReport(report timesheet.Report, previousPayslip, nextPayslip *model.Payslip) controller.Values {
 	previousBalanceCellText, previousBalance := v.getPreviousBalance(previousPayslip)
 	proposedBalanceCellText, proposedBalance := v.getProposedBalance(previousBalance, report.Summary.TotalOvertime)
 	nextBalanceCellText, nextBalance := v.getNextBalance(proposedBalance, nextPayslip)

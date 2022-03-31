@@ -86,9 +86,12 @@ func TestReporter_AddAttendanceShiftsToDailies(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			start := time.Date(2021, time.February, 1, 0, 0, 0, 0, time.UTC)
+			end := start.AddDate(0, 1, 0)
 			r := ReportBuilder{
-				year:  2021,
-				month: 2,
+				from:     start,
+				to:       end,
+				timezone: localzone(t),
 			}
 			r.addAttendanceShiftsToDailies(tt.givenShifts, tt.givenDailySummaries)
 
@@ -134,12 +137,15 @@ func TestReporter_ReduceAttendancesToShifts(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			start := time.Date(2021, time.February, 1, 0, 0, 0, 0, time.UTC)
+			end := start.AddDate(0, 1, 0)
 			r := ReportBuilder{
-				year:     2021,
-				month:    2,
+				from:     start,
+				to:       end,
 				timezone: localzone(t),
 			}
-			result := r.reduceAttendancesToShifts(tt.givenAttendances)
+			list := model.AttendanceList{Items: tt.givenAttendances}
+			result := r.reduceAttendancesToShifts(list)
 
 			assert.Equal(t, tt.expectedShifts, result)
 		})
@@ -192,11 +198,14 @@ func TestReporter_prepareWorkDays(t *testing.T) {
 				}()
 			}
 
+			start := time.Date(tt.givenYear, time.Month(tt.givenMonth), 1, 0, 0, 0, 0, time.UTC)
+			end := start.AddDate(0, 1, 0)
 			r := &ReportBuilder{
-				year:      tt.givenYear,
-				month:     tt.givenMonth,
-				timezone:  localzone(t),
-				contracts: model.ContractList{Items: tt.givenContracts},
+				from:       start,
+				to:         end,
+				timezone:   localzone(t),
+				contracts:  model.ContractList{Items: tt.givenContracts},
+				clampToNow: true,
 			}
 			result, err := r.prepareDays()
 			if tt.expectedError != "" {

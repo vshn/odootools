@@ -3,11 +3,12 @@ package timesheet
 import (
 	"time"
 
+	"github.com/vshn/odootools/pkg/odoo"
 	"github.com/vshn/odootools/pkg/odoo/model"
 )
 
 type YearlyReport struct {
-	MonthlyReports []MonthlyReport
+	MonthlyReports []Report
 	Employee       *model.Employee
 	Year           int
 	Summary        YearlySummary
@@ -20,8 +21,25 @@ type YearlySummary struct {
 	TotalLeaves   float64
 }
 
-func (r *ReportBuilder) CalculateYearlyReport() (YearlyReport, error) {
-	reports := make([]MonthlyReport, 0)
+type YearlyReportBuilder struct {
+	ReportBuilder
+	year int
+}
+
+func NewYearlyReporter(attendances model.AttendanceList, leaves odoo.List[model.Leave], employee *model.Employee, contracts model.ContractList) *YearlyReportBuilder {
+	return &YearlyReportBuilder{
+		ReportBuilder: ReportBuilder{
+			attendances: attendances,
+			leaves:      leaves,
+			employee:    employee,
+			contracts:   contracts,
+			timezone:    time.Local,
+		},
+	}
+}
+
+func (r *YearlyReportBuilder) CalculateYearlyReport() (YearlyReport, error) {
+	reports := make([]Report, 0)
 
 	max := 12
 	if r.year >= now().Year() {
@@ -33,8 +51,10 @@ func (r *ReportBuilder) CalculateYearlyReport() (YearlyReport, error) {
 	}
 
 	for _, month := range makeRange(min, max) {
-		r.month = month
-		monthlyReport, err := r.CalculateMonthlyReport()
+		start := time.Date(r.year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+		end := start.AddDate(0, 1, 0)
+		r.SetRange(start, end)
+		monthlyReport, err := r.CalculateReport()
 		if err != nil {
 			return YearlyReport{}, err
 		}
@@ -64,7 +84,7 @@ func makeRange(min, max int) []int {
 	return a
 }
 
-func (r *ReportBuilder) getEarliestStartContractDate() (time.Time, bool) {
+func (r *YearlyReportBuilder) getEarliestStartContractDate() (time.Time, bool) {
 	n := now()
 	start := n
 	for _, contract := range r.contracts.Items {
@@ -73,4 +93,9 @@ func (r *ReportBuilder) getEarliestStartContractDate() (time.Time, bool) {
 		}
 	}
 	return start, start != n
+}
+
+func (r *YearlyReportBuilder) SetYear(year int) *YearlyReportBuilder {
+	r.year = year
+	return r
 }

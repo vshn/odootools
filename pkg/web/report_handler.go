@@ -18,7 +18,7 @@ func (s Server) OvertimeReport(e echo.Context) error {
 
 // RequestReportForm GET /report
 func (s Server) RequestReportForm(e echo.Context) error {
-	return reportconfig.NewConfigController(s.newControllerContext(e)).ShowConfigurationForm()
+	return reportconfig.NewConfigController(s.newControllerContext(e)).ShowConfigurationFormAndWeeklyReport()
 }
 
 // ProcessReportInput POST /report
