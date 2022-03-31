@@ -37,10 +37,12 @@ func (c *ConfigController) ShowConfigurationFormAndWeeklyReport() error {
 	c.view.roles = c.SessionData.Roles
 	root := pipeline.NewPipeline().WithSteps(
 		pipeline.NewStepFromFunc("parse user input", c.parseInput),
-		pipeline.NewStepFromFunc("fetch attendances", c.fetchAttendanceOfCurrentWeek),
-		pipeline.NewStepFromFunc("fetch contracts", c.fetchContracts),
-		pipeline.NewStepFromFunc("fetch leaves", c.fetchLeaves),
-		pipeline.NewStepFromFunc("calculate report", c.calculateReport),
+		pipeline.ToNestedStep("weekly report", pipeline.Bool(true), pipeline.NewPipeline().WithSteps(
+			pipeline.NewStepFromFunc("fetch attendances", c.fetchAttendanceOfCurrentWeek),
+			pipeline.NewStepFromFunc("fetch contracts", c.fetchContracts),
+			pipeline.NewStepFromFunc("fetch leaves", c.fetchLeaves),
+			pipeline.NewStepFromFunc("calculate report", c.calculateReport).WithErrorHandler(c.displayWarning),
+		)),
 		pipeline.NewStepFromFunc("render", c.render),
 	)
 	result := root.RunWithContext(c.RequestContext)
@@ -147,6 +149,11 @@ func (c *ConfigController) calculateReport(_ context.Context) error {
 	report, err := reporter.CalculateReport()
 	c.Report = report
 	return err
+}
+
+func (c *ConfigController) displayWarning(_ context.Context, err error) error {
+	c.view.warning = err.Error()
+	return nil
 }
 
 // getStartOfWeek returns the previously occurred Monday at midnight.
