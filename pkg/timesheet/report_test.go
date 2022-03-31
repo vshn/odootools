@@ -201,10 +201,11 @@ func TestReporter_prepareWorkDays(t *testing.T) {
 			start := time.Date(tt.givenYear, time.Month(tt.givenMonth), 1, 0, 0, 0, 0, time.UTC)
 			end := start.AddDate(0, 1, 0)
 			r := &ReportBuilder{
-				from:      start,
-				to:        end,
-				timezone:  localzone(t),
-				contracts: model.ContractList{Items: tt.givenContracts},
+				from:       start,
+				to:         end,
+				timezone:   localzone(t),
+				contracts:  model.ContractList{Items: tt.givenContracts},
+				clampToNow: true,
 			}
 			result, err := r.prepareDays()
 			if tt.expectedError != "" {

@@ -142,7 +142,8 @@ func (c *ConfigController) fetchLeaves(ctx context.Context) error {
 func (c *ConfigController) calculateReport(_ context.Context) error {
 	reporter := timesheet.NewReporter(c.Attendances, c.Leaves, c.Employee, c.Contracts).
 		SetRange(c.StartOfWeek, c.EndOfWeek).
-		SetTimeZone("Europe/Zurich") // hardcoded for now
+		SetTimeZone("Europe/Zurich"). // hardcoded for now
+		SkipClampingToNow(true)
 	report, err := reporter.CalculateReport()
 	c.Report = report
 	return err

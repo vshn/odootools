@@ -73,6 +73,7 @@ type ReportBuilder struct {
 	to          time.Time
 	contracts   model.ContractList
 	timezone    *time.Location
+	clampToNow  bool
 }
 
 func NewReporter(attendances model.AttendanceList, leaves odoo.List[model.Leave], employee *model.Employee, contracts model.ContractList) *ReportBuilder {
@@ -82,6 +83,7 @@ func NewReporter(attendances model.AttendanceList, leaves odoo.List[model.Leave]
 		employee:    employee,
 		contracts:   contracts,
 		timezone:    time.Local,
+		clampToNow:  true,
 	}
 }
 
@@ -98,6 +100,13 @@ func (r *ReportBuilder) SetTimeZone(zone string) *ReportBuilder {
 	if err == nil {
 		r.timezone = loc
 	}
+	return r
+}
+
+// SkipClampingToNow ignores the current time when preparing the daily summaries within the time range.
+// By default, the reporter doesn't include days that are happening in the future and thus calculate overtime wrongly.
+func (r *ReportBuilder) SkipClampingToNow(skip bool) *ReportBuilder {
+	r.clampToNow = !skip
 	return r
 }
 
@@ -187,7 +196,7 @@ func (r *ReportBuilder) prepareDays() ([]*DailySummary, error) {
 	firstDay := r.from
 	lastDay := r.to
 
-	if lastDay.After(now().In(r.timezone)) {
+	if r.clampToNow && lastDay.After(now().In(r.timezone)) {
 		lastDay = r.getDateTomorrow()
 	}
 
