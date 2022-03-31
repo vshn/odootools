@@ -11,6 +11,7 @@ type ConfigView struct {
 	controller.BaseView
 	roles      []string
 	isSignedIn bool
+	warning    string
 }
 
 func (v *ConfigView) GetConfigurationValues(report timesheet.Report) controller.Values {
@@ -34,6 +35,7 @@ func (v *ConfigView) GetConfigurationValues(report timesheet.Report) controller.
 		"IsSignedIn":  v.isSignedIn,
 		"Attendances": formatted,
 		"Summary":     summary,
+		"Warning":     v.warning,
 	}
 	if len(v.roles) > 0 {
 		for _, role := range v.roles {
