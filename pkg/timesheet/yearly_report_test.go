@@ -29,7 +29,7 @@ func TestReportBuilder_getEarliestStartContractDate(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			r := NewYearlyReporter(odoo.List[model.Attendance]{}, odoo.List[model.Leave]{}, nil, tt.givenContracts)
+			r := NewYearlyReporter(model.AttendanceList{}, odoo.List[model.Leave]{}, nil, tt.givenContracts)
 			resultDate, found := r.getEarliestStartContractDate()
 			assert.Equal(t, tt.expectedFound, found)
 			if tt.expectedFound {
