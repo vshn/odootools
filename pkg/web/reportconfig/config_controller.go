@@ -41,8 +41,8 @@ func (c *ConfigController) ShowConfigurationFormAndWeeklyReport() error {
 			pipeline.NewStepFromFunc("fetch attendances", c.fetchAttendanceOfCurrentWeek),
 			pipeline.NewStepFromFunc("fetch contracts", c.fetchContracts),
 			pipeline.NewStepFromFunc("fetch leaves", c.fetchLeaves),
-			pipeline.NewStepFromFunc("calculate report", c.calculateReport).WithErrorHandler(c.displayWarning),
-		)),
+			pipeline.NewStepFromFunc("calculate report", c.calculateReport),
+		)).WithErrorHandler(c.displayWarning),
 		pipeline.NewStepFromFunc("render", c.render),
 	)
 	result := root.RunWithContext(c.RequestContext)
