@@ -3,7 +3,7 @@ module github.com/vshn/odootools
 go 1.18
 
 require (
-	github.com/ccremer/go-command-pipeline v0.13.0
+	github.com/ccremer/go-command-pipeline v0.17.0
 	github.com/go-logr/logr v1.2.3
 	github.com/go-logr/zapr v1.2.3
 	github.com/golang/mock v1.6.0
