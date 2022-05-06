@@ -55,7 +55,7 @@ jobs:
         insecure_skip_tls_verify: true
 
     - name: Docker login
-      uses: docker/login-action@v1
+      uses: docker/login-action@v2
       with:
         registry: ${{ env.REGISTRY_URL }}
         username: ${{ github.repository_owner }}
