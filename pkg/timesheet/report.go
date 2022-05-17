@@ -129,9 +129,10 @@ func (r *ReportBuilder) CalculateReport() (Report, error) {
 
 	summary := Summary{}
 	for _, dailySummary := range dailySummaries {
-		summary.TotalOvertime += dailySummary.CalculateOvertime()
-		summary.TotalExcusedTime += dailySummary.CalculateExcusedTime()
-		summary.TotalWorkedTime += dailySummary.CalculateWorkingTime()
+		overtimeSummary := dailySummary.CalculateOvertimeSummary()
+		summary.TotalOvertime += overtimeSummary.Overtime()
+		summary.TotalExcusedTime += overtimeSummary.ExcusedTime()
+		summary.TotalWorkedTime += overtimeSummary.WorkingTime()
 		if dailySummary.IsHoliday() {
 			summary.TotalLeave += 1
 		}
