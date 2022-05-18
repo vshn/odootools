@@ -75,6 +75,7 @@
         <th scope="col">Leaves</th>
         <th scope="col">Excused hours</th>
         <th scope="col">Worked hours</th>
+        <th scope="col">(Out of office hours, real)</th>
         <th scope="col">{{ .LastMonth }} Payslip</th>
         <th scope="col">Overtime delta</th>
         <th scope="col">Proposed balance</th>
@@ -89,6 +90,7 @@
         <td>{{ .Leaves }}d</td>
         <td>{{ .ExcusedHours }}</td>
         <td>{{ .WorkedHours }}</td>
+        <td>{{ .OutOfOfficeHours }}</td>
         <td>{{ .PreviousBalance }}</td>
         <td>{{ .OvertimeHours }}</td>
         <td>{{ .ProposedBalance }}</td>

@@ -46,9 +46,10 @@ type AbsenceBlock struct {
 }
 
 type Summary struct {
-	TotalOvertime    time.Duration
-	TotalExcusedTime time.Duration
-	TotalWorkedTime  time.Duration
+	TotalOvertime        time.Duration
+	TotalExcusedTime     time.Duration
+	TotalWorkedTime      time.Duration
+	TotalOutOfOfficeTime time.Duration
 	// TotalLeave is the amount of paid leave days.
 	// This value respects FTE ratio, e.g. in a 50% ratio a public holiday is still counted as '1d'.
 	TotalLeave      float64
@@ -133,6 +134,7 @@ func (r *ReportBuilder) CalculateReport() (Report, error) {
 		summary.TotalOvertime += overtimeSummary.Overtime()
 		summary.TotalExcusedTime += overtimeSummary.ExcusedTime()
 		summary.TotalWorkedTime += overtimeSummary.WorkingTime()
+		summary.TotalOutOfOfficeTime += overtimeSummary.OutOfOfficeTime
 		if dailySummary.IsHoliday() {
 			summary.TotalLeave += 1
 		}

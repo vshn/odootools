@@ -57,6 +57,7 @@ func (v *reportView) getValuesForReport(report timesheet.Report, previousPayslip
 		"Leaves":                          report.Summary.TotalLeave,
 		"ExcusedHours":                    v.FormatDurationInHours(report.Summary.TotalExcusedTime),
 		"WorkedHours":                     v.FormatDurationInHours(report.Summary.TotalWorkedTime),
+		"OutOfOfficeHours":                v.FormatDurationInHours(report.Summary.TotalOutOfOfficeTime),
 		"OvertimeHours":                   v.FormatDurationInHours(report.Summary.TotalOvertime),
 		"PreviousBalance":                 previousBalanceCellText,
 		"NextBalance":                     nextBalanceCellText,
