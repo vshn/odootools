@@ -107,7 +107,7 @@ func TestDailySummary_CalculateOvertime(t *testing.T) {
 				Shifts:   tt.givenShifts,
 				FTERatio: 1,
 			}
-			result := s.CalculateOvertime()
+			result := s.CalculateOvertimeSummary().Overtime()
 			assert.Equal(t, tt.expectedOvertime, result)
 		})
 	}
@@ -168,7 +168,7 @@ func TestDailySummary_CalculateDailyMaxHours(t *testing.T) {
 				FTERatio: tt.givenFteRatio,
 				Absences: tt.givenAbsences,
 			}
-			result := s.CalculateDailyMax()
+			result := s.calculateDailyMax()
 			assert.Equal(t, time.Duration(tt.expectedHours*float64(time.Hour)), result)
 		})
 	}

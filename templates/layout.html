@@ -10,7 +10,13 @@
     <link href="/static/bootstrap.min.css" rel="stylesheet">
     <script src="/static/bootstrap.min.js" rel="script"></script>
 </head>
-
+<style>
+    @media (min-width: 2000px) {
+    .container{
+        max-width: 2000px;
+    }
+}
+</style>
 <body>
 <main class="container">
     {{ template "nav" . }}

@@ -39,7 +39,7 @@ func (v *reportView) formatMonthlySummary(s timesheet.Summary, payslip *model.Pa
 func (v *reportView) GetValuesForMonthlyReport(report timesheet.Report, payslip *model.Payslip) controller.Values {
 	formatted := make([]controller.Values, 0)
 	for _, summary := range report.DailySummaries {
-		if summary.IsWeekend() && summary.CalculateWorkingTime() == 0 {
+		if summary.IsWeekend() && summary.CalculateOvertimeSummary().WorkingTime() == 0 {
 			continue
 		}
 		formatted = append(formatted, v.FormatDailySummary(summary))

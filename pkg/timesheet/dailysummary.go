@@ -12,6 +12,15 @@ type DailySummary struct {
 	FTERatio float64
 }
 
+type OvertimeSummary struct {
+	RegularWorkingTime time.Duration
+	SickLeaveTime      time.Duration
+	AuthoritiesTime    time.Duration
+	OutOfOfficeTime    time.Duration
+	DailyMax           time.Duration
+	PublicServiceTime  time.Duration
+}
+
 // NewDailySummary creates a new instance.
 // The fteRatio is the percentage (input a value between 0..1) of the employee and is used to calculate the daily maximum hours an employee should work.
 // Date is expected to be in a localized timezone.
@@ -40,7 +49,7 @@ func (s *DailySummary) addAbsenceBlock(block AbsenceBlock) {
 	s.Absences = append(s.Absences, block)
 }
 
-// CalculateOvertime returns the duration of overtime.
+// CalculateOvertimeSummary returns the duration of overtime.
 // If returned duration is positive, then the employee did overtime and undertime if duration is negative.
 //
 // The overtime is then calculated according to these business rules:
@@ -49,28 +58,45 @@ func (s *DailySummary) addAbsenceBlock(block AbsenceBlock) {
 //    However, there's no overtime possible using excused hours
 //  * If the working hours exceed the theoretical daily maximum, then the excused hours are basically ignored.
 //    Example: it's not possible to work 9 hours, have 1 hour sick leave and expect 2 hours overtime for an 8 hours daily maximum, the overtime here is 1 hour.
-func (s *DailySummary) CalculateOvertime() time.Duration {
-	workingTime := s.CalculateWorkingTime()
-	excusedTime := s.CalculateExcusedTime()
-
-	dailyMax := s.CalculateDailyMax() - s.CalculateAbsenceTime()
-	if workingTime >= dailyMax {
-		// Can't be on sick leave etc. if working overtime.
-		excusedTime = 0
-	} else if workingTime+excusedTime > dailyMax {
-		// There is overlap: Not enough workHours, but having excused hours = Cap at daily max, no overtime
-		excusedTime = dailyMax - workingTime
-	}
-	overtime := workingTime + excusedTime - dailyMax
-
-	return overtime
+func (s *DailySummary) CalculateOvertimeSummary() OvertimeSummary {
+	os := OvertimeSummary{}
+	dailyMax := s.calculateDailyMax() - s.CalculateAbsenceTime()
+	os.DailyMax = dailyMax
+	s.calculateWorkingTime(&os)
+	s.calculateExcusedTime(&os)
+	return os
 }
 
-// CalculateDailyMax returns the theoretical amount of hours that an employee should work on this day.
+// Overtime returns the total overtime with all business rules respected.
+func (s OvertimeSummary) Overtime() time.Duration {
+	excusedTime := s.ExcusedTime()
+	workingTime := s.WorkingTime()
+	if workingTime >= s.DailyMax {
+		// Can't be on excused hours. if working overtime.
+		excusedTime = 0
+	} else if workingTime+excusedTime > s.DailyMax {
+		// There is overlap: Not enough workHours, but having excused hours = Cap at daily max, no overtime
+		excusedTime = s.DailyMax - workingTime
+	}
+	return workingTime + excusedTime - s.DailyMax
+}
+
+// WorkingTime is the sum of OutOfOfficeTime (multiplied with 1.5) and RegularWorkingTime.
+func (s OvertimeSummary) WorkingTime() time.Duration {
+	overtime := 1.5 * float64(s.OutOfOfficeTime)
+	return s.RegularWorkingTime + time.Duration(overtime)
+}
+
+// ExcusedTime returns the sum of AuthoritiesTime, PublicServiceTime and SickLeaveTime.
+func (s OvertimeSummary) ExcusedTime() time.Duration {
+	return s.AuthoritiesTime + s.PublicServiceTime + s.SickLeaveTime
+}
+
+// calculateDailyMax returns the theoretical amount of hours that an employee should work on this day.
 //  * It returns 0 for weekend days.
 //  * It returns 8.5 hours multiplied by FTE ratio for days in 2020 and earlier.
 //  * It returns 8.0 hours multiplied by FTE ratio for days in 2021 and later.
-func (s *DailySummary) CalculateDailyMax() time.Duration {
+func (s *DailySummary) calculateDailyMax() time.Duration {
 	if s.IsWeekend() {
 		return 0
 	}
@@ -81,34 +107,32 @@ func (s *DailySummary) CalculateDailyMax() time.Duration {
 	return time.Duration(8 * s.FTERatio * float64(time.Hour))
 }
 
-// CalculateWorkingTime accumulates all working hours from that day.
-// The outside office hours are multiplied with 1.5.
-func (s *DailySummary) CalculateWorkingTime() time.Duration {
-	workTime := time.Duration(0)
+// calculateWorkingTime accumulates all working hours from that day.
+func (s *DailySummary) calculateWorkingTime(o *OvertimeSummary) {
 	for _, shift := range s.Shifts {
+		diff := shift.End.Sub(shift.Start)
 		switch shift.Reason {
 		case "":
-			diff := shift.End.Sub(shift.Start)
-			workTime += diff
+			o.RegularWorkingTime += diff
 		case ReasonOutsideOfficeHours:
-			diff := 1.5 * float64(shift.End.Sub(shift.Start))
-			workTime += time.Duration(diff)
+			o.OutOfOfficeTime += diff
 		}
 	}
-	return workTime
 }
 
-// CalculateExcusedTime accumulates all hours that are excused in some way (sick leave etc) from that day.
-func (s *DailySummary) CalculateExcusedTime() time.Duration {
-	total := time.Duration(0)
+// calculateExcusedTime accumulates all hours that are excused in some way (sick leave etc) from that day.
+func (s *DailySummary) calculateExcusedTime(o *OvertimeSummary) {
 	for _, shift := range s.Shifts {
+		diff := shift.End.Sub(shift.Start)
 		switch shift.Reason {
-		case ReasonSickLeave, ReasonAuthorities, ReasonPublicService:
-			diff := shift.End.Sub(shift.Start)
-			total += diff
+		case ReasonSickLeave:
+			o.SickLeaveTime += diff
+		case ReasonAuthorities:
+			o.AuthoritiesTime += diff
+		case ReasonPublicService:
+			o.PublicServiceTime += diff
 		}
 	}
-	return total
 }
 
 // CalculateAbsenceTime accumulates all absence hours from that day.
@@ -119,7 +143,7 @@ func (s *DailySummary) CalculateAbsenceTime() time.Duration {
 			// VSHN specific: Odoo treats "Unpaid" as normal leave, but for VSHN it's informational-only, meaning one still has to work.
 			// For every other type of absence, we add the daily max equivalent.
 
-			total += s.CalculateDailyMax()
+			total += s.calculateDailyMax()
 		}
 	}
 	return total
