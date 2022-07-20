@@ -12,7 +12,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/labstack/echo-contrib v0.12.0
 	github.com/labstack/echo/v4 v4.7.2
-	github.com/stretchr/testify v1.7.3
+	github.com/stretchr/testify v1.8.0
 	github.com/urfave/cli/v2 v2.11.1
 	go.uber.org/zap v1.21.0
 )
