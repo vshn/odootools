@@ -13,13 +13,13 @@ require (
 	github.com/labstack/echo-contrib v0.12.0
 	github.com/labstack/echo/v4 v4.7.2
 	github.com/stretchr/testify v1.7.3
-	github.com/urfave/cli/v2 v2.10.1
+	github.com/urfave/cli/v2 v2.11.1
 	go.uber.org/zap v1.21.0
 )
 
 require (
 	github.com/benbjohnson/clock v1.1.0 // indirect
-	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/gorilla/context v1.1.1 // indirect
