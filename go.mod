@@ -14,7 +14,7 @@ require (
 	github.com/labstack/echo/v4 v4.7.2
 	github.com/stretchr/testify v1.8.0
 	github.com/urfave/cli/v2 v2.11.1
-	go.uber.org/zap v1.21.0
+	go.uber.org/zap v1.22.0
 )
 
 require (
