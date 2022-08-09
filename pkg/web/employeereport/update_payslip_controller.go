@@ -25,14 +25,15 @@ func NewUpdatePayslipController(ctx *controller.BaseController) *UpdatePayslipCo
 
 // UpdatePayslipOfEmployee POST /report/employee/:employee/:year/:month
 func (c *UpdatePayslipController) UpdatePayslipOfEmployee() error {
-	root := pipeline.NewPipeline().WithSteps(
-		pipeline.NewStepFromFunc("parse user input", c.parseInput).WithErrorHandler(c.badRequest),
-		pipeline.NewStepFromFunc("fetch employee", c.fetchEmployeeByID).WithErrorHandler(c.badRequest),
-		pipeline.NewStepFromFunc("fetch current month's payslip", c.fetchNextPayslip).WithErrorHandler(c.badRequest),
-		pipeline.NewStepFromFunc("save payslip", c.savePayslip).WithErrorHandler(c.serverError),
+	root := pipeline.NewPipeline[context.Context]()
+	root.WithSteps(
+		root.NewStep("parse user input", c.parseInput).WithErrorHandler(c.serverError(http.StatusBadRequest)),
+		root.NewStep("fetch employee", c.fetchEmployeeByID).WithErrorHandler(c.serverError(http.StatusBadRequest)),
+		root.NewStep("fetch current month's payslip", c.fetchNextPayslip).WithErrorHandler(c.serverError(http.StatusBadRequest)),
+		root.NewStep("save payslip", c.savePayslip).WithErrorHandler(c.serverError(http.StatusInternalServerError)),
 	)
-	result := root.RunWithContext(c.RequestContext)
-	return result.Err()
+	err := root.RunWithContext(c.RequestContext)
+	return err
 }
 
 func (c *UpdatePayslipController) parseInput(_ context.Context) error {
@@ -71,14 +72,6 @@ func (c *UpdatePayslipController) fetchNextPayslip(ctx context.Context) error {
 	return nil
 }
 
-func (c *UpdatePayslipController) badRequest(_ context.Context, err error) error {
-	jsonErr := c.Echo.JSON(http.StatusBadRequest, UpdateResponse{ErrorMessage: err.Error()})
-	if jsonErr != nil {
-		return jsonErr
-	}
-	return err
-}
-
 func (c *UpdatePayslipController) savePayslip(ctx context.Context) error {
 	payslip := c.NextPayslip
 	payslip.Overtime = c.Input.Overtime
@@ -92,10 +85,14 @@ func (c *UpdatePayslipController) savePayslip(ctx context.Context) error {
 	})
 }
 
-func (c *UpdatePayslipController) serverError(_ context.Context, err error) error {
-	jsonErr := c.Echo.JSON(http.StatusInternalServerError, UpdateResponse{ErrorMessage: err.Error()})
-	if jsonErr != nil {
-		return jsonErr
+func (c *UpdatePayslipController) serverError(httpStatusError int) func(_ context.Context, err error) error {
+	return func(_ context.Context, err error) error {
+		if err != nil {
+			jsonErr := c.Echo.JSON(httpStatusError, UpdateResponse{ErrorMessage: err.Error()})
+			if jsonErr != nil {
+				return jsonErr
+			}
+		}
+		return err
 	}
-	return err
 }

@@ -34,19 +34,19 @@ func NewReportController(ctx *controller.BaseController) *ReportController {
 
 // DisplayOvertimeReport GET /report/:id/:year/:month
 func (c *ReportController) DisplayOvertimeReport() error {
-	root := pipeline.NewPipeline().
-		WithSteps(
-			pipeline.NewStepFromFunc("parse user input", c.parseInput),
-			pipeline.NewStepFromFunc("fetch employee", c.fetchEmployeeByID),
-			pipeline.NewStepFromFunc("fetch contracts", c.fetchContracts),
-			pipeline.NewStepFromFunc("fetch attendances", c.fetchAttendances),
-			pipeline.NewStepFromFunc("fetch leaves", c.fetchLeaves),
-			pipeline.NewStepFromFunc("fetch last issued payslip", c.fetchPayslip),
-			pipeline.If(pipeline.Not(c.noMonthGiven), pipeline.NewStepFromFunc("calculate monthly report", c.calculateMonthlyReport)),
-			pipeline.If(c.noMonthGiven, pipeline.NewStepFromFunc("calculate yearly report", c.calculateYearlyReport)),
-		)
-	result := root.RunWithContext(c.RequestContext)
-	return result.Err()
+	root := pipeline.NewPipeline[context.Context]()
+	root.WithSteps(
+		root.NewStep("parse user input", c.parseInput),
+		root.NewStep("fetch employee", c.fetchEmployeeByID),
+		root.NewStep("fetch contracts", c.fetchContracts),
+		root.NewStep("fetch attendances", c.fetchAttendances),
+		root.NewStep("fetch leaves", c.fetchLeaves),
+		root.NewStep("fetch last issued payslip", c.fetchPayslip),
+		root.When(pipeline.Not(c.noMonthGiven), "calculate monthly report", c.calculateMonthlyReport),
+		root.When(c.noMonthGiven, "calculate yearly report", c.calculateYearlyReport),
+	)
+	err := root.RunWithContext(c.RequestContext)
+	return err
 }
 
 func (c *ReportController) parseInput(_ context.Context) error {
