@@ -43,13 +43,14 @@ func (s Server) Login(e echo.Context) error {
 func (s Server) runPostLogin(e echo.Context, odooSession *odoo.Session) error {
 	o := model.NewOdoo(odooSession)
 	sessionData := controller.SessionData{}
-	p := pipeline.NewPipeline().WithSteps(
-		pipeline.NewStepFromFunc("fetch employee", func(ctx context.Context) error {
+	p := pipeline.NewPipeline[context.Context]()
+	p.WithSteps(
+		p.NewStep("fetch employee", func(ctx context.Context) error {
 			e, err := o.FetchEmployeeByUserID(ctx, odooSession.UID)
 			sessionData.Employee = e
 			return err
 		}),
-		pipeline.NewStepFromFunc("fetch manager group", func(ctx context.Context) error {
+		p.NewStep("fetch manager group", func(ctx context.Context) error {
 			group, err := o.FetchGroupByName(ctx, "Human Resources", "Manager")
 			if group != nil {
 				for _, userID := range group.UserIDs {
@@ -60,7 +61,7 @@ func (s Server) runPostLogin(e echo.Context, odooSession *odoo.Session) error {
 			}
 			return err
 		}),
-		pipeline.NewStepFromFunc("save session", func(ctx context.Context) error {
+		p.NewStep("save session", func(ctx context.Context) error {
 			if err := s.SaveOdooSession(e, odooSession); err != nil {
 				return err
 			}
@@ -69,10 +70,13 @@ func (s Server) runPostLogin(e echo.Context, odooSession *odoo.Session) error {
 			}
 			return e.Redirect(http.StatusFound, "/report")
 		}).WithErrorHandler(func(ctx context.Context, err error) error {
-			return s.ShowError(e, err)
+			if err != nil {
+				return s.ShowError(e, err)
+			}
+			return nil
 		}),
 	)
-	return p.RunWithContext(e.Request().Context()).Err()
+	return p.RunWithContext(e.Request().Context())
 }
 
 // Logout GET /logout

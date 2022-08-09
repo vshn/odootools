@@ -49,17 +49,19 @@ func NewEmployeeReportController(ctx *controller.BaseController) *ReportControll
 
 // DisplayEmployeeReport GET /report/employees/:year/:month
 func (c *ReportController) DisplayEmployeeReport() error {
-	root := pipeline.NewPipeline().WithOptions(pipeline.DisableErrorWrapping).WithSteps(
-		pipeline.NewStepFromFunc("parse user input", c.parseInput),
-		pipeline.NewStepFromFunc("fetch employees", c.fetchEmployees),
-		pipeline.NewWorkerPoolStep("generate reports for each employee", 4, c.createPipelinesForEachEmployee, c.collectReports),
-		pipeline.NewStepFromFunc("render report", c.renderReport),
-	)
-	result := root.RunWithContext(c.RequestContext)
-	return result.Err()
+	root := pipeline.NewPipeline[context.Context]()
+	root.WithOptions(pipeline.Options{DisableErrorWrapping: true}).
+		WithSteps(
+			root.NewStep("parse user input", c.parseInput),
+			root.NewStep("fetch employees", c.fetchEmployees),
+			pipeline.NewWorkerPoolStep("generate reports for each employee", 4, c.createPipelinesForEachEmployee, c.collectReports),
+			root.NewStep("render report", c.renderReport),
+		)
+	err := root.RunWithContext(c.RequestContext)
+	return err
 }
 
-func (c *ReportController) createPipelinesForEachEmployee(ctx context.Context, pipelines chan *pipeline.Pipeline) {
+func (c *ReportController) createPipelinesForEachEmployee(ctx context.Context, pipelines chan *pipeline.Pipeline[context.Context]) {
 	defer close(pipelines)
 	c.reports = make([]*EmployeeReport, c.employees.Len())
 	for i, employee := range c.employees.Items {
@@ -80,24 +82,24 @@ func (c *ReportController) createPipelinesForEachEmployee(ctx context.Context, p
 	}
 }
 
-func (c *EmployeeReport) createPipeline() *pipeline.Pipeline {
-	p := pipeline.NewPipeline()
-	p.AddStep(p.WithNestedSteps(fmt.Sprintf("report for %q", c.Employee.Name),
-		pipeline.NewStepFromFunc("fetch contracts", c.fetchContracts),
-		pipeline.NewStepFromFunc("fetch attendances", c.fetchAttendances),
-		pipeline.NewStepFromFunc("fetch leaves", c.fetchLeaves),
-		pipeline.NewStepFromFunc("fetch last issued payslip", c.fetchPreviousPayslip),
-		pipeline.NewStepFromFunc("fetch current month's payslip", c.fetchNextPayslip),
-		pipeline.NewStepFromFunc("calculate monthly report", c.calculateMonthlyReport).WithErrorHandler(c.ignoreNoContractFound),
+func (c *EmployeeReport) createPipeline() *pipeline.Pipeline[context.Context] {
+	p := pipeline.NewPipeline[context.Context]()
+	p.AddStep(p.WithNestedSteps(fmt.Sprintf("report for %q", c.Employee.Name), nil,
+		p.NewStep("fetch contracts", c.fetchContracts),
+		p.NewStep("fetch attendances", c.fetchAttendances),
+		p.NewStep("fetch leaves", c.fetchLeaves),
+		p.NewStep("fetch last issued payslip", c.fetchPreviousPayslip),
+		p.NewStep("fetch current month's payslip", c.fetchNextPayslip),
+		p.NewStep("calculate monthly report", c.calculateMonthlyReport).WithErrorHandler(c.ignoreNoContractFound),
 	))
 	return p
 }
 
-func (c *ReportController) collectReports(_ context.Context, results map[uint64]pipeline.Result) error {
+func (c *ReportController) collectReports(_ context.Context, results map[uint64]error) error {
 	var combined error
-	for _, result := range results {
-		if result.IsFailed() {
-			combined = multierror.Append(combined, result.Err())
+	for _, err := range results {
+		if err != nil {
+			combined = multierror.Append(combined, err)
 		}
 	}
 	return combined

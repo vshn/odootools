@@ -35,29 +35,30 @@ func NewConfigController(ctrl *controller.BaseController) *ConfigController {
 
 func (c *ConfigController) ShowConfigurationFormAndWeeklyReport() error {
 	c.view.roles = c.SessionData.Roles
-	root := pipeline.NewPipeline().WithSteps(
-		pipeline.NewStepFromFunc("parse user input", c.parseInput),
-		pipeline.ToNestedStep("weekly report", pipeline.Bool(true), pipeline.NewPipeline().WithSteps(
-			pipeline.NewStepFromFunc("fetch attendances", c.fetchAttendanceOfCurrentWeek),
-			pipeline.NewStepFromFunc("fetch contracts", c.fetchContracts),
-			pipeline.NewStepFromFunc("fetch leaves", c.fetchLeaves),
-			pipeline.NewStepFromFunc("calculate report", c.calculateReport),
-		)).WithErrorHandler(c.displayWarning),
-		pipeline.NewStepFromFunc("render", c.render),
+	root := pipeline.NewPipeline[context.Context]()
+	root.WithSteps(
+		root.NewStep("parse user input", c.parseInput),
+		root.WithNestedSteps("weekly report", pipeline.Bool[context.Context](true),
+			root.NewStep("fetch attendances", c.fetchAttendanceOfCurrentWeek),
+			root.NewStep("fetch contracts", c.fetchContracts),
+			root.NewStep("fetch leaves", c.fetchLeaves),
+			root.NewStep("calculate report", c.calculateReport),
+		).WithErrorHandler(c.displayWarning),
+		root.NewStep("render", c.render),
 	)
-	result := root.RunWithContext(c.RequestContext)
-	return result.Err()
+	err := root.RunWithContext(c.RequestContext)
+	return err
 }
 
 func (c *ConfigController) ProcessInput() error {
-	root := pipeline.NewPipeline().
-		WithSteps(
-			pipeline.NewStepFromFunc("parse user input", c.parseInput),
-			pipeline.NewStepFromFunc("search employee", c.searchEmployee),
-			pipeline.NewStepFromFunc("redirect to report", c.redirectToReportView),
-		)
-	result := root.RunWithContext(c.RequestContext)
-	return result.Err()
+	root := pipeline.NewPipeline[context.Context]()
+	root.WithSteps(
+		root.NewStep("parse user input", c.parseInput),
+		root.NewStep("search employee", c.searchEmployee),
+		root.NewStep("redirect to report", c.redirectToReportView),
+	)
+	err := root.RunWithContext(c.RequestContext)
+	return err
 }
 
 func (c *ConfigController) parseInput(_ context.Context) error {
@@ -152,7 +153,9 @@ func (c *ConfigController) calculateReport(_ context.Context) error {
 }
 
 func (c *ConfigController) displayWarning(_ context.Context, err error) error {
-	c.view.warning = err.Error()
+	if err != nil {
+		c.view.warning = err.Error()
+	}
 	return nil
 }
 
