@@ -4,15 +4,15 @@ import "encoding/json"
 
 // ActionReason describes the "action reason" from Odoo.
 // Example raw values returned from Odoo:
-//  * `false` (if no specific reason given)
-//  * `[1, "Outside office hours"]`
-//  * `[2, "Outside office hours"]`
-//  * `[3, "Sick / Medical Consultation"]`
-//  * `[4, "Sick / Medical Consultation"]`
-//  * `[5, "Authorities"]`
-//  * `[6, "Authorities"]`
-//  * `[27, "Requested Public Service"]`
-//  * `[28, "Requested Public Service"]`
+//   - `false` (if no specific reason given)
+//   - `[1, "Outside office hours"]`
+//   - `[2, "Outside office hours"]`
+//   - `[3, "Sick / Medical Consultation"]`
+//   - `[4, "Sick / Medical Consultation"]`
+//   - `[5, "Authorities"]`
+//   - `[6, "Authorities"]`
+//   - `[27, "Requested Public Service"]`
+//   - `[28, "Requested Public Service"]`
 type ActionReason struct {
 	ID   float64
 	Name string

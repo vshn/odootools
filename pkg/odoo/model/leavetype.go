@@ -5,13 +5,13 @@ import "encoding/json"
 // LeaveType describes the "leave type" from Odoo.
 //
 // Example raw values returned from Odoo:
-//  * `false` (if no specific reason given)
-//  * `[4, "Unpaid"]`
-//  * `[5, "Military Service"]`
-//  * `[7, "Special Occasions"]`
-//  * `[9, "Public Holiday"]`
-//  * `[16, "Legal Leaves 2020"]`
-//  * `[17, "Legal Leaves 2021"]`
+//   - `false` (if no specific reason given)
+//   - `[4, "Unpaid"]`
+//   - `[5, "Military Service"]`
+//   - `[7, "Special Occasions"]`
+//   - `[9, "Public Holiday"]`
+//   - `[16, "Legal Leaves 2020"]`
+//   - `[17, "Legal Leaves 2021"]`
 type LeaveType struct {
 	ID   float64
 	Name string

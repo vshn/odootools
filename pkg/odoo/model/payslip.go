@@ -69,9 +69,9 @@ var colonFormatRegex = regexp.MustCompile(".*?((-?\\d+):(\\d{2})(?::?(\\d{2}))?)
 // ParseOvertime tries to parse the currently inconsistently-formatted custom field to a duration.
 // If the field is empty, 0 is returned without error.
 // It parses the following formats:
-//  * hhh:mm (e.g. '15:54')
-//  * hhh:mm:ss (e.g. '153:54:45')
-//  * {1,2}d{1,2}h (e.g. '15d54m')
+//   - hhh:mm (e.g. '15:54')
+//   - hhh:mm:ss (e.g. '153:54:45')
+//   - {1,2}d{1,2}h (e.g. '15d54m')
 func (p Payslip) ParseOvertime() (time.Duration, error) {
 	raw := p.GetOvertime()
 	if raw == "" {

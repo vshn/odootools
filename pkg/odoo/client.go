@@ -103,9 +103,9 @@ type LoginOptions struct {
 
 // Login tries to authenticate the user against Odoo.
 // It returns a session if authentication was successful. An error is returned if
-//  - the credentials were wrong,
-//  - encoding or sending the request,
-//  - or decoding the request failed.
+//   - the credentials were wrong,
+//   - encoding or sending the request,
+//   - or decoding the request failed.
 func (c Client) Login(ctx context.Context, options LoginOptions) (*Session, error) {
 	resp, err := c.requestSession(ctx, options)
 	if err != nil {
