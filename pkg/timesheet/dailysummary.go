@@ -53,11 +53,11 @@ func (s *DailySummary) addAbsenceBlock(block AbsenceBlock) {
 // If returned duration is positive, then the employee did overtime and undertime if duration is negative.
 //
 // The overtime is then calculated according to these business rules:
-//  * Outside office hours are multiplied by 1.5 (as a compensation)
-//  * Excused hours like sick leave, authorities or public service can be used to "fill up" the daily theoretical maximum if the working hours are less than said maximum.
-//    However, there's no overtime possible using excused hours
-//  * If the working hours exceed the theoretical daily maximum, then the excused hours are basically ignored.
-//    Example: it's not possible to work 9 hours, have 1 hour sick leave and expect 2 hours overtime for an 8 hours daily maximum, the overtime here is 1 hour.
+//   - Outside office hours are multiplied by 1.5 (as a compensation)
+//   - Excused hours like sick leave, authorities or public service can be used to "fill up" the daily theoretical maximum if the working hours are less than said maximum.
+//     However, there's no overtime possible using excused hours
+//   - If the working hours exceed the theoretical daily maximum, then the excused hours are basically ignored.
+//     Example: it's not possible to work 9 hours, have 1 hour sick leave and expect 2 hours overtime for an 8 hours daily maximum, the overtime here is 1 hour.
 func (s *DailySummary) CalculateOvertimeSummary() OvertimeSummary {
 	os := OvertimeSummary{}
 	dailyMax := s.calculateDailyMax() - s.CalculateAbsenceTime()
@@ -93,9 +93,9 @@ func (s OvertimeSummary) ExcusedTime() time.Duration {
 }
 
 // calculateDailyMax returns the theoretical amount of hours that an employee should work on this day.
-//  * It returns 0 for weekend days.
-//  * It returns 8.5 hours multiplied by FTE ratio for days in 2020 and earlier.
-//  * It returns 8.0 hours multiplied by FTE ratio for days in 2021 and later.
+//   - It returns 0 for weekend days.
+//   - It returns 8.5 hours multiplied by FTE ratio for days in 2020 and earlier.
+//   - It returns 8.0 hours multiplied by FTE ratio for days in 2021 and later.
 func (s *DailySummary) calculateDailyMax() time.Duration {
 	if s.IsWeekend() {
 		return 0
