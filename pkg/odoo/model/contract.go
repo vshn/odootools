@@ -21,6 +21,22 @@ type Contract struct {
 // ContractList contains a slice of Contract.
 type ContractList odoo.List[Contract]
 
+// NoContractCoversDateErr is an error that indicates a contract doesn't cover a date.
+type NoContractCoversDateErr struct {
+	Err  error
+	Date odoo.Date
+}
+
+// Error implements error.
+func (e *NoContractCoversDateErr) Error() string {
+	return e.Err.Error()
+}
+
+// Unwrap implements Wrapper.
+func (e *NoContractCoversDateErr) Unwrap() error {
+	return e.Err
+}
+
 // GetFTERatioForDay returns the workload ratio that is active for the given day.
 // All involved dates are expected to be in UTC.
 func (l ContractList) GetFTERatioForDay(day odoo.Date) (float64, error) {
@@ -39,7 +55,10 @@ func (l ContractList) GetFTERatioForDay(day odoo.Date) (float64, error) {
 			return contract.WorkingSchedule.GetFTERatio()
 		}
 	}
-	return 0, fmt.Errorf("no contract found that covers date: %s", day.String())
+	return 0, &NoContractCoversDateErr{
+		Err:  fmt.Errorf("no contract found that covers date: %s", day.String()),
+		Date: day,
+	}
 }
 
 func (o Odoo) FetchAllContractsOfEmployee(ctx context.Context, employeeID int) (ContractList, error) {
