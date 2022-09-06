@@ -2,9 +2,9 @@ package employeereport
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	pipeline "github.com/ccremer/go-command-pipeline"
@@ -188,7 +188,8 @@ func (c *EmployeeReport) fetchNextPayslip(ctx context.Context) error {
 }
 
 func (c *EmployeeReport) ignoreNoContractFound(_ context.Context, err error) error {
-	if strings.Contains(err.Error(), "no contract found that covers date") {
+	var noContractErr *model.NoContractCoversDateErr
+	if errors.As(err, &noContractErr) {
 		return nil
 	}
 	return err
