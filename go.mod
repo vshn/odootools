@@ -13,7 +13,7 @@ require (
 	github.com/labstack/echo-contrib v0.13.0
 	github.com/labstack/echo/v4 v4.9.0
 	github.com/stretchr/testify v1.8.0
-	github.com/urfave/cli/v2 v2.14.1
+	github.com/urfave/cli/v2 v2.17.1
 	go.uber.org/zap v1.23.0
 )
 
