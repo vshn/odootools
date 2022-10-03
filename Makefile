@@ -16,20 +16,20 @@ help: ## Show this help
 
 # Note: We only use package.json for Renovate support
 
+.PHONY: generate
 generate: base_url = https://cdn.jsdelivr.net/npm/bootstrap
 generate: version = $(shell jq --raw-output '.packages."node_modules/bootstrap".version' package-lock.json)
-generate: ## Generate code and assets
-	curl -sSLo templates/bootstrap.min.css $(base_url)@$(version)/dist/css/bootstrap.min.css
-	curl -sSLo templates/bootstrap.min.css.map $(base_url)@$(version)/dist/css/bootstrap.min.css.map
-	curl -sSLo templates/bootstrap.min.js $(base_url)@$(version)/dist/js/bootstrap.min.js
-	curl -sSLo templates/bootstrap.min.js.map $(base_url)@$(version)/dist/js/bootstrap.min.js.map
+generate: $(STATIC_ASSETS) ## Generate code and assets
+
+templates/bootstrap.min.%:
+	curl -sSLo "$@" "$(base_url)@$(version)/dist/$(*:.map=)/bootstrap.min.$*"
 
 .PHONY: build
 build: build.bin build.docker ## All-in-one build
 
 .PHONY: build.bin
 build.bin: export CGO_ENABLED = 0
-build.bin: fmt vet templates/bootstrap.min.css ## Build binary
+build.bin: generate fmt vet ## Build binary
 	@go build -o odootools .
 
 .PHONY: build.docker
@@ -37,7 +37,7 @@ build.docker: build.bin ## Build docker image
 	$(DOCKER) build -t $(CONTAINER_IMG) .
 
 .PHONY: test
-test:
+test: generate
 	@go test -race -coverprofile cover.out -covermode atomic -count 1 ./...
 
 .PHONY: fmt
@@ -45,11 +45,11 @@ fmt: ## Run 'go fmt' against code
 	go fmt ./...
 
 .PHONY: vet
-vet: ## Run 'go vet' against code
+vet: generate ## Run 'go vet' against code
 	go vet ./...
 
 .PHONY: lint
-lint: fmt vet generate ## All-in-one linting
+lint: fmt vet ## All-in-one linting
 	@echo 'Check for uncommitted changes ...'
 	git diff --exit-code
 
@@ -60,8 +60,6 @@ run: ## Run a local instance on localhost:4200
 
 run.docker: build.docker ## Run in docker on port 8080
 	$(DOCKER) run --rm -it --env "SECRET_KEY=$(LOCAL_SECRET_KEY)" --env ODOO_DB --env ODOO_URL --env "LISTEN_ADDRESS=:8080" --publish "8080:8080" $(CONTAINER_IMG) web
-
-templates/bootstrap.min.css: generate
 
 .helmfile:
 	helmfile -e $(ENV) -f envs/helmfile.yaml $(helm_cmd) $(helm_args)
@@ -84,3 +82,7 @@ preview.destroy: export SECRET_KEY = none
 preview.destroy: helm_cmd = destroy
 preview.destroy: helm_args = --args --wait
 preview.destroy: .helmfile ## Uninstall Helm release in preview environment
+
+.PHONY: clean
+clean:
+	rm -f odootools templates/bootstrap.min.*
