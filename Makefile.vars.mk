@@ -13,3 +13,5 @@ LOCAL_SECRET_KEY ?= rQKkLcSZ1I5Skruo+jDRLK4YjFsIKbX1YmPFMAxKbWI=
 ENV ?= test
 
 DOCKER ?= $(shell which podman &>/dev/null && echo podman || echo docker)
+
+STATIC_ASSETS ?= $(shell echo templates/bootstrap.min.{css,js}{,.map})

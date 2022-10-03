@@ -10,3 +10,6 @@ node_modules
 # Goreleaser
 dist/
 .github/release-notes.md
+
+# Generated assets
+templates/bootstrap.min.*
