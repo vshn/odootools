@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"regexp"
 
@@ -37,7 +36,7 @@ func (t *debugTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	if r.Body != nil {
 		reqBody, _ := r.GetBody()
 		defer reqBody.Close()
-		buf, _ := ioutil.ReadAll(reqBody)
+		buf, _ := io.ReadAll(reqBody)
 		buf = t.pwRe.ReplaceAll(buf, []byte(confidentialPlaceholder))
 		buf = t.sessRe.ReplaceAll(buf, []byte(confidentialPlaceholder))
 		logger.V(2).Info(fmt.Sprintf("%s %s ---> %s", r.Method, r.URL.Path, string(buf)))
@@ -50,7 +49,7 @@ func (t *debugTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 
 	if res.Body != nil {
 		defer res.Body.Close()
-		buf, _ := ioutil.ReadAll(res.Body)
+		buf, _ := io.ReadAll(res.Body)
 		redacted := t.sessRe.ReplaceAll(buf, []byte(confidentialPlaceholder))
 		logger.V(2).Info(fmt.Sprintf("%s %s <--- %s", r.Method, r.URL.Path, string(redacted)))
 		res.Body = io.NopCloser(bytes.NewReader(buf))

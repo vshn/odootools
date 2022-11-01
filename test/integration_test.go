@@ -2,7 +2,6 @@ package integration_test
 
 import (
 	"io"
-	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http/httptest"
@@ -28,7 +27,7 @@ func TestHealthz(t *testing.T) {
 	newServer("").ServeHTTP(res, req)
 
 	assert.Equal(t, res.Code, 200)
-	body, err := ioutil.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 	assert.NoError(t, err)
 	assert.Equal(t, []byte{}, body) // response body
 }

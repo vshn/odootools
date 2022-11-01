@@ -34,23 +34,9 @@ func main() {
 		Usage:   "Odoo ERP utility tools for everyday things",
 		Version: VersionInfo{Version: version, Commit: commit, Date: date}.String(),
 		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:     "odoo-url",
-				Usage:    "Odoo Base URL",
-				Required: true,
-				EnvVars:  []string{"ODOO_URL"},
-			},
-			&cli.StringFlag{
-				Name:     "odoo-db",
-				Usage:    "Odoo Database name",
-				Required: true,
-				EnvVars:  []string{"ODOO_DB"},
-			},
-			&cli.IntFlag{
-				Name:    "log-level",
-				Usage:   "Log verbosity level",
-				EnvVars: []string{"LOG_LEVEL"},
-			},
+			newOdooURLFlag(),
+			newOdooDBFlag(),
+			newLogLevelFlag(),
 		},
 		Commands: []*cli.Command{
 			newWebCommand(),

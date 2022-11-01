@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-var workingScheduleRegex = regexp.MustCompile("(?P<ratio>[0-9]+\\s*%)")
+var workingScheduleRegex = regexp.MustCompile(`(?P<ratio>[0-9]+\s*%)`)
 
 type WorkingSchedule struct {
 	ID   float64
@@ -24,7 +24,7 @@ func (s *WorkingSchedule) String() string {
 }
 
 // MarshalJSON implements json.Marshaler.
-func (s WorkingSchedule) MarshalJSON() ([]byte, error) {
+func (s *WorkingSchedule) MarshalJSON() ([]byte, error) {
 	if s.Name == "" {
 		return []byte("false"), nil
 	}
@@ -55,7 +55,7 @@ func (s *WorkingSchedule) UnmarshalJSON(b []byte) error {
 
 // GetFTERatio tries to extract the FTE ratio from the name of the schedule.
 // It returns an error if it could not find a match
-func (s WorkingSchedule) GetFTERatio() (float64, error) {
+func (s *WorkingSchedule) GetFTERatio() (float64, error) {
 	match := workingScheduleRegex.FindStringSubmatch(s.Name)
 	if len(match) > 0 {
 		v := match[0]

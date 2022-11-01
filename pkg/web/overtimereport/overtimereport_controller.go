@@ -117,22 +117,6 @@ func (c *ReportController) calculateYearlyReport(_ context.Context) error {
 	return c.Echo.Render(http.StatusOK, yearlyReportTemplateName, values)
 }
 
-func (c *ReportController) searchEmployee(ctx context.Context) error {
-	if c.Input.SearchUserEnabled {
-		e, err := c.OdooClient.SearchEmployee(ctx, c.Input.SearchUser)
-		if e == nil {
-			return fmt.Errorf("no user matching '%s' found", c.Input.SearchUser)
-		}
-		c.Employee = e
-		return err
-	}
-	if c.SessionData.Employee != nil {
-		c.Employee = c.SessionData.Employee
-		return nil
-	}
-	return fmt.Errorf("no Employee found for user ID %q", c.OdooSession.UID)
-}
-
 func (c *ReportController) fetchPayslip(ctx context.Context) error {
 	lastMonth := c.Input.GetFirstDayOfMonth().AddDate(0, -1, 0)
 	payslip, err := c.OdooClient.FetchPayslipInMonth(ctx, c.Employee.ID, lastMonth)
