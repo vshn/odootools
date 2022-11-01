@@ -1,6 +1,7 @@
 package employeereport
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -28,7 +29,7 @@ func Test_EmployeeReport_ignoreNoContractFound(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			r := &EmployeeReport{}
-			err := r.ignoreNoContractFound(nil, tc.givenError)
+			err := r.ignoreNoContractFound(context.TODO(), tc.givenError)
 			if tc.expectedError != "" {
 				assert.EqualError(t, err, tc.expectedError)
 			} else {

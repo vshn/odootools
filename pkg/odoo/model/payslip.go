@@ -64,7 +64,7 @@ func (p Payslip) GetOvertime() string {
 // colonFormatRegex searches for string reference that has somewhere a pattern like '123:45' or '123:45:54'
 // A match will be divided into subgroups, e.g. '123' for hours, '45' for minutes, '54' for seconds.
 // The hours group can have a dash in front of the number to indicate negative hours.
-var colonFormatRegex = regexp.MustCompile(".*?((-?\\d+):(\\d{2})(?::?(\\d{2}))?).*")
+var colonFormatRegex = regexp.MustCompile(`.*?((-?\d+):(\d{2})(?::?(\d{2}))?).*`)
 
 // ParseOvertime tries to parse the currently inconsistently-formatted custom field to a duration.
 // If the field is empty, 0 is returned without error.
