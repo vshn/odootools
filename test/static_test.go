@@ -1,7 +1,7 @@
 package integration_test
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http/httptest"
 	"testing"
 
@@ -15,7 +15,7 @@ func TestStaticAssets(t *testing.T) {
 
 	assert.Equal(t, 200, res.Code)
 	assert.Equal(t, "text/plain; charset=UTF-8", res.Header().Get("content-type"))
-	body, err := ioutil.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 	assert.NoError(t, err)
 	assert.Equal(t, "User-agent: *\nDisallow: /\n", string(body))
 }

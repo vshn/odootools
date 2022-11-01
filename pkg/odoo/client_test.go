@@ -2,7 +2,7 @@ package odoo
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
@@ -63,7 +63,7 @@ func TestClient_Login_Success(t *testing.T) {
 		numRequests++
 		assert.Equal(t, "/web/session/authenticate", r.RequestURI)
 
-		b, err := ioutil.ReadAll(r.Body)
+		b, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
 		body := string(b)
 		assert.Contains(t, body, `"db":"TestDB"`)

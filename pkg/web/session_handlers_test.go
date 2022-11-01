@@ -1,7 +1,7 @@
 package web
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -18,7 +18,7 @@ func TestRenderLoginForm(t *testing.T) {
 	newTestServer("").ServeHTTP(res, req)
 	assert.Equal(t, http.StatusOK, res.Code, "status code")
 	assert.Equal(t, "text/html; charset=UTF-8", res.Header().Get("content-type"), "content-type")
-	body, err := ioutil.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 	assert.NoError(t, err)
 	assert.Contains(t, string(body), "<h1>Login</h1>")
 	assert.Contains(t, string(body), "<title>Login ")
@@ -58,7 +58,7 @@ func TestLoginSuccess(t *testing.T) {
 	assert.Equal(t, http.StatusFound, res.Code, "http status")
 	assert.Equal(t, "/report", res.Header().Get("Location"), "location header")
 
-	b, err := ioutil.ReadAll(res.Body)
+	b, err := io.ReadAll(res.Body)
 	require.NoError(t, err)
 	body := string(b)
 	assert.NotContains(t, body, `class="alert`)
@@ -71,7 +71,7 @@ func TestLoginSuccess(t *testing.T) {
 
 func respondLogin(t *testing.T, w http.ResponseWriter, r *http.Request) {
 	assert.Equal(t, "/web/session/authenticate", r.RequestURI)
-	b, err := ioutil.ReadAll(r.Body)
+	b, err := io.ReadAll(r.Body)
 	require.NoError(t, err)
 	body := strings.TrimSpace(string(b))
 
@@ -103,7 +103,7 @@ func respondLogin(t *testing.T, w http.ResponseWriter, r *http.Request) {
 func respondEmployeeSearch(t *testing.T, w http.ResponseWriter, r *http.Request) {
 	assert.Equal(t, "/web/dataset/search_read", r.RequestURI)
 
-	b, err := ioutil.ReadAll(r.Body)
+	b, err := io.ReadAll(r.Body)
 	require.NoError(t, err)
 	body := strings.TrimSpace(string(b))
 	assert.Contains(t, body, `"params":{"model":"hr.employee","domain":[["user_id","=",1]],"fields":["name"]}`, "search parameters")
@@ -124,7 +124,7 @@ func respondEmployeeSearch(t *testing.T, w http.ResponseWriter, r *http.Request)
 func respondGroupMembershipSearch(t *testing.T, w http.ResponseWriter, r *http.Request) {
 	assert.Equal(t, "/web/dataset/search_read", r.RequestURI)
 
-	b, err := ioutil.ReadAll(r.Body)
+	b, err := io.ReadAll(r.Body)
 	require.NoError(t, err)
 	body := string(b)
 
@@ -197,7 +197,7 @@ func TestLoginBadCredentials(t *testing.T) {
 
 	// Verify that the login page is rendered
 	assert.Equal(t, "text/html; charset=UTF-8", res.Header().Get("content-type"), "content type")
-	body, err := ioutil.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 	assert.NoError(t, err)
 	assert.Contains(t, string(body), "<h1>Login</h1>")
 	assert.Contains(t, string(body), "Invalid login or password")

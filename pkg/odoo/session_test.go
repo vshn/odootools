@@ -1,7 +1,7 @@
 package odoo
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -20,7 +20,7 @@ func TestSession_CreateGenericModel(t *testing.T) {
 		numRequests++
 		assert.Equal(t, "/web/dataset/call_kw/create", r.RequestURI)
 
-		buf, err := ioutil.ReadAll(r.Body)
+		buf, err := io.ReadAll(r.Body)
 		assert.NoError(t, err)
 		assert.JSONEq(t, `{
 			"id":"fakeID",
@@ -65,7 +65,7 @@ func TestSession_UpdateGenericModel(t *testing.T) {
 		numRequests++
 		assert.Equal(t, "/web/dataset/call_kw/write", r.RequestURI)
 
-		buf, err := ioutil.ReadAll(r.Body)
+		buf, err := io.ReadAll(r.Body)
 		assert.NoError(t, err)
 		assert.JSONEq(t, `{
 			"id":"fakeID",
@@ -110,7 +110,7 @@ func TestSession_DeleteGenericModel(t *testing.T) {
 		numRequests++
 		assert.Equal(t, "/web/dataset/call_kw/unlink", r.RequestURI)
 
-		buf, err := ioutil.ReadAll(r.Body)
+		buf, err := io.ReadAll(r.Body)
 		assert.NoError(t, err)
 		assert.JSONEq(t, `{
 			"id":"fakeID",
