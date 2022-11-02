@@ -19,6 +19,12 @@ Simply login with your Odoo credentials, configure the report settings and gener
 
 It's currently aimed at Odoo 8.
 
+## Development
+
+### Documentation
+
+See some development notes in [CONTRIBUTING.md](./CONTRIBUTING.md) and [docs/](./docs/)
+
 ### Run the tool
 
 First, you need to export Odoo settings:
@@ -57,3 +63,4 @@ oc -n $nstest patch rolebinding system:image-pusher --type='json' -p='[{"op": "r
 # Get SA token
 oc -n $ns sa get-token $sa
 ```
+Once this is set up, you can use the token in the CD settings: https://github.com/vshn/odootools/settings/secrets/actions
