@@ -1,5 +1,6 @@
 {{ define "main" }}
-<h1>Attendance for {{ .Username }}</h1>
+<h1>Attendance for {{ .Username }}<small class="text-muted"> {{ .MonthDisplayName }}</small></h1>
+<div class="float"></div>
 {{ with .Error }}
 <div class="alert alert-danger" role="alert">{{ . }}</div>
 {{ end }}

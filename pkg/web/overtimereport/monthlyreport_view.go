@@ -68,6 +68,7 @@ func (v *reportView) GetValuesForMonthlyReport(report timesheet.Report, previous
 			"NextMonthLink":     fmt.Sprintf(linkFormat, report.Employee.ID, nextYear, nextMonth),
 			"PreviousMonthLink": fmt.Sprintf(linkFormat, report.Employee.ID, prevYear, prevMonth),
 		},
-		"Username": report.Employee.Name,
+		"Username":         report.Employee.Name,
+		"MonthDisplayName": fmt.Sprintf("%s %d", report.From.Month(), report.From.Year()),
 	}
 }
