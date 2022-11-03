@@ -16,13 +16,14 @@ import (
 
 type ReportController struct {
 	controller.BaseController
-	Input       reportconfig.ReportRequest
-	Employee    *model.Employee
-	ReportView  *reportView
-	Contracts   model.ContractList
-	Attendances model.AttendanceList
-	Leaves      odoo.List[model.Leave]
-	Payslip     *model.Payslip
+	Input           reportconfig.ReportRequest
+	Employee        *model.Employee
+	ReportView      *reportView
+	Contracts       model.ContractList
+	Attendances     model.AttendanceList
+	Leaves          odoo.List[model.Leave]
+	PreviousPayslip *model.Payslip
+	NextPayslip     *model.Payslip
 }
 
 func NewReportController(ctx *controller.BaseController) *ReportController {
@@ -41,7 +42,7 @@ func (c *ReportController) DisplayOvertimeReport() error {
 		root.NewStep("fetch contracts", c.fetchContracts),
 		root.NewStep("fetch attendances", c.fetchAttendances),
 		root.NewStep("fetch leaves", c.fetchLeaves),
-		root.NewStep("fetch last issued payslip", c.fetchPayslip),
+		root.NewStep("fetch payslips", c.fetchPayslips),
 		root.When(pipeline.Not(c.noMonthGiven), "calculate monthly report", c.calculateMonthlyReport),
 		root.When(c.noMonthGiven, "calculate yearly report", c.calculateYearlyReport),
 	)
@@ -101,7 +102,7 @@ func (c *ReportController) calculateMonthlyReport(_ context.Context) error {
 	if err != nil {
 		return err
 	}
-	values := c.ReportView.GetValuesForMonthlyReport(report, c.Payslip)
+	values := c.ReportView.GetValuesForMonthlyReport(report, c.PreviousPayslip, c.NextPayslip)
 	return c.Echo.Render(http.StatusOK, monthlyReportTemplateName, values)
 }
 
@@ -117,10 +118,15 @@ func (c *ReportController) calculateYearlyReport(_ context.Context) error {
 	return c.Echo.Render(http.StatusOK, yearlyReportTemplateName, values)
 }
 
-func (c *ReportController) fetchPayslip(ctx context.Context) error {
+func (c *ReportController) fetchPayslips(ctx context.Context) error {
 	lastMonth := c.Input.GetFirstDayOfMonth().AddDate(0, -1, 0)
-	payslip, err := c.OdooClient.FetchPayslipInMonth(ctx, c.Employee.ID, lastMonth)
-	c.Payslip = payslip
+	payslips, err := c.OdooClient.FetchPayslipBetween(ctx, c.Employee.ID, lastMonth, c.Input.GetLastDayOfMonth())
+	if payslips.Len() >= 1 {
+		c.PreviousPayslip = &payslips.Items[0]
+	}
+	if payslips.Len() >= 2 {
+		c.NextPayslip = &payslips.Items[1]
+	}
 	return err
 }
 
