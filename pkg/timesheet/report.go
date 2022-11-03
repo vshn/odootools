@@ -91,11 +91,8 @@ func (r *ReportBuilder) SetRange(from, to time.Time) *ReportBuilder {
 	return r
 }
 
-func (r *ReportBuilder) SetTimeZone(zone string) *ReportBuilder {
-	loc, err := time.LoadLocation(zone)
-	if err == nil {
-		r.timezone = loc
-	}
+func (r *ReportBuilder) SetTimeZone(location *time.Location) *ReportBuilder {
+	r.timezone = location
 	return r
 }
 

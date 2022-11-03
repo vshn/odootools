@@ -13,11 +13,13 @@ func TestTimeZone_UnmarshalJSON(t *testing.T) {
 		givenInput       string
 		expectedLocation *time.Location
 	}{
-		"UTC":           {givenInput: "UTC", expectedLocation: time.UTC},
-		"Local":         {givenInput: "Local", expectedLocation: time.Local},
-		"EuropeZurich":  {givenInput: `"Europe/Zurich"`, expectedLocation: mustLoadLocation("Europe/Zurich")},
-		"CanadaPacific": {givenInput: "Canada/Pacific", expectedLocation: mustLoadLocation("Canada/Pacific")},
-		"PST8PDT":       {givenInput: "PST8PDT", expectedLocation: mustLoadLocation("PST8PDT")},
+		"false":            {givenInput: "false", expectedLocation: nil},
+		"empty":            {givenInput: "", expectedLocation: nil},
+		"UTC":              {givenInput: "UTC", expectedLocation: time.UTC},
+		"Local":            {givenInput: "Local", expectedLocation: time.Local},
+		"EuropeZurich":     {givenInput: `"Europe/Zurich"`, expectedLocation: mustLoadLocation("Europe/Zurich")},
+		"AmericaVancouver": {givenInput: "America/Vancouver", expectedLocation: mustLoadLocation("America/Vancouver")},
+		"PST8PDT":          {givenInput: "PST8PDT", expectedLocation: mustLoadLocation("PST8PDT")},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {

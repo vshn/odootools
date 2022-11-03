@@ -2,20 +2,28 @@ package odoo
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"time"
 )
 
-type TimeZone time.Location
+// TimeZone represents a time zone in Odoo.
+type TimeZone struct {
+	loc *time.Location
+}
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (tz *TimeZone) UnmarshalJSON(b []byte) error {
+	var f bool
+	if err := json.Unmarshal(b, &f); err == nil || string(b) == "false" || string(b) == "" {
+		return nil
+	}
 	ts := bytes.Trim(b, `"`)
 	loc, err := time.LoadLocation(string(ts))
 	if err != nil {
 		return fmt.Errorf("cannot unmarshal json: %w", err)
 	}
-	*tz = TimeZone(*loc)
+	tz.loc = loc
 	return nil
 }
 
@@ -23,6 +31,5 @@ func (tz *TimeZone) Location() *time.Location {
 	if tz == nil {
 		return nil
 	}
-	l := time.Location(*tz)
-	return &l
+	return tz.loc
 }

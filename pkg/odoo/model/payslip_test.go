@@ -36,7 +36,7 @@ func TestPayslip_ParseOvertime(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			p := Payslip{Overtime: tt.givenOvertime}
+			p := Payslip{XOvertime: tt.givenOvertime}
 			result, err := p.ParseOvertime()
 			if tt.expectedError != "" {
 				assert.EqualError(t, err, tt.expectedError)

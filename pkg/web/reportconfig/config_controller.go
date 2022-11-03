@@ -24,6 +24,7 @@ type ConfigController struct {
 	Leaves      odoo.List[model.Leave]
 	Contracts   model.ContractList
 	Report      timesheet.Report
+	User        *model.User
 }
 
 func NewConfigController(ctrl *controller.BaseController) *ConfigController {
@@ -40,6 +41,7 @@ func (c *ConfigController) ShowConfigurationFormAndWeeklyReport() error {
 		root.NewStep("parse user input", c.parseInput),
 		root.WithNestedSteps("weekly report", pipeline.Bool[context.Context](true),
 			root.NewStep("fetch attendances", c.fetchAttendanceOfCurrentWeek),
+			root.NewStep("fetch user", c.fetchUser),
 			root.NewStep("fetch contracts", c.fetchContracts),
 			root.NewStep("fetch leaves", c.fetchLeaves),
 			root.NewStep("calculate report", c.calculateReport),
@@ -118,6 +120,12 @@ func (c *ConfigController) fetchAttendanceOfCurrentWeek(ctx context.Context) err
 	return nil
 }
 
+func (c *ConfigController) fetchUser(ctx context.Context) error {
+	user, err := c.OdooClient.FetchUserByID(ctx, c.OdooSession.UID)
+	c.User = user
+	return err
+}
+
 func (c *ConfigController) fetchContracts(ctx context.Context) error {
 	contracts, err := c.OdooClient.FetchAllContractsOfEmployee(ctx, c.SessionData.Employee.ID)
 	c.Contracts = contracts
@@ -133,7 +141,7 @@ func (c *ConfigController) fetchLeaves(ctx context.Context) error {
 func (c *ConfigController) calculateReport(_ context.Context) error {
 	reporter := timesheet.NewReporter(c.Attendances, c.Leaves, c.Employee, c.Contracts).
 		SetRange(c.StartOfWeek, c.EndOfWeek).
-		SetTimeZone("Europe/Zurich"). // hardcoded for now
+		SetTimeZone(c.User.TimeZone.Location()). // hardcoded for now
 		SkipClampingToNow(true)
 	report, err := reporter.CalculateReport()
 	c.Report = report

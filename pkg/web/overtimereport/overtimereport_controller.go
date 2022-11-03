@@ -24,6 +24,7 @@ type ReportController struct {
 	Leaves          odoo.List[model.Leave]
 	PreviousPayslip *model.Payslip
 	NextPayslip     *model.Payslip
+	User            *model.User
 }
 
 func NewReportController(ctx *controller.BaseController) *ReportController {
@@ -39,6 +40,7 @@ func (c *ReportController) DisplayOvertimeReport() error {
 	root.WithSteps(
 		root.NewStep("parse user input", c.parseInput),
 		root.NewStep("fetch employee", c.fetchEmployeeByID),
+		root.NewStep("fetch user settings", c.fetchUser),
 		root.NewStep("fetch contracts", c.fetchContracts),
 		root.NewStep("fetch attendances", c.fetchAttendances),
 		root.NewStep("fetch leaves", c.fetchLeaves),
@@ -72,6 +74,12 @@ func (c *ReportController) fetchEmployeeByID(ctx context.Context) error {
 	return err
 }
 
+func (c *ReportController) fetchUser(ctx context.Context) error {
+	user, err := c.OdooClient.FetchUserByID(ctx, c.OdooSession.UID)
+	c.User = user
+	return err
+}
+
 func (c *ReportController) fetchContracts(ctx context.Context) error {
 	contracts, err := c.OdooClient.FetchAllContractsOfEmployee(ctx, c.Employee.ID)
 	c.Contracts = contracts
@@ -97,7 +105,7 @@ func (c *ReportController) calculateMonthlyReport(_ context.Context) error {
 	end := start.AddDate(0, 1, 0)
 	reporter := timesheet.NewReporter(c.Attendances, c.Leaves, c.Employee, c.Contracts).
 		SetRange(start, end).
-		SetTimeZone("Europe/Zurich") // hardcoded for now
+		SetTimeZone(c.User.TimeZone.Location())
 	report, err := reporter.CalculateReport()
 	if err != nil {
 		return err
@@ -109,7 +117,7 @@ func (c *ReportController) calculateMonthlyReport(_ context.Context) error {
 func (c *ReportController) calculateYearlyReport(_ context.Context) error {
 	reporter := timesheet.NewYearlyReporter(c.Attendances, c.Leaves, c.Employee, c.Contracts).
 		SetYear(c.Input.Year)
-	reporter.SetTimeZone("Europe/Zurich") // hardcoded for now
+	reporter.SetTimeZone(c.User.TimeZone.Location())
 	report, err := reporter.CalculateYearlyReport()
 	if err != nil {
 		return err
