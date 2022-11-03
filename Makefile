@@ -53,6 +53,9 @@ lint: fmt vet ## All-in-one linting
 	@echo 'Check for uncommitted changes ...'
 	git diff --exit-code
 
+.PHONY: release-prepare
+release-prepare: generate
+
 run: export LISTEN_ADDRESS=localhost:4200
 run: export SECRET_KEY=$(LOCAL_SECRET_KEY)
 run: ## Run a local instance on localhost:4200

@@ -1,11 +1,15 @@
+before:
+  hooks:
+    - make release-prepare
+
 builds:
-- binary: odootools
-  env:
-  - CGO_ENABLED=0 # this is needed otherwise the Docker image build is faulty
-  goarch:
-  - amd64
-  goos:
-  - linux
+  - binary: odootools
+    env:
+      - CGO_ENABLED=0 # this is needed otherwise the Docker image build is faulty
+    goarch:
+      - amd64
+    goos:
+      - linux
 
 archives:
   - format: binary
@@ -18,11 +22,11 @@ snapshot:
   name_template: "{{ incpatch .Version }}-snapshot"
 
 dockers:
-- image_templates:
-  - "ghcr.io/vshn/odootools:v{{ .Version }}"
+  - image_templates:
+      - "ghcr.io/vshn/odootools:v{{ .Version }}"
 
-    # For prereleases, updating `latest` does not make sense.
-  - "{{ if not .Prerelease }}ghcr.io/vshn/odootools:latest{{ end }}"
+        # For prereleases, updating `latest` does not make sense.
+      - "{{ if not .Prerelease }}ghcr.io/vshn/odootools:latest{{ end }}"
 
 release:
   prerelease: auto
