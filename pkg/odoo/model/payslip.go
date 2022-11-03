@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
-	"strings"
+	"sort"
 	"time"
 
 	"github.com/vshn/odootools/pkg/odoo"
@@ -23,16 +23,31 @@ func (o Odoo) FetchPayslipInMonth(ctx context.Context, employeeID int, firstDayO
 		[]interface{}{"employee_id", "=", employeeID},
 		[]string{"date_from", ">=", firstDayOfMonth.AddDate(0, 0, -1).Format(odoo.DateFormat)},
 		[]string{"date_to", "<=", firstDayOfMonth.AddDate(0, 1, -1).Format(odoo.DateFormat)},
+		[]string{"name", "ilike", "Salary Slip"},
 	})
-	for _, payslip := range payslips.Items {
-		if strings.Contains(payslip.Name, "Pikett") {
-			continue
-		}
-		if strings.Contains(payslip.Name, "Salary") {
-			return &payslip, nil
-		}
+	if payslips.Len() > 0 {
+		return &payslips.Items[0], err
 	}
 	return nil, err
+}
+
+// FetchPayslipBetween returns all payslips that are between the given dates.
+// It may return empty list if none found.
+// If multiple found, they are sorted ascending by to their Payslip.DateFrom (earliest first).
+func (o Odoo) FetchPayslipBetween(ctx context.Context, employeeID int, firstDay, lastDay time.Time) (odoo.List[Payslip], error) {
+	payslips, err := o.readPayslips(ctx, []odoo.Filter{
+		[]interface{}{"employee_id", "=", employeeID},
+		[]string{"date_from", ">=", firstDay.AddDate(0, 0, -1).Format(odoo.DateFormat)},
+		[]string{"date_to", "<=", lastDay.Format(odoo.DateFormat)},
+		[]string{"name", "ilike", "Salary Slip"},
+	})
+	// sort by start date ascending
+	sort.SliceStable(payslips.Items, func(i, j int) bool {
+		fromFirst := payslips.Items[i].DateFrom.ToTime()
+		fromSecond := payslips.Items[j].DateFrom.ToTime()
+		return fromFirst.Before(fromSecond)
+	})
+	return payslips, err
 }
 
 func (o Odoo) UpdatePayslip(ctx context.Context, payslip *Payslip) error {

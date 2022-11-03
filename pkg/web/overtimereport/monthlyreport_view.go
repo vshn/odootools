@@ -15,15 +15,17 @@ type reportView struct {
 	controller.BaseView
 }
 
-func (v *reportView) formatMonthlySummary(s timesheet.Summary, payslip *model.Payslip) controller.Values {
+func (v *reportView) formatMonthlySummary(s timesheet.Summary, previousPayslip *model.Payslip, currentPayslip *model.Payslip) controller.Values {
 	val := controller.Values{
 		"TotalOvertime": v.FormatDurationInHours(s.TotalOvertime),
 		"TotalLeaves":   fmt.Sprintf("%sd", v.FormatFloat(s.TotalLeave, 1)),
+		"TotalWorked":   v.FormatDurationInHours(s.TotalWorkedTime),
+		"TotalExcused":  v.FormatDurationInHours(s.TotalExcusedTime),
 	}
-	if payslip == nil {
+	if previousPayslip == nil {
 		val["PayslipError"] = "No matching payslip found"
 	} else {
-		lastMonthBalance, err := payslip.ParseOvertime()
+		lastMonthBalance, err := previousPayslip.ParseOvertime()
 		if err != nil {
 			val["PayslipError"] = err.Error()
 		}
@@ -33,10 +35,19 @@ func (v *reportView) formatMonthlySummary(s timesheet.Summary, payslip *model.Pa
 			val["NewOvertimeBalance"] = v.FormatDurationInHours(lastMonthBalance + s.TotalOvertime)
 		}
 	}
+	if currentPayslip != nil {
+		if currentBalance, err := currentPayslip.ParseOvertime(); err == nil {
+			if currentBalance == 0 {
+				val["CurrentPayslipBalance"] = ""
+			} else {
+				val["CurrentPayslipBalance"] = v.FormatDurationInHours(currentBalance)
+			}
+		}
+	}
 	return val
 }
 
-func (v *reportView) GetValuesForMonthlyReport(report timesheet.Report, payslip *model.Payslip) controller.Values {
+func (v *reportView) GetValuesForMonthlyReport(report timesheet.Report, previousPayslip, nextPayslip *model.Payslip) controller.Values {
 	formatted := make([]controller.Values, 0)
 	for _, summary := range report.DailySummaries {
 		if summary.IsWeekend() && summary.CalculateOvertimeSummary().WorkingTime() == 0 {
@@ -49,7 +60,7 @@ func (v *reportView) GetValuesForMonthlyReport(report timesheet.Report, payslip 
 	linkFormat := "/report/%d/%d/%02d"
 	return controller.Values{
 		"Attendances": formatted,
-		"Summary":     v.formatMonthlySummary(report.Summary, payslip),
+		"Summary":     v.formatMonthlySummary(report.Summary, previousPayslip, nextPayslip),
 		"Nav": controller.Values{
 			"LoggedIn":          true,
 			"ActiveView":        monthlyReportTemplateName,
