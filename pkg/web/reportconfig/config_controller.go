@@ -112,21 +112,9 @@ func (c *ConfigController) fetchAttendanceOfCurrentWeek(ctx context.Context) err
 		return err
 	}
 	attendances.SortByDate()
-	attendances = attendances.FilterAttendanceBetweenDates(c.StartOfWeek, c.EndOfWeek)
-	c.Attendances = attendances
-	if len(attendances.Items) > 0 {
-		lastAttendance := attendances.Items[len(attendances.Items)-1]
-		if lastAttendance.Action == timesheet.ActionSignIn {
-			c.view.isSignedIn = true
-			now := odoo.Date(time.Now())
-			// fake a sign_out
-			c.Attendances.Items = append(c.Attendances.Items, model.Attendance{
-				DateTime: &now,
-				Action:   timesheet.ActionSignOut,
-				Reason:   lastAttendance.Reason,
-			})
-		}
-	}
+	c.Attendances = attendances.
+		FilterAttendanceBetweenDates(c.StartOfWeek, c.EndOfWeek).
+		AddCurrentTimeAsSignOut()
 	return nil
 }
 
