@@ -70,3 +70,24 @@ func (l AttendanceList) FilterAttendanceBetweenDates(from, to time.Time) Attenda
 	}
 	return filteredAttendances
 }
+
+// AddCurrentTimeAsSignOut adds an Attendance with timesheet.ActionSignOut reason and with the current time.
+// An attendance is only added if the last Attendance in the list is timesheet.ActionSignIn.
+func (l AttendanceList) AddCurrentTimeAsSignOut() AttendanceList {
+	if len(l.Items) == 0 {
+		return l
+	}
+	lastAttendance := l.Items[len(l.Items)-1]
+	if lastAttendance.Action != ActionSignIn {
+		return l
+	}
+
+	now := odoo.Date(time.Now())
+	// fake a sign_out
+	l.Items = append(l.Items, Attendance{
+		DateTime: &now,
+		Action:   ActionSignOut,
+		Reason:   lastAttendance.Reason,
+	})
+	return l
+}

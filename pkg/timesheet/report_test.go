@@ -107,8 +107,8 @@ func TestReporter_ReduceAttendancesToShifts(t *testing.T) {
 	}{
 		"GivenAttendancesInUTC_WhenReducing_ThenApplyLocalZone": {
 			givenAttendances: []model.Attendance{
-				{DateTime: newDateTime(t, "2021-02-03 19:00"), Action: ActionSignIn}, // these times are UTC
-				{DateTime: newDateTime(t, "2021-02-03 22:59"), Action: ActionSignOut},
+				{DateTime: newDateTime(t, "2021-02-03 19:00"), Action: model.ActionSignIn}, // these times are UTC
+				{DateTime: newDateTime(t, "2021-02-03 22:59"), Action: model.ActionSignOut},
 			},
 			expectedShifts: []AttendanceShift{
 				{Start: newDateTime(t, "2021-02-03 19:00").ToTime().In(localzone(t)),
@@ -118,10 +118,10 @@ func TestReporter_ReduceAttendancesToShifts(t *testing.T) {
 		},
 		"GivenAttendancesInUTC_WhenSplitOverMidnight_ThenSplitInTwoDays": {
 			givenAttendances: []model.Attendance{
-				{DateTime: newDateTime(t, "2021-02-03 19:00"), Action: ActionSignIn}, // these times are UTC
-				{DateTime: newDateTime(t, "2021-02-03 22:59"), Action: ActionSignOut},
-				{DateTime: newDateTime(t, "2021-02-03 23:00"), Action: ActionSignIn},
-				{DateTime: newDateTime(t, "2021-02-04 00:00"), Action: ActionSignOut},
+				{DateTime: newDateTime(t, "2021-02-03 19:00"), Action: model.ActionSignIn}, // these times are UTC
+				{DateTime: newDateTime(t, "2021-02-03 22:59"), Action: model.ActionSignOut},
+				{DateTime: newDateTime(t, "2021-02-03 23:00"), Action: model.ActionSignIn},
+				{DateTime: newDateTime(t, "2021-02-04 00:00"), Action: model.ActionSignOut},
 			},
 			expectedShifts: []AttendanceShift{
 				{

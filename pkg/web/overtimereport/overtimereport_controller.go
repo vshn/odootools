@@ -81,7 +81,7 @@ func (c *ReportController) fetchContracts(ctx context.Context) error {
 func (c *ReportController) fetchAttendances(ctx context.Context) error {
 	begin, end := c.Input.GetDateRange()
 	attendances, err := c.OdooClient.FetchAttendancesBetweenDates(ctx, c.Employee.ID, begin, end)
-	c.Attendances = attendances
+	c.Attendances = attendances.AddCurrentTimeAsSignOut()
 	return err
 }
 

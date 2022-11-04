@@ -27,11 +27,6 @@ const (
 // for testing purposes
 var now = time.Now
 
-const (
-	ActionSignIn  = "sign_in"
-	ActionSignOut = "sign_out"
-)
-
 type AttendanceShift struct {
 	// Start is the localized beginning time of the attendance
 	Start time.Time
@@ -154,13 +149,13 @@ func (r *ReportBuilder) reduceAttendancesToShifts(attendances model.AttendanceLi
 	shifts := make([]AttendanceShift, 0)
 	var tmpShift AttendanceShift
 	for _, attendance := range attendances.Items {
-		if attendance.Action == ActionSignIn {
+		if attendance.Action == model.ActionSignIn {
 			tmpShift = AttendanceShift{
 				Start:  attendance.DateTime.ToTime().In(r.timezone),
 				Reason: attendance.Reason.String(),
 			}
 		}
-		if attendance.Action == ActionSignOut {
+		if attendance.Action == model.ActionSignOut {
 			tmpShift.End = attendance.DateTime.ToTime().In(r.timezone)
 			shifts = append(shifts, tmpShift)
 		}

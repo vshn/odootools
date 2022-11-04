@@ -18,6 +18,11 @@ type ActionReason struct {
 	Name string
 }
 
+const (
+	ActionSignOut = "sign_out"
+	ActionSignIn  = "sign_in"
+)
+
 // String implements fmt.Stringer.
 func (reason *ActionReason) String() string {
 	if reason == nil {
