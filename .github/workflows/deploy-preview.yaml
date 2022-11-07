@@ -34,7 +34,7 @@ jobs:
           ${{ runner.os }}-go-
 
     - name: Setup helmfile
-      uses: mamezou-tech/setup-helmfile@v1.0.0
+      uses: mamezou-tech/setup-helmfile@v1.1.0
       with:
         helm-version: v3.7.1
         helmfile-version: v0.142.0
