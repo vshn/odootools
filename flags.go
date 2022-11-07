@@ -1,6 +1,8 @@
 package main
 
-import "github.com/urfave/cli/v2"
+import (
+	"github.com/urfave/cli/v2"
+)
 
 func newOdooURLFlag() *cli.StringFlag {
 	return &cli.StringFlag{
@@ -59,5 +61,14 @@ func newTLSKeyFlag() *cli.StringFlag {
 		Name:    "tls-key",
 		Usage:   "The path to a certificate private key file to serve",
 		EnvVars: []string{"TLS_KEY"},
+	}
+}
+
+func newDefaultTimezoneFlag() *cli.StringFlag {
+	return &cli.StringFlag{
+		Name:    "default-timezone",
+		Usage:   "Default timezone to use in report calculations if unspecified in employee's records",
+		EnvVars: []string{"DEFAULT_TZ"},
+		Value:   "Europe/Zurich",
 	}
 }

@@ -40,11 +40,11 @@ func (c *ReportController) DisplayOvertimeReport() error {
 	root.WithSteps(
 		root.NewStep("parse user input", c.parseInput),
 		root.NewStep("fetch employee", c.fetchEmployeeByID),
+		root.NewStep("fetch payslips", c.fetchPayslips),
 		root.NewStep("fetch user settings", c.fetchUser),
 		root.NewStep("fetch contracts", c.fetchContracts),
 		root.NewStep("fetch attendances", c.fetchAttendances),
 		root.NewStep("fetch leaves", c.fetchLeaves),
-		root.NewStep("fetch payslips", c.fetchPayslips),
 		root.When(pipeline.Not(c.noMonthGiven), "calculate monthly report", c.calculateMonthlyReport),
 		root.When(c.noMonthGiven, "calculate yearly report", c.calculateYearlyReport),
 	)
@@ -87,31 +87,49 @@ func (c *ReportController) fetchContracts(ctx context.Context) error {
 }
 
 func (c *ReportController) fetchAttendances(ctx context.Context) error {
+	tz := c.getTimeZone()
 	begin, end := c.Input.GetDateRange()
-	attendances, err := c.OdooClient.FetchAttendancesBetweenDates(ctx, c.Employee.ID, begin, end)
-	c.Attendances = attendances.AddCurrentTimeAsSignOut()
+	attendances, err := c.OdooClient.FetchAttendancesBetweenDates(ctx, c.Employee.ID, begin.In(tz), end.In(tz))
+	c.Attendances = attendances.AddCurrentTimeAsSignOut(tz)
 	return err
 }
 
 func (c *ReportController) fetchLeaves(ctx context.Context) error {
+	tz := c.getTimeZone()
 	begin, end := c.Input.GetDateRange()
-	leaves, err := c.OdooClient.FetchLeavesBetweenDates(ctx, c.Employee.ID, begin, end)
+	leaves, err := c.OdooClient.FetchLeavesBetweenDates(ctx, c.Employee.ID, begin.In(tz), end.In(tz))
 	c.Leaves = leaves
 	return err
 }
 
 func (c *ReportController) calculateMonthlyReport(_ context.Context) error {
-	start := time.Date(c.Input.Year, time.Month(c.Input.Month), 1, 0, 0, 0, 0, time.UTC)
+	tz := c.getTimeZone()
+	start := time.Date(c.Input.Year, time.Month(c.Input.Month), 1, 0, 0, 0, 0, tz)
 	end := start.AddDate(0, 1, 0)
 	reporter := timesheet.NewReporter(c.Attendances, c.Leaves, c.Employee, c.Contracts).
 		SetRange(start, end).
-		SetTimeZone(c.User.TimeZone.Location())
+		SetTimeZone(tz)
+
 	report, err := reporter.CalculateReport()
 	if err != nil {
 		return err
 	}
 	values := c.ReportView.GetValuesForMonthlyReport(report, c.PreviousPayslip, c.NextPayslip)
 	return c.Echo.Render(http.StatusOK, monthlyReportTemplateName, values)
+}
+
+func (c *ReportController) getTimeZone() *time.Location {
+	if c.NextPayslip != nil && c.NextPayslip.TimeZone != nil {
+		// timezone from payslip has precedence.
+		return c.NextPayslip.TimeZone.Location()
+	}
+	if c.User != nil && c.SessionData.Employee.ID == c.Employee.ID && time.Now().Month() == time.Month(c.Input.Month) {
+		// get the timezone from user preferences only if we create a report for our own user AND we're in the current month.
+		// for months long in the past we don't want to calculate based on user's current preferences.
+		return c.User.TimeZone.Location()
+	}
+	// last resort to default TZ.
+	return controller.DefaultTimeZone
 }
 
 func (c *ReportController) calculateYearlyReport(_ context.Context) error {

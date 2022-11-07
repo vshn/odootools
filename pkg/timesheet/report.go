@@ -1,6 +1,7 @@
 package timesheet
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/vshn/odootools/pkg/odoo"
@@ -33,6 +34,22 @@ type AttendanceShift struct {
 	// End is the localized finish time of the attendance
 	End    time.Time
 	Reason string
+}
+
+// String implements fmt.Stringer.
+func (s *AttendanceShift) String() string {
+	if s == nil {
+		return ""
+	}
+	return fmt.Sprintf("AttendanceShift[Start: %s, End: %s, Duration, %s, Reason: %s]", s.Start, s.End, s.Duration(), s.Reason)
+}
+
+// Duration returns the difference between AttendanceShift.Start and AttendanceShift.End.
+func (s *AttendanceShift) Duration() time.Duration {
+	if s == nil {
+		return 0
+	}
+	return s.End.Sub(s.Start)
 }
 
 type AbsenceBlock struct {
@@ -104,7 +121,7 @@ func (r *ReportBuilder) SkipClampingToNow(skip bool) *ReportBuilder {
 }
 
 func (r *ReportBuilder) CalculateReport() (Report, error) {
-	filteredAttendances := r.attendances.FilterAttendanceBetweenDates(r.from.In(r.timezone), r.to)
+	filteredAttendances := r.attendances.FilterAttendanceBetweenDates(r.from.In(r.timezone), r.to.In(r.timezone))
 	shifts := r.reduceAttendancesToShifts(filteredAttendances)
 	filteredLeaves := r.filterLeavesInTimeRange()
 	absences := r.reduceLeavesToBlocks(filteredLeaves)

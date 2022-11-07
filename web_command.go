@@ -1,12 +1,22 @@
 package main
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/urfave/cli/v2"
 	"github.com/vshn/odootools/pkg/odoo"
 	"github.com/vshn/odootools/pkg/web"
+	"github.com/vshn/odootools/pkg/web/controller"
 )
 
 func RunWebServer(cli *cli.Context) error {
+
+	loc, err := time.LoadLocation(cli.String(newDefaultTimezoneFlag().Name))
+	if err != nil {
+		return fmt.Errorf("cannot load timezone: %w", err)
+	}
+	controller.DefaultTimeZone = loc
 
 	client, err := odoo.NewClient(cli.String(newOdooURLFlag().Name), odoo.ClientOptions{UseDebugLogger: cli.Int(newLogLevelFlag().Name) >= 2})
 	if err != nil {
@@ -34,6 +44,7 @@ func newWebCommand() *cli.Command {
 		Flags: []cli.Flag{
 			newSecretKeyFlag(),
 			newListenAddress(),
+			newDefaultTimezoneFlag(),
 			newTLSCertFlag(),
 			newTLSKeyFlag(),
 		},

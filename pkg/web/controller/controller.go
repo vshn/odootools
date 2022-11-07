@@ -21,14 +21,6 @@ const HRManagerRoleKey = "HRManager"
 
 var DefaultTimeZone *time.Location
 
-func init() {
-	loc, err := time.LoadLocation("Europe/Zurich")
-	if err != nil {
-		panic(err)
-	}
-	DefaultTimeZone = loc
-}
-
 // SessionData is an additional data struct.
 // Its purpose is to store data in a session cookie in order to avoid repetitive Odoo API calls.
 type SessionData struct {
