@@ -164,9 +164,10 @@ func (c *EmployeeReport) fetchLeaves(ctx context.Context) error {
 }
 
 func (c *EmployeeReport) calculateMonthlyReport(_ context.Context) error {
+	tz := c.getTimeZone()
 	reporter := timesheet.NewReporter(c.Attendances, c.Leaves, &c.Employee, c.Contracts).
 		SetRange(c.Start, c.Stop.AddDate(0, 0, 1)).
-		SetTimeZone(controller.TimezoneOrDefault(c.NextPayslip.TimeZone, controller.DefaultTimeZone))
+		SetTimeZone(tz)
 	report, err := reporter.CalculateReport()
 	c.Result = report
 	return err
@@ -193,4 +194,13 @@ func (c *EmployeeReport) ignoreNoContractFound(_ context.Context, err error) err
 		return nil
 	}
 	return err
+}
+
+func (c *EmployeeReport) getTimeZone() *time.Location {
+	if c.NextPayslip != nil && !c.NextPayslip.TimeZone.IsEmpty() {
+		// timezone from payslip has precedence.
+		return c.NextPayslip.TimeZone.Location()
+	}
+	// last resort to default TZ.
+	return controller.DefaultTimeZone
 }
