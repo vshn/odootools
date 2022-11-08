@@ -40,8 +40,8 @@ func (c *ConfigController) ShowConfigurationFormAndWeeklyReport() error {
 	root.WithSteps(
 		root.NewStep("parse user input", c.parseInput),
 		root.WithNestedSteps("weekly report", pipeline.Bool[context.Context](true),
-			root.NewStep("fetch attendances", c.fetchAttendanceOfCurrentWeek),
 			root.NewStep("fetch user", c.fetchUser),
+			root.NewStep("fetch attendances", c.fetchAttendanceOfCurrentWeek),
 			root.NewStep("fetch contracts", c.fetchContracts),
 			root.NewStep("fetch leaves", c.fetchLeaves),
 			root.NewStep("calculate report", c.calculateReport),
@@ -116,7 +116,7 @@ func (c *ConfigController) fetchAttendanceOfCurrentWeek(ctx context.Context) err
 	attendances.SortByDate()
 	c.Attendances = attendances.
 		FilterAttendanceBetweenDates(c.StartOfWeek, c.EndOfWeek).
-		AddCurrentTimeAsSignOut()
+		AddCurrentTimeAsSignOut(c.User.TimeZone.Location())
 	return nil
 }
 

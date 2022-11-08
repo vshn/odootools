@@ -112,8 +112,8 @@ func (r *ReportBuilder) CalculateReport() (Report, error) {
 	if err != nil {
 		return Report{
 			Employee: r.employee,
-			From:     r.from,
-			To:       r.to,
+			From:     r.from.In(r.timezone),
+			To:       r.to.In(r.timezone),
 		}, err
 	}
 
@@ -136,8 +136,8 @@ func (r *ReportBuilder) CalculateReport() (Report, error) {
 		DailySummaries: dailySummaries,
 		Summary:        summary,
 		Employee:       r.employee,
-		From:           r.from,
-		To:             r.to,
+		From:           r.from.In(r.timezone),
+		To:             r.to.In(r.timezone),
 	}, nil
 }
 
