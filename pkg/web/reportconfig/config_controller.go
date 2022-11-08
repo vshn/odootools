@@ -69,7 +69,6 @@ func (c *ConfigController) parseInput(_ context.Context) error {
 	c.Input = input
 
 	today := time.Now()
-	//today := time.Date(2021, time.December, 5, 4, 5, 6, 0, time.Local)
 	monday := getStartOfWeek(today)
 	sunday := getEndOfWeek(today).AddDate(0, 0, 1)
 
@@ -122,8 +121,13 @@ func (c *ConfigController) fetchAttendanceOfCurrentWeek(ctx context.Context) err
 
 func (c *ConfigController) fetchUser(ctx context.Context) error {
 	user, err := c.OdooClient.FetchUserByID(ctx, c.OdooSession.UID)
+	if err != nil {
+		return err
+	}
 	c.User = user
-	return err
+	c.StartOfWeek = c.StartOfWeek.In(user.TimeZone.Location())
+	c.EndOfWeek = c.EndOfWeek.In(user.TimeZone.Location())
+	return nil
 }
 
 func (c *ConfigController) fetchContracts(ctx context.Context) error {
@@ -141,7 +145,7 @@ func (c *ConfigController) fetchLeaves(ctx context.Context) error {
 func (c *ConfigController) calculateReport(_ context.Context) error {
 	reporter := timesheet.NewReporter(c.Attendances, c.Leaves, c.Employee, c.Contracts).
 		SetRange(c.StartOfWeek, c.EndOfWeek).
-		SetTimeZone(c.User.TimeZone.Location()). // hardcoded for now
+		SetTimeZone(c.User.TimeZone.Location()).
 		SkipClampingToNow(true)
 	report, err := reporter.CalculateReport()
 	c.Report = report
