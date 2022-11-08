@@ -33,3 +33,19 @@ func (tz *TimeZone) Location() *time.Location {
 	}
 	return tz.loc
 }
+
+// LocationOrDefault returns the location if it's defined, or given default it not.
+func (tz *TimeZone) LocationOrDefault(def *time.Location) *time.Location {
+	if tz.IsEmpty() {
+		return def
+	}
+	return tz.Location()
+}
+
+// IsEmpty returns true if the location is nil.
+func (tz *TimeZone) IsEmpty() bool {
+	if tz == nil || tz.Location() == nil {
+		return true
+	}
+	return false
+}

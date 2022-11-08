@@ -124,9 +124,10 @@ func (c *ConfigController) fetchUser(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	tz := user.TimeZone.LocationOrDefault(controller.DefaultTimeZone)
 	c.User = user
-	c.StartOfWeek = c.StartOfWeek.In(user.TimeZone.Location())
-	c.EndOfWeek = c.EndOfWeek.In(user.TimeZone.Location())
+	c.StartOfWeek = c.StartOfWeek.In(tz)
+	c.EndOfWeek = c.EndOfWeek.In(tz)
 	return nil
 }
 

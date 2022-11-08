@@ -119,14 +119,14 @@ func (c *ReportController) calculateMonthlyReport(_ context.Context) error {
 }
 
 func (c *ReportController) getTimeZone() *time.Location {
-	if c.NextPayslip != nil && c.NextPayslip.TimeZone != nil {
+	if c.NextPayslip != nil && !c.NextPayslip.TimeZone.IsEmpty() {
 		// timezone from payslip has precedence.
 		return c.NextPayslip.TimeZone.Location()
 	}
 	if c.User != nil && c.SessionData.Employee.ID == c.Employee.ID && time.Now().Month() == time.Month(c.Input.Month) {
 		// get the timezone from user preferences only if we create a report for our own user AND we're in the current month.
 		// for months long in the past we don't want to calculate based on user's current preferences.
-		return c.User.TimeZone.Location()
+		return c.User.TimeZone.LocationOrDefault(controller.DefaultTimeZone)
 	}
 	// last resort to default TZ.
 	return controller.DefaultTimeZone
