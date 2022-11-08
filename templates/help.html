@@ -56,6 +56,22 @@
 </div>
 
 <div>
+    <h3>Timezones</h3>
+    <p>
+        Odootools needs to know if the <strong>majority</strong> of attendances within a month is logged outside "Europe/Zurich" timezone.
+        For the current month, the user needs to update their timezone settings in user preferences in Odoo, for example "America/Vancouver".
+        For past months, the timezone needs to be saved in the according payslip.
+        This is done by PeopleOps when they create the payslips for all employees.
+    </p>
+    <p>
+        The timezone is saved in the payslip in order to get a historic view, for example when creating a yearly report, when only certain months differ from the default timezone.
+    </p>
+    <p>
+        If there are attendances in multiple timezones within a month, then the attendances of the minority timezones need to be saved in Odoo in the main timezone of the affected month.
+    </p>
+</div>
+
+<div>
     <h3>Overtime balance and Payslip</h3>
      <p>
         The overtime balance is calculated with following formula:

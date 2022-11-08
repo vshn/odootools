@@ -121,3 +121,14 @@ In the end it doesn't matter:
 
 The workload ratio can be retrieved from Odoo via the "Contracts" model.
 However, special read access needs to be granted so that they can be queried for their own user.
+
+### Timezone Support
+
+A custom field in the payslip model is required (`x_timezone`) to save the timezone of a user for a certain month.
+We considered using the timezone from the browser or make it toggleable in the UI, but that doesn't cover enough cases.
+
+PeopleOps have the ability to create reports over all employees.
+For that reason there can't be a single timezone info (e.g. from Browser) because that would apply to every employee.
+Also, throughout a year an employee can switch zones, so the yearly report has to know which months are different.
+
+So we need a historic view per user per month and that's where the custom field in the payslip comes in.
