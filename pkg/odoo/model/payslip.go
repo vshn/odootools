@@ -11,11 +11,12 @@ import (
 )
 
 type Payslip struct {
-	ID       int         `json:"id"`
-	Name     string      `json:"name"`
-	Overtime interface{} `json:"x_overtime"`
-	DateFrom odoo.Date   `json:"date_from"`
-	DateTo   odoo.Date   `json:"date_to"`
+	ID        int            `json:"id"`
+	Name      string         `json:"name"`
+	DateFrom  odoo.Date      `json:"date_from"`
+	DateTo    odoo.Date      `json:"date_to"`
+	XOvertime interface{}    `json:"x_overtime"`
+	TimeZone  *odoo.TimeZone `json:"x_timezone"`
 }
 
 func (o Odoo) FetchPayslipInMonth(ctx context.Context, employeeID int, firstDayOfMonth time.Time) (*Payslip, error) {
@@ -60,20 +61,20 @@ func (o Odoo) readPayslips(ctx context.Context, domainFilters []odoo.Filter) (od
 	err := o.querier.SearchGenericModel(ctx, odoo.SearchReadModel{
 		Model:  "hr.payslip",
 		Domain: domainFilters,
-		Fields: []string{"date_from", "date_to", "x_overtime", "name"},
+		Fields: []string{"date_from", "date_to", "x_overtime", "name", "x_timezone"},
 	}, &result)
 	return result, err
 }
 
-// GetOvertime returns the plain field value as string.
-func (p Payslip) GetOvertime() string {
-	if p.Overtime == nil {
+// Overtime returns the plain field value as string.
+func (p Payslip) Overtime() string {
+	if p.XOvertime == nil {
 		return ""
 	}
-	if _, ok := p.Overtime.(bool); ok {
+	if _, ok := p.XOvertime.(bool); ok {
 		return ""
 	}
-	return p.Overtime.(string)
+	return p.XOvertime.(string)
 }
 
 // colonFormatRegex searches for string reference that has somewhere a pattern like '123:45' or '123:45:54'
@@ -88,7 +89,7 @@ var colonFormatRegex = regexp.MustCompile(`.*?((-?\d+):(\d{2})(?::?(\d{2}))?).*`
 //   - hhh:mm:ss (e.g. '153:54:45')
 //   - {1,2}d{1,2}h (e.g. '15d54m')
 func (p Payslip) ParseOvertime() (time.Duration, error) {
-	raw := p.GetOvertime()
+	raw := p.Overtime()
 	if raw == "" {
 		return 0, nil
 	}

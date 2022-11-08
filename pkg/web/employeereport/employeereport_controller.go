@@ -166,7 +166,7 @@ func (c *EmployeeReport) fetchLeaves(ctx context.Context) error {
 func (c *EmployeeReport) calculateMonthlyReport(_ context.Context) error {
 	reporter := timesheet.NewReporter(c.Attendances, c.Leaves, &c.Employee, c.Contracts).
 		SetRange(c.Start, c.Stop.AddDate(0, 0, 1)).
-		SetTimeZone("Europe/Zurich") // hardcoded for now
+		SetTimeZone(controller.TimezoneOrDefault(c.NextPayslip.TimeZone, controller.DefaultTimeZone))
 	report, err := reporter.CalculateReport()
 	c.Result = report
 	return err

@@ -23,7 +23,7 @@ func TestReportView_getButtonText(t *testing.T) {
 			expectedButtonText: "Save (New)",
 		},
 		"GivenPayslip_WhenOvertimeSaved_ThenExpectSaveUpdate": {
-			givenNextPayslip:   &model.Payslip{Overtime: "2:00:00"},
+			givenNextPayslip:   &model.Payslip{XOvertime: "2:00:00"},
 			expectedButtonText: "Save (Update)",
 		},
 	}
@@ -53,12 +53,12 @@ func TestReportView_getPreviousBalance(t *testing.T) {
 			expectedBalance:      0,
 		},
 		"GivenPayslip_WhenOvertimeSaved_ThenExpectParsedValue": {
-			givenPreviousPayslip: &model.Payslip{Overtime: "2:00:00 incl holidays"},
+			givenPreviousPayslip: &model.Payslip{XOvertime: "2:00:00 incl holidays"},
 			expectedCell:         "2:00:00 incl holidays",
 			expectedBalance:      mustParseDuration(t, "2h"),
 		},
 		"GivenPayslip_WhenOvertimeCannotParse_ThenExpectErrorText": {
-			givenPreviousPayslip: &model.Payslip{Overtime: "2 hours"},
+			givenPreviousPayslip: &model.Payslip{XOvertime: "2 hours"},
 			expectedCell:         "<format not parseable: 2 hours>",
 			expectedBalance:      0,
 		},
@@ -93,13 +93,13 @@ func TestReportView_getNextBalance(t *testing.T) {
 			expectedBalance:      mustParseDuration(t, "2h"),
 		},
 		"GivenPayslip_WhenOvertimeSaved_ThenExpectCellValueVerbatim": {
-			givenNextPayslip:     &model.Payslip{Overtime: "2:00:00 with holidays"},
+			givenNextPayslip:     &model.Payslip{XOvertime: "2:00:00 with holidays"},
 			givenProposedBalance: mustParseDuration(t, "4h"),
 			expectedCell:         "2:00:00 with holidays",
 			expectedBalance:      mustParseDuration(t, "2h"),
 		},
 		"GivenPayslip_WhenOvertimeCannotParse_ThenExpectErrorTextAndUnchangedProposedBalance": {
-			givenNextPayslip:     &model.Payslip{Overtime: "2 hours"},
+			givenNextPayslip:     &model.Payslip{XOvertime: "2 hours"},
 			givenProposedBalance: mustParseDuration(t, "4h"),
 			expectedCell:         "<format not parseable: 2 hours>",
 			expectedBalance:      mustParseDuration(t, "4h"),
@@ -137,7 +137,7 @@ func TestReportView_getOvertimeBalanceEditPreview(t *testing.T) {
 			expectedOvertimeBalanceEditPreview: "2:00:00",
 		},
 		"GivenNoPayslip_WhenOvertimeExists_ThenUseExistingValue": {
-			givenNextPayslip:                   &model.Payslip{Overtime: "2:00:00"},
+			givenNextPayslip:                   &model.Payslip{XOvertime: "2:00:00"},
 			givenProposedBalance:               mustParseDuration(t, "4h"),
 			expectedOvertimeBalanceEditPreview: "2:00:00",
 		},

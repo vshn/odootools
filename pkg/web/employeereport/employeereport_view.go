@@ -71,7 +71,7 @@ func (v *reportView) getOvertimeBalanceEditPreview(nextPayslip *model.Payslip, p
 	overtimeBalanceEditPreview = v.FormatDurationInHours(proposedBalance)
 	if nextPayslip != nil {
 		// next payslip exists
-		if existingValue := nextPayslip.GetOvertime(); existingValue != "" {
+		if existingValue := nextPayslip.Overtime(); existingValue != "" {
 			// payslip may have been updated already
 			return existingValue
 		}
@@ -80,7 +80,7 @@ func (v *reportView) getOvertimeBalanceEditPreview(nextPayslip *model.Payslip, p
 }
 
 func (v *reportView) getButtonText(nextPayslip *model.Payslip) string {
-	if nextPayslip == nil || nextPayslip.GetOvertime() == "" {
+	if nextPayslip == nil || nextPayslip.Overtime() == "" {
 		return "Save (New)"
 	}
 	return "Save (Update)"
@@ -103,7 +103,7 @@ func (v *reportView) getPreviousBalance(previousPayslip *model.Payslip) (cellTex
 		cellText = "<no payslip found>"
 		return
 	}
-	if previousPayslip.GetOvertime() == "" {
+	if previousPayslip.Overtime() == "" {
 		cellText = "<no overtime saved>"
 		return
 	}
@@ -113,7 +113,7 @@ func (v *reportView) getPreviousBalance(previousPayslip *model.Payslip) (cellTex
 		previousOvertime = 0
 		return
 	}
-	cellText = previousPayslip.GetOvertime()
+	cellText = previousPayslip.Overtime()
 	return
 }
 
@@ -127,7 +127,7 @@ func (v *reportView) getNextBalance(proposedBalance time.Duration, nextPayslip *
 	if nextPayslip == nil {
 		return "<no payslip found>", proposedBalance
 	}
-	if existing := nextPayslip.GetOvertime(); existing != "" {
+	if existing := nextPayslip.Overtime(); existing != "" {
 		cellText = existing
 		parsed, err := nextPayslip.ParseOvertime()
 		if err != nil {

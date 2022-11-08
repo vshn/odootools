@@ -11,6 +11,24 @@ import (
 	"github.com/vshn/odootools/pkg/odoo/model"
 )
 
+var (
+	zurichTZ    *time.Location
+	vancouverTZ *time.Location
+)
+
+func init() {
+	zue, err := time.LoadLocation("Europe/Zurich")
+	if err != nil {
+		panic(err)
+	}
+	zurichTZ = zue
+	van, err := time.LoadLocation("America/Vancouver")
+	if err != nil {
+		panic(err)
+	}
+	vancouverTZ = van
+}
+
 func hours(t *testing.T, date, hours string) time.Time {
 	tm, err := time.Parse(odoo.DateTimeFormat, fmt.Sprintf("%s %s:00", date, hours))
 	require.NoError(t, err)
@@ -30,11 +48,9 @@ func parse(t *testing.T, pattern string) time.Time {
 }
 
 func date(t *testing.T, date string) *time.Time {
-	zone, err := time.LoadLocation("Europe/Zurich")
-	require.NoError(t, err)
 	tm, err := time.Parse(odoo.DateFormat, date)
 	require.NoError(t, err)
-	tmzone := tm.In(zone)
+	tmzone := tm.In(zurichTZ)
 	return &tmzone
 }
 
@@ -43,12 +59,6 @@ func newDateTime(t *testing.T, value string) *odoo.Date {
 	require.NoError(t, err)
 	ptr := odoo.Date(tm)
 	return &ptr
-}
-
-func localzone(t *testing.T) *time.Location {
-	zone, err := time.LoadLocation("Europe/Zurich")
-	require.NoError(t, err)
-	return zone
 }
 
 func TestReporter_AddAttendanceShiftsToDailies(t *testing.T) {
@@ -91,7 +101,7 @@ func TestReporter_AddAttendanceShiftsToDailies(t *testing.T) {
 			r := ReportBuilder{
 				from:     start,
 				to:       end,
-				timezone: localzone(t),
+				timezone: zurichTZ,
 			}
 			r.addAttendanceShiftsToDailies(tt.givenShifts, tt.givenDailySummaries)
 
@@ -103,34 +113,59 @@ func TestReporter_AddAttendanceShiftsToDailies(t *testing.T) {
 func TestReporter_ReduceAttendancesToShifts(t *testing.T) {
 	tests := map[string]struct {
 		givenAttendances []model.Attendance
+		givenTimeZone    *time.Location
 		expectedShifts   []AttendanceShift
 	}{
-		"GivenAttendancesInUTC_WhenReducing_ThenApplyLocalZone": {
+		"GivenAttendancesInZurich_WhenReducing_ThenApplyLocalZone": {
+			givenTimeZone: zurichTZ,
 			givenAttendances: []model.Attendance{
-				{DateTime: newDateTime(t, "2021-02-03 19:00"), Action: model.ActionSignIn}, // these times are UTC
+				// these times are UTC
+				{DateTime: newDateTime(t, "2021-02-03 19:00"), Action: model.ActionSignIn},
 				{DateTime: newDateTime(t, "2021-02-03 22:59"), Action: model.ActionSignOut},
 			},
 			expectedShifts: []AttendanceShift{
-				{Start: newDateTime(t, "2021-02-03 19:00").ToTime().In(localzone(t)),
-					End: newDateTime(t, "2021-02-03 22:59").ToTime().In(localzone(t)),
+				{Start: newDateTime(t, "2021-02-03 19:00").ToTime().In(zurichTZ),
+					End: newDateTime(t, "2021-02-03 22:59").ToTime().In(zurichTZ),
 				},
 			},
 		},
-		"GivenAttendancesInUTC_WhenSplitOverMidnight_ThenSplitInTwoDays": {
+		"GivenAttendancesInZurich_WhenSplitOverMidnight_ThenSplitInTwoDays": {
+			givenTimeZone: zurichTZ,
 			givenAttendances: []model.Attendance{
-				{DateTime: newDateTime(t, "2021-02-03 19:00"), Action: model.ActionSignIn}, // these times are UTC
+				// these times are UTC
+				{DateTime: newDateTime(t, "2021-02-03 19:00"), Action: model.ActionSignIn},
 				{DateTime: newDateTime(t, "2021-02-03 22:59"), Action: model.ActionSignOut},
 				{DateTime: newDateTime(t, "2021-02-03 23:00"), Action: model.ActionSignIn},
 				{DateTime: newDateTime(t, "2021-02-04 00:00"), Action: model.ActionSignOut},
 			},
 			expectedShifts: []AttendanceShift{
 				{
-					Start: newDateTime(t, "2021-02-03 19:00").ToTime().In(localzone(t)),
-					End:   newDateTime(t, "2021-02-03 22:59").ToTime().In(localzone(t)),
+					Start: newDateTime(t, "2021-02-03 19:00").ToTime().In(zurichTZ),
+					End:   newDateTime(t, "2021-02-03 22:59").ToTime().In(zurichTZ),
 				},
 				{
-					Start: newDateTime(t, "2021-02-03 23:00").ToTime().In(localzone(t)),
-					End:   newDateTime(t, "2021-02-04 00:00").ToTime().In(localzone(t)),
+					Start: newDateTime(t, "2021-02-03 23:00").ToTime().In(zurichTZ),
+					End:   newDateTime(t, "2021-02-04 00:00").ToTime().In(zurichTZ),
+				},
+			},
+		},
+		"GivenAttendancesInVancouver_ThenSplitCorrectly": {
+			givenTimeZone: vancouverTZ,
+			givenAttendances: []model.Attendance{
+				// these times are UTC
+				{DateTime: newDateTime(t, "2021-02-03 15:00"), Action: model.ActionSignIn},
+				{DateTime: newDateTime(t, "2021-02-03 19:00"), Action: model.ActionSignOut},
+				{DateTime: newDateTime(t, "2021-02-03 20:00"), Action: model.ActionSignIn},
+				{DateTime: newDateTime(t, "2021-02-04 01:00"), Action: model.ActionSignOut},
+			},
+			expectedShifts: []AttendanceShift{
+				{
+					Start: newDateTime(t, "2021-02-03 15:00").ToTime().In(vancouverTZ), // 2021-02-03 07:00:00 -0800 PST
+					End:   newDateTime(t, "2021-02-03 19:00").ToTime().In(vancouverTZ), // 2021-02-03 11:00:00 -0800 PST
+				},
+				{
+					Start: newDateTime(t, "2021-02-03 20:00").ToTime().In(vancouverTZ), // 2021-02-03 12:00:00 -0800 PST
+					End:   newDateTime(t, "2021-02-04 01:00").ToTime().In(vancouverTZ), // 2021-02-03 17:00:00 -0800 PST
 				},
 			},
 		},
@@ -142,10 +177,13 @@ func TestReporter_ReduceAttendancesToShifts(t *testing.T) {
 			r := ReportBuilder{
 				from:     start,
 				to:       end,
-				timezone: localzone(t),
+				timezone: tt.givenTimeZone,
 			}
 			list := model.AttendanceList{Items: tt.givenAttendances}
 			result := r.reduceAttendancesToShifts(list)
+			for _, shift := range result {
+				t.Logf("shift start: %s, end: %s", shift.Start, shift.End)
+			}
 
 			assert.Equal(t, tt.expectedShifts, result)
 		})
@@ -203,7 +241,7 @@ func TestReporter_prepareWorkDays(t *testing.T) {
 			r := &ReportBuilder{
 				from:       start,
 				to:         end,
-				timezone:   localzone(t),
+				timezone:   zurichTZ,
 				contracts:  model.ContractList{Items: tt.givenContracts},
 				clampToNow: true,
 			}

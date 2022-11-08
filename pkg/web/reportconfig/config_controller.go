@@ -24,6 +24,7 @@ type ConfigController struct {
 	Leaves      odoo.List[model.Leave]
 	Contracts   model.ContractList
 	Report      timesheet.Report
+	User        *model.User
 }
 
 func NewConfigController(ctrl *controller.BaseController) *ConfigController {
@@ -39,6 +40,7 @@ func (c *ConfigController) ShowConfigurationFormAndWeeklyReport() error {
 	root.WithSteps(
 		root.NewStep("parse user input", c.parseInput),
 		root.WithNestedSteps("weekly report", pipeline.Bool[context.Context](true),
+			root.NewStep("fetch user", c.fetchUser),
 			root.NewStep("fetch attendances", c.fetchAttendanceOfCurrentWeek),
 			root.NewStep("fetch contracts", c.fetchContracts),
 			root.NewStep("fetch leaves", c.fetchLeaves),
@@ -67,7 +69,6 @@ func (c *ConfigController) parseInput(_ context.Context) error {
 	c.Input = input
 
 	today := time.Now()
-	//today := time.Date(2021, time.December, 5, 4, 5, 6, 0, time.Local)
 	monday := getStartOfWeek(today)
 	sunday := getEndOfWeek(today).AddDate(0, 0, 1)
 
@@ -114,7 +115,19 @@ func (c *ConfigController) fetchAttendanceOfCurrentWeek(ctx context.Context) err
 	attendances.SortByDate()
 	c.Attendances = attendances.
 		FilterAttendanceBetweenDates(c.StartOfWeek, c.EndOfWeek).
-		AddCurrentTimeAsSignOut()
+		AddCurrentTimeAsSignOut(c.User.TimeZone.Location())
+	return nil
+}
+
+func (c *ConfigController) fetchUser(ctx context.Context) error {
+	user, err := c.OdooClient.FetchUserByID(ctx, c.OdooSession.UID)
+	if err != nil {
+		return err
+	}
+	tz := user.TimeZone.LocationOrDefault(controller.DefaultTimeZone)
+	c.User = user
+	c.StartOfWeek = c.StartOfWeek.In(tz)
+	c.EndOfWeek = c.EndOfWeek.In(tz)
 	return nil
 }
 
@@ -133,7 +146,7 @@ func (c *ConfigController) fetchLeaves(ctx context.Context) error {
 func (c *ConfigController) calculateReport(_ context.Context) error {
 	reporter := timesheet.NewReporter(c.Attendances, c.Leaves, c.Employee, c.Contracts).
 		SetRange(c.StartOfWeek, c.EndOfWeek).
-		SetTimeZone("Europe/Zurich"). // hardcoded for now
+		SetTimeZone(c.User.TimeZone.Location()).
 		SkipClampingToNow(true)
 	report, err := reporter.CalculateReport()
 	c.Report = report

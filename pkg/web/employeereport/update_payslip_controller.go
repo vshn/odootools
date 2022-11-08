@@ -74,7 +74,7 @@ func (c *UpdatePayslipController) fetchNextPayslip(ctx context.Context) error {
 
 func (c *UpdatePayslipController) savePayslip(ctx context.Context) error {
 	payslip := c.NextPayslip
-	payslip.Overtime = c.Input.Overtime
+	payslip.XOvertime = c.Input.Overtime
 	err := c.OdooClient.UpdatePayslip(ctx, payslip)
 	if err != nil {
 		return err
