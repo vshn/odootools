@@ -1,38 +1,28 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"time"
 
 	"github.com/urfave/cli/v2"
+	"github.com/vshn/odootools/pkg/web"
 )
 
 var (
 	version = "unknown"
 	commit  = "-dirty-"
 	date    = time.Now().Format("2006-01-02")
+
+	versionInfo web.VersionInfo
 )
 
-type VersionInfo struct {
-	Version string
-	Commit  string
-	Date    string
-}
-
-func (vi VersionInfo) String() string {
-	dateLayout := "2006-01-02"
-	t, _ := time.Parse(dateLayout, vi.Date)
-	return fmt.Sprintf("%s, commit %s, date %s", vi.Version, vi.Commit[0:7], t.Format(dateLayout))
-}
-
 func main() {
-
+	versionInfo = web.VersionInfo{Version: version, Commit: commit, Date: date}
 	app := &cli.App{
 		Name:    "odootools",
 		Usage:   "Odoo ERP utility tools for everyday things",
-		Version: VersionInfo{Version: version, Commit: commit, Date: date}.String(),
+		Version: versionInfo.String(),
 		Flags: []cli.Flag{
 			newOdooURLFlag(),
 			newOdooDBFlag(),

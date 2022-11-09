@@ -15,13 +15,20 @@ const (
 	DataCookieID = "odootools-data"
 )
 
-func (s Server) GetOdooSession(e echo.Context) *odoo.Session {
+// GetOdooSession returns the Odoo session from the session cookie.
+// Returns nil if there is no active session.
+func (s *Server) GetOdooSession(e echo.Context) *odoo.Session {
 	sess, _ := session.Get(SessionCookieID, e)
-	odooSess := odoo.RestoreSession(s.odooClient, sess.Values["odoo_id"].(string), sess.Values["odoo_uid"].(int))
+	odooId := sess.Values["odoo_id"]
+	odooUid := sess.Values["odoo_uid"]
+	if odooId == nil && odooUid == nil {
+		return nil
+	}
+	odooSess := odoo.RestoreSession(s.odooClient, odooId.(string), odooUid.(int))
 	return odooSess
 }
 
-func (s Server) GetSessionData(e echo.Context) controller.SessionData {
+func (s *Server) GetSessionData(e echo.Context) controller.SessionData {
 	sess, _ := session.Get(DataCookieID, e)
 	data := controller.SessionData{}
 	if raw, found := sess.Values["data"]; found {
@@ -33,7 +40,7 @@ func (s Server) GetSessionData(e echo.Context) controller.SessionData {
 	return data
 }
 
-func (s Server) SaveOdooSession(e echo.Context, odooSession *odoo.Session) error {
+func (s *Server) SaveOdooSession(e echo.Context, odooSession *odoo.Session) error {
 	sess := sessions.NewSession(s.cookieStore, SessionCookieID)
 	sess.Options = &sessions.Options{
 		Path:     "/",
@@ -46,7 +53,7 @@ func (s Server) SaveOdooSession(e echo.Context, odooSession *odoo.Session) error
 	return sess.Save(e.Request(), e.Response())
 }
 
-func (s Server) SaveSessionData(e echo.Context, data controller.SessionData) error {
+func (s *Server) SaveSessionData(e echo.Context, data controller.SessionData) error {
 	sess := sessions.NewSession(s.cookieStore, DataCookieID)
 	sess.Options = &sessions.Options{
 		Path:     "/",

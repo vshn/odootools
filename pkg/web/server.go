@@ -22,12 +22,14 @@ type Server struct {
 	Echo        *echo.Echo
 	cookieStore *sessions.CookieStore
 	dbName      string
+	versionInfo VersionInfo
 }
 
 func NewServer(
 	odoo *odoo.Client,
 	secretKey string,
 	dbName string,
+	versionInfo VersionInfo,
 ) *Server {
 	key, err := base64.StdEncoding.DecodeString(secretKey)
 	if err != nil {
@@ -39,6 +41,7 @@ func NewServer(
 		dbName:      dbName,
 		Echo:        echo.New(),
 		cookieStore: sessions.NewCookieStore(key, key),
+		versionInfo: versionInfo,
 	}
 	e := s.Echo
 	e.Pre(middleware.RemoveTrailingSlash())
@@ -66,11 +69,11 @@ func NewServer(
 	return &s
 }
 
-func (s Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.Echo.ServeHTTP(w, r)
 }
 
-func (s Server) newControllerContext(e echo.Context) *controller.BaseController {
+func (s *Server) newControllerContext(e echo.Context) *controller.BaseController {
 	sess := s.GetOdooSession(e)
 	data := s.GetSessionData(e)
 	logCtx := logr.NewContext(e.Request().Context(), funcr.NewJSON(func(obj string) {
@@ -80,7 +83,7 @@ func (s Server) newControllerContext(e echo.Context) *controller.BaseController 
 	return &controller.BaseController{Echo: e, OdooClient: model.NewOdoo(sess), OdooSession: sess, SessionData: data, RequestContext: logCtx}
 }
 
-func (s Server) ShowError(e echo.Context, err error) error {
+func (s *Server) ShowError(e echo.Context, err error) error {
 	return e.Render(http.StatusInternalServerError, "error", controller.AsError(err))
 }
 

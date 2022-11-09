@@ -15,6 +15,7 @@ func (s *Server) setupRoutes(middleware ...echo.MiddlewareFunc) {
 
 	// Application routes
 	e.GET("/", s.RedirectTo("/report"))
+	e.GET("/about", s.aboutPage)
 
 	report := e.Group("/report", middleware...)
 	report.GET("", s.RequestReportForm)

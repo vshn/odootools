@@ -11,5 +11,5 @@ func newTestServer(odooURL string) *Server {
 		}
 		oc = c
 	}
-	return NewServer(oc, "0000000000000000000000000000000000000000000=", "TestDB")
+	return NewServer(oc, "0000000000000000000000000000000000000000000=", "TestDB", VersionInfo{})
 }

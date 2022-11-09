@@ -41,5 +41,5 @@ func newServer(odooURL string) *web.Server {
 		}
 		oc = c
 	}
-	return web.NewServer(oc, "0000000000000000000000000000000000000000000=", "TestDB")
+	return web.NewServer(oc, "0000000000000000000000000000000000000000000=", "TestDB", web.VersionInfo{})
 }
