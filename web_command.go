@@ -26,6 +26,7 @@ func RunWebServer(cli *cli.Context) error {
 		client,
 		cli.String(newSecretKeyFlag().Name),
 		cli.String(newOdooDBFlag().Name),
+		versionInfo,
 	)
 
 	addr := cli.String(newListenAddress().Name)

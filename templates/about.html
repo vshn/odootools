@@ -1,0 +1,13 @@
+{{ define "main" }}
+<h1>About Odootools</h1>
+{{ with .Error }}
+<div class="alert alert-danger" role="alert">{{ . }}</div>
+{{ end }}
+<div>
+  <p>
+    Version: {{ .Version }}<br>
+    Date: {{ .Date }}<br>
+    <a href="{{ .ChangelogLink }}" target="_blank">Release Notes</a>
+  </p>
+</div>
+{{ end }}
