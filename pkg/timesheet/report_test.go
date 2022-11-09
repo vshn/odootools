@@ -211,7 +211,7 @@ func TestReporter_prepareWorkDays(t *testing.T) {
 			givenYear:     2021,
 			givenMonth:    5,
 			expectedDays:  generateMonth(t, 2021, 5, 31),
-			expectedError: "no contract found that covers date: 2021-05-01 00:00:00",
+			expectedError: "no contract found that covers date: 2021-05-01 00:00:00 +0000 UTC",
 		},
 		"GivenCurrentMonth_ThenReturnNoMoreThanToday": {
 			givenYear:  2021,

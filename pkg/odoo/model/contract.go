@@ -43,6 +43,9 @@ func (l ContractList) GetFTERatioForDay(day odoo.Date) (float64, error) {
 	date := day.ToTime()
 	for _, contract := range l.Items {
 		start := contract.Start.ToTime().Add(-1 * time.Second)
+		if loc := date.Location(); loc != nil {
+			start = start.In(loc)
+		}
 		if contract.End.IsZero() {
 			// current contract
 			if start.Before(date) {
@@ -56,7 +59,7 @@ func (l ContractList) GetFTERatioForDay(day odoo.Date) (float64, error) {
 		}
 	}
 	return 0, &NoContractCoversDateErr{
-		Err:  fmt.Errorf("no contract found that covers date: %s", day.String()),
+		Err:  fmt.Errorf("no contract found that covers date: %s", day.ToTime()),
 		Date: day,
 	}
 }
