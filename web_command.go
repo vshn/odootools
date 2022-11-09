@@ -43,6 +43,8 @@ func newWebCommand() *cli.Command {
 		Usage:  "Starts the web server",
 		Action: RunWebServer,
 		Flags: []cli.Flag{
+			newOdooURLFlag(),
+			newOdooDBFlag(),
 			newSecretKeyFlag(),
 			newListenAddress(),
 			newDefaultTimezoneFlag(),

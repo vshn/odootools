@@ -24,8 +24,6 @@ func main() {
 		Usage:   "Odoo ERP utility tools for everyday things",
 		Version: versionInfo.String(),
 		Flags: []cli.Flag{
-			newOdooURLFlag(),
-			newOdooDBFlag(),
 			newLogLevelFlag(),
 		},
 		Commands: []*cli.Command{
