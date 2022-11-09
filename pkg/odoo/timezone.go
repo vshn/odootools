@@ -27,6 +27,14 @@ func (tz *TimeZone) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// MarshalJSON implements json.Marshaler.
+func (tz *TimeZone) MarshalJSON() ([]byte, error) {
+	if tz.IsEmpty() || tz.Location() == time.Local {
+		return []byte(`null`), nil
+	}
+	return []byte(fmt.Sprintf(`"%s"`, tz.loc)), nil
+}
+
 func (tz *TimeZone) Location() *time.Location {
 	if tz == nil {
 		return nil
