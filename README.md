@@ -1,14 +1,12 @@
 [![Build](https://img.shields.io/github/workflow/status/vshn/odootools/Test)][build]
 ![Go version](https://img.shields.io/github/go-mod/go-version/vshn/odootools)
 [![Version](https://img.shields.io/github/v/release/vshn/odootools)][releases]
-[![Maintainability](https://img.shields.io/codeclimate/maintainability/vshn/odootools)][codeclimate]
 [![GitHub downloads](https://img.shields.io/github/downloads/vshn/odootools/total)][releases]
 [![License](https://img.shields.io/github/license/vshn/odootools)][license]
 
 [build]: https://github.com/vshn/odootools/actions?query=workflow%3ATest
 [releases]: https://github.com/vshn/odootools/releases
 [license]: https://github.com/vshn/odootools/blob/master/LICENSE
-[codeclimate]: https://codeclimate.com/github/vshn/odootools
 
 # odootools
 
