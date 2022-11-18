@@ -54,6 +54,7 @@ func (v *reportView) getValuesForReport(report timesheet.Report, previousPayslip
 		"ReportDirectLink":                fmt.Sprintf("/report/%d/%d/%02d", report.Employee.ID, v.year, v.month),
 		"ButtonText":                      v.getButtonText(nextPayslip),
 		"Workload":                        v.FormatFloat(report.Summary.AverageWorkload*100, 0),
+		"Timezone":                        report.From.Location(),
 		"Leaves":                          report.Summary.TotalLeave,
 		"ExcusedHours":                    v.FormatDurationInHours(report.Summary.TotalExcusedTime),
 		"WorkedHours":                     v.FormatDurationInHours(report.Summary.TotalWorkedTime),
