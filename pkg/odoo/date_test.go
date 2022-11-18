@@ -52,7 +52,7 @@ func TestDate_MarshalJSON(t *testing.T) {
 		},
 		"GivenTime_ThenReturnFormatted": {
 			givenDate:      Date{Time: time.Date(2021, 02, 03, 4, 5, 6, 0, time.UTC)},
-			expectedOutput: "2021-02-03 04:05:06",
+			expectedOutput: `"2021-02-03 04:05:06"`,
 		},
 	}
 	for name, tc := range tests {
