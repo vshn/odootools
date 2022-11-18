@@ -27,10 +27,10 @@ func TestTimeZone_UnmarshalJSON(t *testing.T) {
 			err := subject.UnmarshalJSON([]byte(tt.givenInput))
 			require.NoError(t, err)
 			if tt.expectedLocation == nil {
-				assert.Nil(t, subject.Location())
+				assert.Nil(t, subject.Location)
 				return
 			}
-			assert.Equal(t, tt.expectedLocation, subject.Location())
+			assert.Equal(t, tt.expectedLocation, subject.Location)
 		})
 	}
 }
@@ -47,7 +47,7 @@ func TestTimeZone_MarshalJSON(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			subject := &TimeZone{loc: tt.givenLocation}
+			subject := &TimeZone{Location: tt.givenLocation}
 			result, err := subject.MarshalJSON()
 			require.NoError(t, err)
 			if tt.expectedOutput == nil {

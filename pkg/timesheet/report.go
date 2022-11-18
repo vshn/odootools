@@ -25,8 +25,8 @@ const (
 	StateDraft     = "draft"
 )
 
-// for testing purposes
-var now = time.Now
+// DefaultTimeZone is the zone to which apply a last-resort default.
+var DefaultTimeZone *time.Location
 
 type AttendanceShift struct {
 	// Start is the localized beginning time of the attendance
@@ -71,8 +71,8 @@ type Summary struct {
 type Report struct {
 	DailySummaries []*DailySummary
 	Summary        Summary
-	Employee       *model.Employee
-	// From is the first day (inclusive) of the time range
+	Employee       model.Employee
+	// From is the first day (inclusive) of the time range.
 	From time.Time
 	// To is the last day (inclusive) of the time range
 	To time.Time
@@ -81,36 +81,23 @@ type Report struct {
 type ReportBuilder struct {
 	attendances model.AttendanceList
 	leaves      odoo.List[model.Leave]
-	employee    *model.Employee
+	employee    model.Employee
 	from        time.Time
 	to          time.Time
 	contracts   model.ContractList
-	timezone    *time.Location
 	clampToNow  bool
+	clock       func() time.Time
 }
 
-func NewReporter(attendances model.AttendanceList, leaves odoo.List[model.Leave], employee *model.Employee, contracts model.ContractList) *ReportBuilder {
+func NewReporter(attendances model.AttendanceList, leaves odoo.List[model.Leave], employee model.Employee, contracts model.ContractList) *ReportBuilder {
 	return &ReportBuilder{
 		attendances: attendances,
 		leaves:      leaves,
 		employee:    employee,
 		contracts:   contracts,
-		timezone:    time.Local,
 		clampToNow:  true,
+		clock:       time.Now,
 	}
-}
-
-// SetRange sets the time range in which the report should consider calculations.
-// For example, to build a monthly report, set `from` to the first day of the month from midnight, and `to` to the first day of the next month at midnight.
-func (r *ReportBuilder) SetRange(from, to time.Time) *ReportBuilder {
-	r.from = from
-	r.to = to
-	return r
-}
-
-func (r *ReportBuilder) SetTimeZone(location *time.Location) *ReportBuilder {
-	r.timezone = location
-	return r
 }
 
 // SkipClampingToNow ignores the current time when preparing the daily summaries within the time range.
@@ -120,8 +107,12 @@ func (r *ReportBuilder) SkipClampingToNow(skip bool) *ReportBuilder {
 	return r
 }
 
-func (r *ReportBuilder) CalculateReport() (Report, error) {
-	filteredAttendances := r.attendances.FilterAttendanceBetweenDates(r.from.In(r.timezone), r.to.In(r.timezone))
+// CalculateReport creates a report with the given information in the builder.
+// For example, to build a monthly report, set `from` to the first day of the month from midnight, and `to` to the first day of the next month at midnight.
+func (r *ReportBuilder) CalculateReport(from time.Time, to time.Time) (Report, error) {
+	r.from = from
+	r.to = to
+	filteredAttendances := r.attendances.FilterAttendanceBetweenDates(r.from, r.to)
 	shifts := r.reduceAttendancesToShifts(filteredAttendances)
 	filteredLeaves := r.filterLeavesInTimeRange()
 	absences := r.reduceLeavesToBlocks(filteredLeaves)
@@ -129,8 +120,8 @@ func (r *ReportBuilder) CalculateReport() (Report, error) {
 	if err != nil {
 		return Report{
 			Employee: r.employee,
-			From:     r.from.In(r.timezone),
-			To:       r.to.In(r.timezone),
+			From:     r.from,
+			To:       r.to,
 		}, err
 	}
 
@@ -153,9 +144,13 @@ func (r *ReportBuilder) CalculateReport() (Report, error) {
 		DailySummaries: dailySummaries,
 		Summary:        summary,
 		Employee:       r.employee,
-		From:           r.from.In(r.timezone),
-		To:             r.to.In(r.timezone),
+		From:           r.from,
+		To:             r.to,
 	}, nil
+}
+
+func (r *ReportBuilder) getTimeZone() *time.Location {
+	return r.from.Location()
 }
 
 func (r *ReportBuilder) reduceAttendancesToShifts(attendances model.AttendanceList) []AttendanceShift {
@@ -165,12 +160,12 @@ func (r *ReportBuilder) reduceAttendancesToShifts(attendances model.AttendanceLi
 	for _, attendance := range attendances.Items {
 		if attendance.Action == model.ActionSignIn {
 			tmpShift = AttendanceShift{
-				Start:  attendance.DateTime.ToTime().In(r.timezone),
+				Start:  attendance.DateTime.In(r.getTimeZone()),
 				Reason: attendance.Reason.String(),
 			}
 		}
 		if attendance.Action == model.ActionSignOut {
-			tmpShift.End = attendance.DateTime.ToTime().In(r.timezone)
+			tmpShift.End = attendance.DateTime.In(r.getTimeZone())
 			shifts = append(shifts, tmpShift)
 		}
 	}
@@ -193,9 +188,10 @@ func (r *ReportBuilder) reduceLeavesToBlocks(leaves []model.Leave) []AbsenceBloc
 	for _, leave := range leaves {
 		// Only consider approved leaves
 		if leave.State == StateApproved {
+			from := leave.DateFrom
 			blocks = append(blocks, AbsenceBlock{
 				Reason: leave.Type.String(),
-				Date:   leave.DateFrom.ToTime().In(r.timezone).Truncate(24 * time.Hour),
+				Date:   time.Date(from.Year(), from.Month(), from.Day(), 0, 0, 0, 0, from.Location()),
 			})
 		}
 	}
@@ -208,23 +204,26 @@ func (r *ReportBuilder) prepareDays() ([]*DailySummary, error) {
 	firstDay := r.from
 	lastDay := r.to
 
-	if r.clampToNow && lastDay.After(now().In(r.timezone)) {
+	now := r.clock().In(r.getTimeZone())
+	if r.clampToNow && lastDay.After(now) {
 		lastDay = r.getDateTomorrow()
 	}
 
 	for currentDay := firstDay; currentDay.Before(lastDay); currentDay = currentDay.AddDate(0, 0, 1) {
-		currentRatio, err := r.contracts.GetFTERatioForDay(odoo.Date(currentDay))
+		currentRatio, err := r.contracts.GetFTERatioForDay(currentDay)
 		if err != nil {
 			return days, err
 		}
-		days = append(days, NewDailySummary(currentRatio, currentDay.In(r.timezone)))
+		days = append(days, NewDailySummary(currentRatio, currentDay.In(r.getTimeZone())))
 	}
 
 	return days, nil
 }
 
 func (r *ReportBuilder) getDateTomorrow() time.Time {
-	return now().In(r.timezone).Truncate(24*time.Hour).AddDate(0, 0, 1)
+	tz := r.getTimeZone()
+	now := r.clock().In(tz)
+	return time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, tz)
 }
 
 func (r *ReportBuilder) addAttendanceShiftsToDailies(shifts []AttendanceShift, dailySums []*DailySummary) {
@@ -252,8 +251,8 @@ func (r *ReportBuilder) filterLeavesInTimeRange() []model.Leave {
 	for _, leave := range r.leaves.Items {
 		splits := leave.SplitByDay()
 		for _, split := range splits {
-			date := split.DateFrom.WithLocation(r.timezone)
-			if date.IsWithinTimeRange(r.from, r.to) && date.ToTime().Weekday() != time.Sunday && date.ToTime().Weekday() != time.Saturday {
+			date := split.DateFrom.In(r.getTimeZone())
+			if odoo.IsWithinTimeRange(date, r.from, r.to) && date.Weekday() != time.Sunday && date.Weekday() != time.Saturday {
 				filteredLeaves = append(filteredLeaves, split)
 			}
 		}

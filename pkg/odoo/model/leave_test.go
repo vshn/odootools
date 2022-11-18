@@ -43,8 +43,8 @@ func TestLeave_SplitByDay(t *testing.T) {
 			for i := 0; i < len(result); i++ {
 				actual := result[i]
 				expected := tt.expectedLeaves[i]
-				assert.Equal(t, expected.DateFrom.ToTime(), actual.DateFrom.ToTime())
-				assert.Equal(t, expected.DateTo.ToTime(), actual.DateTo.ToTime())
+				assert.Equal(t, expected.DateFrom, actual.DateFrom)
+				assert.Equal(t, expected.DateTo, actual.DateTo)
 				assert.Equal(t, expected.State, actual.State)
 				assert.Zero(t, actual.ID)
 			}

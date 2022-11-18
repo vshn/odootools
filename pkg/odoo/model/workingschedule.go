@@ -8,6 +8,7 @@ import (
 	"strings"
 )
 
+// should match something like "Standard 100% Work Week"
 var workingScheduleRegex = regexp.MustCompile(`(?P<ratio>[0-9]+\s*%)`)
 
 type WorkingSchedule struct {

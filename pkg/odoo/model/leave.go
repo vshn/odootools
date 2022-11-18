@@ -13,11 +13,11 @@ type Leave struct {
 
 	// DateFrom is the starting timestamp of the leave in UTC
 	// Format: DateTimeFormat
-	DateFrom *odoo.Date `json:"date_from"`
+	DateFrom odoo.Date `json:"date_from,omitempty"`
 
 	// DateTo is the ending timestamp of the leave in UTC
 	// Format: DateTimeFormat
-	DateTo *odoo.Date `json:"date_to"`
+	DateTo odoo.Date `json:"date_to,omitempty"`
 
 	// Type describes the "leave type" from Odoo.
 	Type *LeaveType `json:"holiday_status_id,omitempty"`
@@ -64,21 +64,21 @@ func (o Odoo) readLeaves(ctx context.Context, domainFilters []odoo.Filter) (odoo
 
 func (l Leave) SplitByDay() []Leave {
 	arr := make([]Leave, 0)
-	if l.DateFrom.ToTime().Day() == l.DateTo.ToTime().Day() {
+	if l.DateFrom.Day() == l.DateTo.Day() {
 		arr = append(arr, l)
 		return arr
 	}
-	totalDuration := l.DateTo.ToTime().Sub(l.DateFrom.ToTime())
+	totalDuration := l.DateTo.Sub(l.DateFrom.Time)
 	days := totalDuration / (time.Hour * 24)
 	hoursPerDay := days * 8 * time.Hour
-	startDate := l.DateFrom.ToTime()
-	endDate := l.DateTo.ToTime()
+	startDate := l.DateFrom.Time
+	endDate := l.DateTo.Time
 	for currentDate := startDate; currentDate.Before(endDate); currentDate = currentDate.AddDate(0, 0, 1) {
-		from := odoo.Date(currentDate)
-		to := odoo.Date(currentDate.Add(hoursPerDay))
+		from := odoo.Date{Time: currentDate}
+		to := odoo.Date{Time: currentDate.Add(hoursPerDay)}
 		newLeave := Leave{
-			DateFrom: &from,
-			DateTo:   &to,
+			DateFrom: from,
+			DateTo:   to,
 			Type:     l.Type,
 			State:    l.State,
 		}

@@ -19,6 +19,28 @@ type Payslip struct {
 	TimeZone  *odoo.TimeZone `json:"x_timezone"`
 }
 
+type PayslipList odoo.List[Payslip]
+
+// FilterInMonth returns the payslip that covers the given date.
+// Returns nil if no matching payslip found.
+// Respects time.Location if the given date has also a time.Location set.
+func (l PayslipList) FilterInMonth(dayInMonth time.Time) *Payslip {
+	for _, payslip := range l.Items {
+		from := payslip.DateFrom.Time
+		to := payslip.DateTo.Time
+		from = time.Date(from.Year(), from.Month(), from.Day(), 0, 0, 0, 0, dayInMonth.Location())
+		to = time.Date(to.Year(), to.Month(), to.Day(), 0, 0, 0, 0, dayInMonth.Location())
+		if odoo.IsWithinTimeRange(dayInMonth, from, to) {
+			return &payslip
+		}
+	}
+	return nil
+}
+
+func (l PayslipList) Len() int {
+	return len(l.Items)
+}
+
 func (o Odoo) FetchPayslipInMonth(ctx context.Context, employeeID int, firstDayOfMonth time.Time) (*Payslip, error) {
 	payslips, err := o.readPayslips(ctx, []odoo.Filter{
 		[]interface{}{"employee_id", "=", employeeID},
@@ -35,7 +57,7 @@ func (o Odoo) FetchPayslipInMonth(ctx context.Context, employeeID int, firstDayO
 // FetchPayslipBetween returns all payslips that are between the given dates.
 // It may return empty list if none found.
 // If multiple found, they are sorted ascending by to their Payslip.DateFrom (earliest first).
-func (o Odoo) FetchPayslipBetween(ctx context.Context, employeeID int, firstDay, lastDay time.Time) (odoo.List[Payslip], error) {
+func (o Odoo) FetchPayslipBetween(ctx context.Context, employeeID int, firstDay, lastDay time.Time) (PayslipList, error) {
 	payslips, err := o.readPayslips(ctx, []odoo.Filter{
 		[]interface{}{"employee_id", "=", employeeID},
 		[]string{"date_from", ">=", firstDay.AddDate(0, 0, -1).Format(odoo.DateFormat)},
@@ -44,8 +66,8 @@ func (o Odoo) FetchPayslipBetween(ctx context.Context, employeeID int, firstDay,
 	})
 	// sort by start date ascending
 	sort.SliceStable(payslips.Items, func(i, j int) bool {
-		fromFirst := payslips.Items[i].DateFrom.ToTime()
-		fromSecond := payslips.Items[j].DateFrom.ToTime()
+		fromFirst := payslips.Items[i].DateFrom.Time
+		fromSecond := payslips.Items[j].DateFrom.Time
 		return fromFirst.Before(fromSecond)
 	})
 	return payslips, err
@@ -56,8 +78,8 @@ func (o Odoo) UpdatePayslip(ctx context.Context, payslip *Payslip) error {
 	return err
 }
 
-func (o Odoo) readPayslips(ctx context.Context, domainFilters []odoo.Filter) (odoo.List[Payslip], error) {
-	result := odoo.List[Payslip]{}
+func (o Odoo) readPayslips(ctx context.Context, domainFilters []odoo.Filter) (PayslipList, error) {
+	result := PayslipList{}
 	err := o.querier.SearchGenericModel(ctx, odoo.SearchReadModel{
 		Model:  "hr.payslip",
 		Domain: domainFilters,

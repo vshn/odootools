@@ -8,9 +8,13 @@ import (
 	"github.com/vshn/odootools/pkg/web/controller"
 )
 
+type yearlyReportView struct {
+	controller.BaseView
+}
+
 const yearlyReportTemplateName string = "overtimereport-yearly"
 
-func (v *reportView) GetValuesForYearlyReport(report timesheet.YearlyReport) controller.Values {
+func (v *yearlyReportView) GetValuesForYearlyReport(report timesheet.YearlyReport) controller.Values {
 	formatted := make([]controller.Values, 0)
 	for _, month := range report.MonthlyReports {
 		formatted = append(formatted, v.formatMonthlySummaryForYearlyReport(month, report.Year))
@@ -32,19 +36,24 @@ func (v *reportView) GetValuesForYearlyReport(report timesheet.YearlyReport) con
 	}
 }
 
-func (v *reportView) formatMonthlySummaryForYearlyReport(s timesheet.Report, year int) controller.Values {
+func (v *yearlyReportView) formatMonthlySummaryForYearlyReport(s timesheet.BalanceReport, year int) controller.Values {
+	defBalance := ""
+	if s.DefinitiveBalance != nil {
+		defBalance = v.FormatDurationInHours(*s.DefinitiveBalance)
+	}
 	val := controller.Values{
-		"OvertimeHours":  v.FormatDurationInHours(s.Summary.TotalOvertime),
-		"LeaveDays":      v.FormatFloat(s.Summary.TotalLeave, 1),
-		"ExcusedHours":   v.FormatDurationInHours(s.Summary.TotalExcusedTime),
-		"WorkedHours":    v.FormatDurationInHours(s.Summary.TotalWorkedTime),
-		"DetailViewLink": fmt.Sprintf("/report/%d/%d/%d", s.Employee.ID, year, s.From.Month()),
-		"Name":           fmt.Sprintf("%s %d", s.From.Month(), year),
+		"OvertimeHours":     v.FormatDurationInHours(s.Report.Summary.TotalOvertime),
+		"LeaveDays":         v.FormatFloat(s.Report.Summary.TotalLeave, 1),
+		"ExcusedHours":      v.FormatDurationInHours(s.Report.Summary.TotalExcusedTime),
+		"WorkedHours":       v.FormatDurationInHours(s.Report.Summary.TotalWorkedTime),
+		"DefinitiveBalance": defBalance,
+		"DetailViewLink":    fmt.Sprintf("/report/%d/%d/%d", s.Report.Employee.ID, year, s.Report.From.Month()),
+		"Name":              fmt.Sprintf("%s %d", s.Report.From.Month(), year),
 	}
 	return val
 }
 
-func (v *reportView) formatYearlySummary(summary timesheet.YearlySummary) controller.Values {
+func (v *yearlyReportView) formatYearlySummary(summary timesheet.YearlySummary) controller.Values {
 	return controller.Values{
 		"TotalExcused":  v.FormatDurationInHours(summary.TotalExcused),
 		"TotalWorked":   v.FormatDurationInHours(summary.TotalWorked),

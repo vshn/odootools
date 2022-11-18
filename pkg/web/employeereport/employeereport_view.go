@@ -18,10 +18,10 @@ type reportView struct {
 	month int
 }
 
-func (v *reportView) GetValuesForReports(reports []*EmployeeReport, failedEmployees []*model.Employee) controller.Values {
+func (v *reportView) GetValuesForReports(reports []*EmployeeReport, failedEmployees []model.Employee) controller.Values {
 	reportValues := make([]controller.Values, len(reports))
 	for i, report := range reports {
-		reportValues[i] = v.getValuesForReport(report.Result, report.PreviousPayslip, report.NextPayslip)
+		reportValues[i] = v.getValuesForReport(report.MonthlyReportController.BalanceReport.Report, report.MonthlyReportController.GetPreviousPayslip(), report.MonthlyReportController.GetNextPayslip())
 	}
 	nextYear, nextMonth := v.GetNextMonth(v.year, v.month)
 	prevYear, prevMonth := v.GetPreviousMonth(v.year, v.month)
@@ -86,7 +86,7 @@ func (v *reportView) getButtonText(nextPayslip *model.Payslip) string {
 	return "Save (Update)"
 }
 
-func (v *reportView) formatErrorForFailedEmployeeReports(employees []*model.Employee) string {
+func (v *reportView) formatErrorForFailedEmployeeReports(employees []model.Employee) string {
 	if len(employees) == 0 {
 		return ""
 	}

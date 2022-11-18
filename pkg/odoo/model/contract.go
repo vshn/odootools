@@ -11,10 +11,10 @@ import (
 type Contract struct {
 	ID float64 `json:"id"`
 	// Start is the first day of the contract in UTC.
-	Start *odoo.Date `json:"date_start"`
+	Start odoo.Date `json:"date_start"`
 	// Start is the last day of the contract in UTC.
-	// It is nil or Zero if the contract hasn't ended yet.
-	End             *odoo.Date       `json:"date_end"`
+	// It is Zero if the contract hasn't ended yet.
+	End             odoo.Date        `json:"date_end"`
 	WorkingSchedule *WorkingSchedule `json:"working_hours"`
 }
 
@@ -24,7 +24,7 @@ type ContractList odoo.List[Contract]
 // NoContractCoversDateErr is an error that indicates a contract doesn't cover a date.
 type NoContractCoversDateErr struct {
 	Err  error
-	Date odoo.Date
+	Date time.Time
 }
 
 // Error implements error.
@@ -39,10 +39,11 @@ func (e *NoContractCoversDateErr) Unwrap() error {
 
 // GetFTERatioForDay returns the workload ratio that is active for the given day.
 // All involved dates are expected to be in UTC.
-func (l ContractList) GetFTERatioForDay(day odoo.Date) (float64, error) {
-	date := day.ToTime()
+func (l ContractList) GetFTERatioForDay(date time.Time) (float64, error) {
 	for _, contract := range l.Items {
-		start := contract.Start.ToTime().Add(-1 * time.Second)
+		t := contract.Start
+
+		start := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, date.Location()).Add(-1 * time.Second)
 		if contract.End.IsZero() {
 			// current contract
 			if start.Before(date) {
@@ -50,14 +51,14 @@ func (l ContractList) GetFTERatioForDay(day odoo.Date) (float64, error) {
 			}
 			continue
 		}
-		end := contract.End.ToTime().Add(1 * time.Second)
+		end := contract.End.Add(1 * time.Second)
 		if start.Before(date) && end.After(date) {
 			return contract.WorkingSchedule.GetFTERatio()
 		}
 	}
 	return 0, &NoContractCoversDateErr{
-		Err:  fmt.Errorf("no contract found that covers date: %s", day.String()),
-		Date: day,
+		Err:  fmt.Errorf("no contract found that covers date: %s", date),
+		Date: date,
 	}
 }
 

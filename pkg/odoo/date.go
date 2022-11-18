@@ -3,7 +3,6 @@ package odoo
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"time"
 )
 
@@ -14,23 +13,30 @@ const (
 )
 
 // Date is an Odoo-specific format of a timestamp
-type Date time.Time
-
-func (d *Date) String() string {
-	t := time.Time(*d)
-	return t.Format(DateTimeFormat)
+type Date struct {
+	time.Time
 }
 
-func (d Date) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf(`"%s"`, d.String())), nil
+// NewDate returns a new Date.
+func NewDate(year int, month time.Month, day, hour, minute, second int, loc *time.Location) Date {
+	return Date{
+		Time: time.Date(year, month, day, hour, minute, second, 0, loc),
+	}
+}
+
+func (d *Date) MarshalJSON() ([]byte, error) {
+	if d.IsZero() {
+		return []byte("false"), nil
+	}
+	return []byte(d.Format(DateTimeFormat)), nil
 }
 
 func (d *Date) UnmarshalJSON(b []byte) error {
-	ts := bytes.Trim(b, `"`)
 	var f bool
 	if err := json.Unmarshal(b, &f); err == nil || string(b) == "false" {
 		return nil
 	}
+	ts := bytes.Trim(b, `"`)
 	// try parsing date + time
 	t, dateTimeErr := time.Parse(DateTimeFormat, string(ts))
 	if dateTimeErr != nil {
@@ -41,37 +47,13 @@ func (d *Date) UnmarshalJSON(b []byte) error {
 		}
 	}
 
-	*d = Date(t)
+	*d = Date{Time: t}
 	return nil
-}
-
-// IsZero returns true if Date is nil or Time.IsZero()
-func (d *Date) IsZero() bool {
-	return d == nil || d.ToTime().IsZero()
-}
-
-func (d Date) ToTime() time.Time {
-	return time.Time(d)
-}
-
-func (d Date) WithLocation(loc *time.Location) Date {
-	return Date(d.ToTime().In(loc))
-}
-
-func (d Date) IsWithinMonth(year, month int) bool {
-	firstDayOfMonth := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, d.ToTime().Location())
-	nextMonth := firstDayOfMonth.AddDate(0, 1, 0)
-	date := d.ToTime()
-	// time.After doesn't return true if the unix seconds are the same.
-	// Yet some users record attendances exactly midnight 00:00:00 and that causes same-timestamp issues.
-	isBetween := date.After(firstDayOfMonth) && date.Before(nextMonth)
-	return isBetween || date.Unix() == firstDayOfMonth.Unix()
 }
 
 // IsWithinTimeRange returns true if the date is between the given times.
 // The date is considered in the range if from and to equal to the date respectively.
-func (d Date) IsWithinTimeRange(from, to time.Time) bool {
-	date := d.ToTime()
+func IsWithinTimeRange(date, from, to time.Time) bool {
 	// time.After doesn't return true if the unix seconds are the same.
 	// Yet some users record attendances exactly midnight 00:00:00 and that causes same-timestamp issues.
 	isBetween := date.After(from) && date.Before(to)
@@ -79,21 +61,31 @@ func (d Date) IsWithinTimeRange(from, to time.Time) bool {
 }
 
 // MustParseDateTime parses the given value in DateTimeFormat or panics if it fails.
-func MustParseDateTime(value string) *Date {
-	tm, err := time.Parse(DateTimeFormat, value)
+func MustParseDateTime(value string) Date {
+	tm, err := ParseDateTime(value)
 	if err != nil {
 		panic(err)
 	}
-	d := Date(tm)
-	return &d
+	return Date{Time: tm}
 }
 
 // MustParseDate parses the given value in DateFormat or panics if it fails.
-func MustParseDate(value string) *Date {
-	tm, err := time.Parse(DateFormat, value)
+func MustParseDate(value string) Date {
+	tm, err := ParseDate(value)
 	if err != nil {
 		panic(err)
 	}
-	d := Date(tm)
-	return &d
+	return Date{Time: tm}
+}
+
+// ParseDate parses the given value in DateFormat in UTC.
+func ParseDate(value string) (time.Time, error) {
+	tm, err := time.Parse(DateFormat, value)
+	return tm, err
+}
+
+// ParseDateTime parses the given value in DateTimeFormat in UTC.
+func ParseDateTime(value string) (time.Time, error) {
+	tm, err := time.Parse(DateTimeFormat, value)
+	return tm, err
 }
