@@ -74,8 +74,8 @@ func TestAttendanceList_FilterAttendanceBetweenDates(t *testing.T) {
 			givenList: AttendanceList{Items: []Attendance{
 				{DateTime: odoo.MustParseDateTime("2022-03-30 15:00:00")},
 			}},
-			givenFrom: mustParseDate(t, "2022-03-30 12:00:00"),
-			givenTo:   mustParseDate(t, "2022-03-30 17:00:00"),
+			givenFrom: odoo.MustParseDateTime("2022-03-30 12:00:00").Time,
+			givenTo:   odoo.MustParseDateTime("2022-03-30 17:00:00").Time,
 			expectedList: AttendanceList{Items: []Attendance{
 				{DateTime: odoo.MustParseDateTime("2022-03-30 15:00:00")},
 			}},
@@ -84,8 +84,8 @@ func TestAttendanceList_FilterAttendanceBetweenDates(t *testing.T) {
 			givenList: AttendanceList{Items: []Attendance{
 				{DateTime: odoo.MustParseDateTime("2022-03-30 15:00:00")},
 			}},
-			givenFrom: mustParseDate(t, "2022-03-30 15:00:00"),
-			givenTo:   mustParseDate(t, "2022-03-30 17:00:00"),
+			givenFrom: odoo.MustParseDateTime("2022-03-30 15:00:00").Time,
+			givenTo:   odoo.MustParseDateTime("2022-03-30 17:00:00").Time,
 			expectedList: AttendanceList{Items: []Attendance{
 				{DateTime: odoo.MustParseDateTime("2022-03-30 15:00:00")},
 			}},
@@ -94,8 +94,8 @@ func TestAttendanceList_FilterAttendanceBetweenDates(t *testing.T) {
 			givenList: AttendanceList{Items: []Attendance{
 				{DateTime: odoo.MustParseDateTime("2022-03-30 15:00:00")},
 			}},
-			givenFrom: mustParseDate(t, "2022-03-30 12:00:00"),
-			givenTo:   mustParseDate(t, "2022-03-30 15:00:00"),
+			givenFrom: odoo.MustParseDateTime("2022-03-30 12:00:00").Time,
+			givenTo:   odoo.MustParseDateTime("2022-03-30 15:00:00").Time,
 			expectedList: AttendanceList{Items: []Attendance{
 				{DateTime: odoo.MustParseDateTime("2022-03-30 15:00:00")},
 			}},
@@ -104,8 +104,8 @@ func TestAttendanceList_FilterAttendanceBetweenDates(t *testing.T) {
 			givenList: AttendanceList{Items: []Attendance{
 				{DateTime: odoo.MustParseDateTime("2022-03-31 15:00:00")},
 			}},
-			givenFrom:    mustParseDate(t, "2022-03-30 12:00:00"),
-			givenTo:      mustParseDate(t, "2022-03-30 15:00:00"),
+			givenFrom:    odoo.MustParseDateTime("2022-03-30 12:00:00").Time,
+			givenTo:      odoo.MustParseDateTime("2022-03-30 15:00:00").Time,
 			expectedList: AttendanceList{Items: []Attendance{}},
 		},
 		"GivenListWithMultipleEntries_WhenOneOutsideRange_ThenExpectSingleEntry": {
@@ -113,8 +113,8 @@ func TestAttendanceList_FilterAttendanceBetweenDates(t *testing.T) {
 				{DateTime: odoo.MustParseDateTime("2022-03-31 15:00:00")},
 				{DateTime: odoo.MustParseDateTime("2022-03-30 14:00:00")},
 			}},
-			givenFrom: mustParseDate(t, "2022-03-30 12:00:00"),
-			givenTo:   mustParseDate(t, "2022-03-30 15:00:00"),
+			givenFrom: odoo.MustParseDateTime("2022-03-30 12:00:00").Time,
+			givenTo:   odoo.MustParseDateTime("2022-03-30 15:00:00").Time,
 			expectedList: AttendanceList{Items: []Attendance{
 				{DateTime: odoo.MustParseDateTime("2022-03-30 14:00:00")},
 			}},

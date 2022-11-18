@@ -15,7 +15,7 @@ type Attendance struct {
 
 	// DateTime is the entry timestamp in UTC
 	// Format: '2006-01-02 15:04:05'
-	DateTime *odoo.Date `json:"name,omitempty"`
+	DateTime odoo.Date `json:"name,omitempty"`
 
 	// Action is either "sign_in" or "sign_out"
 	Action string `json:"action,omitempty"`
@@ -45,6 +45,7 @@ func (o Odoo) fetchAttendances(ctx context.Context, domainFilters []odoo.Filter)
 		Limit:  0,
 		Offset: 0,
 	}, &result)
+	result.SortByDate()
 	return result, err
 }
 
@@ -52,7 +53,7 @@ func (o Odoo) fetchAttendances(ctx context.Context, domainFilters []odoo.Filter)
 func (l AttendanceList) SortByDate() {
 	items := l.Items
 	sort.Slice(l.Items, func(i, j int) bool {
-		return items[i].DateTime.ToTime().Unix() < items[j].DateTime.ToTime().Unix()
+		return items[i].DateTime.Unix() < items[j].DateTime.Unix()
 	})
 }
 
@@ -64,7 +65,8 @@ func (l AttendanceList) FilterAttendanceBetweenDates(from, to time.Time) Attenda
 		filteredAttendances.Items = []Attendance{}
 	}
 	for _, attendance := range l.Items {
-		if attendance.DateTime.WithLocation(from.Location()).IsWithinTimeRange(from, to) {
+		date := attendance.DateTime.In(from.Location())
+		if odoo.IsWithinTimeRange(date, from, to) {
 			filteredAttendances.Items = append(filteredAttendances.Items, attendance)
 		}
 	}
@@ -82,10 +84,10 @@ func (l AttendanceList) AddCurrentTimeAsSignOut(tz *time.Location) AttendanceLis
 		return l
 	}
 
-	now := odoo.Date(time.Now().In(tz))
+	now := odoo.Date{Time: time.Now().In(tz)}
 	// fake a sign_out
 	l.Items = append(l.Items, Attendance{
-		DateTime: &now,
+		DateTime: now,
 		Action:   ActionSignOut,
 		Reason:   lastAttendance.Reason,
 	})

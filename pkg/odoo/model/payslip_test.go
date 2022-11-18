@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/vshn/odootools/pkg/odoo"
 )
 
 func TestPayslip_ParseOvertime(t *testing.T) {
@@ -44,6 +45,69 @@ func TestPayslip_ParseOvertime(t *testing.T) {
 			}
 			assert.NoError(t, err)
 			assert.Equal(t, tt.expectedOvertime, result)
+		})
+	}
+}
+
+func TestPayslipList_FilterInMonth(t *testing.T) {
+	tests := map[string]struct {
+		givenDate       time.Time
+		givenList       PayslipList
+		expectedPayslip *Payslip
+	}{
+		"EmptyList": {
+			givenDate:       time.Date(2021, 02, 03, 0, 0, 0, 0, time.UTC),
+			givenList:       PayslipList{},
+			expectedPayslip: nil,
+		},
+		"DateNotCovered": {
+			givenDate: time.Date(2021, 02, 03, 0, 0, 0, 0, time.UTC),
+			givenList: PayslipList{
+				Items: []Payslip{
+					{DateFrom: odoo.NewDate(2021, 01, 01, 0, 0, 0, time.UTC), DateTo: odoo.NewDate(2021, 01, 31, 0, 0, 0, time.UTC)},
+				},
+			},
+			expectedPayslip: nil,
+		},
+		"MultipleEntries_DateCovered": {
+			givenDate: time.Date(2021, 02, 03, 0, 0, 0, 0, time.UTC),
+			givenList: PayslipList{
+				Items: []Payslip{
+					{DateFrom: odoo.NewDate(2021, 01, 01, 0, 0, 0, time.UTC), DateTo: odoo.NewDate(2021, 01, 31, 0, 0, 0, time.UTC)},
+					{DateFrom: odoo.NewDate(2021, 02, 01, 0, 0, 0, time.UTC), DateTo: odoo.NewDate(2021, 02, 28, 0, 0, 0, time.UTC)},
+				},
+			},
+			expectedPayslip: &Payslip{
+				DateFrom: odoo.NewDate(2021, 02, 01, 0, 0, 0, time.UTC), DateTo: odoo.NewDate(2021, 02, 28, 0, 0, 0, time.UTC),
+			},
+		},
+		"DateCovered": {
+			givenDate: time.Date(2021, 02, 03, 0, 0, 0, 0, time.UTC),
+			givenList: PayslipList{
+				Items: []Payslip{
+					{DateFrom: odoo.NewDate(2021, 02, 01, 0, 0, 0, time.UTC), DateTo: odoo.NewDate(2021, 02, 28, 0, 0, 0, time.UTC)},
+				},
+			},
+			expectedPayslip: &Payslip{
+				DateFrom: odoo.NewDate(2021, 02, 01, 0, 0, 0, time.UTC), DateTo: odoo.NewDate(2021, 02, 28, 0, 0, 0, time.UTC),
+			},
+		},
+		"DateCoveredInTimezone": {
+			givenDate: time.Date(2021, 02, 01, 0, 0, 0, 0, zurichTZ),
+			givenList: PayslipList{
+				Items: []Payslip{
+					{DateFrom: odoo.NewDate(2021, 02, 01, 0, 0, 0, time.UTC), DateTo: odoo.NewDate(2021, 02, 28, 0, 0, 0, time.UTC)},
+				},
+			},
+			expectedPayslip: &Payslip{
+				DateFrom: odoo.NewDate(2021, 02, 01, 0, 0, 0, time.UTC), DateTo: odoo.NewDate(2021, 02, 28, 0, 0, 0, time.UTC),
+			},
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			result := tc.givenList.FilterInMonth(tc.givenDate)
+			assert.Equal(t, tc.expectedPayslip, result)
 		})
 	}
 }
