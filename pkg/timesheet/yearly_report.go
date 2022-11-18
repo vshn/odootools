@@ -8,8 +8,8 @@ import (
 )
 
 type YearlyReport struct {
-	MonthlyReports []Report
-	Employee       *model.Employee
+	MonthlyReports []BalanceReport
+	Employee       model.Employee
 	Year           int
 	Summary        YearlySummary
 }
@@ -22,43 +22,58 @@ type YearlySummary struct {
 }
 
 type YearlyReportBuilder struct {
-	ReportBuilder
-	year int
+	year        int
+	payslips    model.PayslipList
+	attendances model.AttendanceList
+	leaves      odoo.List[model.Leave]
+	employee    model.Employee
+	contracts   model.ContractList
+	clock       func() time.Time
 }
 
-func NewYearlyReporter(attendances model.AttendanceList, leaves odoo.List[model.Leave], employee *model.Employee, contracts model.ContractList) *YearlyReportBuilder {
+func NewYearlyReporter(attendances model.AttendanceList, leaves odoo.List[model.Leave], employee model.Employee, contracts model.ContractList, payslips model.PayslipList) *YearlyReportBuilder {
 	return &YearlyReportBuilder{
-		ReportBuilder: ReportBuilder{
-			attendances: attendances,
-			leaves:      leaves,
-			employee:    employee,
-			contracts:   contracts,
-			timezone:    time.Local,
-		},
+		payslips:    payslips,
+		attendances: attendances,
+		leaves:      leaves,
+		employee:    employee,
+		contracts:   contracts,
+		clock:       time.Now,
 	}
 }
 
 func (r *YearlyReportBuilder) CalculateYearlyReport() (YearlyReport, error) {
-	reports := make([]Report, 0)
-
+	reports := make([]BalanceReport, 0)
+	now := r.clock()
 	max := 12
-	if r.year >= now().Year() {
-		max = int(now().Month())
+	if r.year >= now.Year() {
+		max = int(now.Month())
 	}
 	min := 1
-	if startDate, found := r.getEarliestStartContractDate(); found && startDate.Year() == now().Year() && r.year == now().Year() {
+	if startDate, found := r.getEarliestStartContractDate(); found && startDate.Year() == now.Year() && r.year == now.Year() {
 		min = int(startDate.Month())
 	}
 
 	for _, month := range makeRange(min, max) {
-		start := time.Date(r.year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+		tz := DefaultTimeZone
+		payslip := r.payslips.FilterInMonth(time.Date(r.year, time.Month(month), 5, 0, 0, 0, 0, time.UTC))
+		if payslip != nil {
+			tz = payslip.TimeZone.LocationOrDefault(tz)
+		}
+		start := time.Date(r.year, time.Month(month), 1, 0, 0, 0, 0, tz)
 		end := start.AddDate(0, 1, 0)
-		r.SetRange(start, end)
-		monthlyReport, err := r.CalculateReport()
+		monthlyReportBuilder := NewReporter(r.attendances, r.leaves, r.employee, r.contracts)
+		monthlyReportBuilder.clock = r.clock
+		monthlyReport, err := monthlyReportBuilder.CalculateReport(start, end)
 		if err != nil {
 			return YearlyReport{}, err
 		}
-		reports = append(reports, monthlyReport)
+		balanceReportBuilder := NewBalanceReportBuilder(monthlyReport, r.payslips)
+		balanceReport, err := balanceReportBuilder.CalculateBalanceReport()
+		if err != nil {
+			return YearlyReport{}, err
+		}
+		reports = append(reports, balanceReport)
 	}
 	yearlyReport := YearlyReport{
 		MonthlyReports: reports,
@@ -67,10 +82,10 @@ func (r *YearlyReportBuilder) CalculateYearlyReport() (YearlyReport, error) {
 	}
 	summary := YearlySummary{}
 	for _, month := range reports {
-		summary.TotalOvertime += month.Summary.TotalOvertime
-		summary.TotalExcused += month.Summary.TotalExcusedTime
-		summary.TotalWorked += month.Summary.TotalWorkedTime
-		summary.TotalLeaves += month.Summary.TotalLeave
+		summary.TotalOvertime += month.Report.Summary.TotalOvertime
+		summary.TotalExcused += month.Report.Summary.TotalExcusedTime
+		summary.TotalWorked += month.Report.Summary.TotalWorkedTime
+		summary.TotalLeaves += month.Report.Summary.TotalLeave
 	}
 	yearlyReport.Summary = summary
 	return yearlyReport, nil
@@ -85,14 +100,14 @@ func makeRange(min, max int) []int {
 }
 
 func (r *YearlyReportBuilder) getEarliestStartContractDate() (time.Time, bool) {
-	n := now()
-	start := n
+	now := r.clock()
+	start := now
 	for _, contract := range r.contracts.Items {
-		if contract.Start.ToTime().Before(start) {
-			start = contract.Start.ToTime()
+		if contract.Start.Before(start) {
+			start = contract.Start.Time
 		}
 	}
-	return start, start != n
+	return start, start != now
 }
 
 func (r *YearlyReportBuilder) SetYear(year int) *YearlyReportBuilder {

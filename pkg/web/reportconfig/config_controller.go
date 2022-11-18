@@ -17,7 +17,7 @@ type ConfigController struct {
 	controller.BaseController
 	Input       ReportRequest
 	view        *ConfigView
-	Employee    *model.Employee
+	Employee    model.Employee
 	Attendances model.AttendanceList
 	StartOfWeek time.Time
 	EndOfWeek   time.Time
@@ -83,11 +83,11 @@ func (c *ConfigController) searchEmployee(ctx context.Context) error {
 		if e == nil {
 			return fmt.Errorf("no user matching '%s' found", c.Input.SearchUser)
 		}
-		c.Employee = e
+		c.Employee = *e
 		return err
 	}
 	if c.SessionData.Employee != nil {
-		c.Employee = c.SessionData.Employee
+		c.Employee = *c.SessionData.Employee
 		return nil
 	}
 	return fmt.Errorf("no Employee found for user ID %q", c.OdooSession.UID)
@@ -115,7 +115,7 @@ func (c *ConfigController) fetchAttendanceOfCurrentWeek(ctx context.Context) err
 	attendances.SortByDate()
 	c.Attendances = attendances.
 		FilterAttendanceBetweenDates(c.StartOfWeek, c.EndOfWeek).
-		AddCurrentTimeAsSignOut(c.User.TimeZone.Location())
+		AddCurrentTimeAsSignOut(c.User.TimeZone.Location)
 	return nil
 }
 
@@ -124,7 +124,7 @@ func (c *ConfigController) fetchUser(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	tz := user.TimeZone.LocationOrDefault(controller.DefaultTimeZone)
+	tz := user.TimeZone.LocationOrDefault(timesheet.DefaultTimeZone)
 	c.User = user
 	c.StartOfWeek = c.StartOfWeek.In(tz)
 	c.EndOfWeek = c.EndOfWeek.In(tz)
@@ -145,10 +145,8 @@ func (c *ConfigController) fetchLeaves(ctx context.Context) error {
 
 func (c *ConfigController) calculateReport(_ context.Context) error {
 	reporter := timesheet.NewReporter(c.Attendances, c.Leaves, c.Employee, c.Contracts).
-		SetRange(c.StartOfWeek, c.EndOfWeek).
-		SetTimeZone(c.User.TimeZone.Location()).
 		SkipClampingToNow(true)
-	report, err := reporter.CalculateReport()
+	report, err := reporter.CalculateReport(c.StartOfWeek, c.EndOfWeek)
 	c.Report = report
 	return err
 }

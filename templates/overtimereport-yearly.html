@@ -16,6 +16,7 @@
         <th scope="col">Excused hours</th>
         <th scope="col">Worked hours</th>
         <th scope="col">Overtime hours</th>
+        <th scope="col">Definitive balance</th>
     </tr>
     </thead>
     <tbody>
@@ -26,6 +27,7 @@
         <td>{{ .ExcusedHours }}</td>
         <td>{{ .WorkedHours }}</td>
         <td>{{ .OvertimeHours }}</td>
+        <td>{{ .DefinitiveBalance }}</td>
     </tr>
     {{ end }}
     </tbody>
@@ -36,6 +38,7 @@
         <th scope="col">Total Excused</th>
         <th scope="col">Total Worked</th>
         <th scope="col">Total Overtime</th>
+        <th scope="col"></th>
     </tr>
     <tr>
         <td></td>
@@ -43,6 +46,7 @@
         <td>{{ .Summary.TotalExcused }}</td>
         <td>{{ .Summary.TotalWorked }}</td>
         <td>{{ .Summary.TotalOvertime }}</td>
+        <td></td>
     </tr>
     </tfoot>
 </table>
