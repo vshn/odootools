@@ -3,6 +3,7 @@ package odoo
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"time"
 )
 
@@ -28,7 +29,7 @@ func (d *Date) MarshalJSON() ([]byte, error) {
 	if d.IsZero() {
 		return []byte("false"), nil
 	}
-	return []byte(d.Format(DateTimeFormat)), nil
+	return []byte(fmt.Sprintf(`"%s"`, d.Format(DateTimeFormat))), nil
 }
 
 func (d *Date) UnmarshalJSON(b []byte) error {
