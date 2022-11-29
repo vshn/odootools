@@ -58,7 +58,7 @@
         <th scope="col"></th>
         <th scope="col"></th>
         <th scope="col"></th>
-        <th scope="col"></th>
+        <th scope="col">Previous Month's Balance</th>
         <th scope="col">Calculated Balance</th>
         <th scope="col">Definitive Balance</th>
     </tr>
@@ -67,7 +67,7 @@
         <td></td>
         <td></td>
         <td></td>
-        <td></td>
+        <td>{{ .Summary.PreviousBalance }}</td>
         <td>{{ .Summary.NewOvertimeBalance }}</td>
         <td>{{ .Summary.CurrentPayslipBalance }}</td>
     </tr>

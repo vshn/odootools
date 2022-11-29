@@ -50,6 +50,7 @@ func (v *monthlyReportView) formatMonthlySummary(report timesheet.BalanceReport)
 		"TotalWorked":   v.FormatDurationInHours(s.TotalWorkedTime),
 		"TotalExcused":  v.FormatDurationInHours(s.TotalExcusedTime),
 	}
+	val["PreviousBalance"] = v.FormatDurationInHours(report.PreviousBalance)
 	val["NewOvertimeBalance"] = v.FormatDurationInHours(report.CalculatedBalance)
 	val["CurrentPayslipBalance"] = ""
 	if report.DefinitiveBalance != nil {
