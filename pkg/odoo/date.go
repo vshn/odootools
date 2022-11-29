@@ -61,6 +61,12 @@ func IsWithinTimeRange(date, from, to time.Time) bool {
 	return isBetween || date.Unix() == from.Unix() || date.Unix() == to.Unix()
 }
 
+// LocalizeTime returns the same time but with a different location.
+// As opposed to time.In(loc), the returned time is not just updated with the location.
+func LocalizeTime(tm time.Time, loc *time.Location) time.Time {
+	return time.Date(tm.Year(), tm.Month(), tm.Day(), tm.Hour(), tm.Minute(), tm.Second(), tm.Nanosecond(), loc)
+}
+
 // MustParseDateTime parses the given value in DateTimeFormat or panics if it fails.
 func MustParseDateTime(value string) Date {
 	tm, err := ParseDateTime(value)

@@ -50,7 +50,7 @@ func (r *YearlyReportBuilder) CalculateYearlyReport() (YearlyReport, error) {
 		max = int(now.Month())
 	}
 	min := 1
-	if startDate, found := r.getEarliestStartContractDate(); found && startDate.Year() == now.Year() && r.year == now.Year() {
+	if startDate, found := r.getEarliestStartContractDate(); found && startDate.Year() == r.year {
 		min = int(startDate.Month())
 	}
 

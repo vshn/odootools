@@ -168,7 +168,7 @@ func TestReporter_ReduceAttendancesToShifts(t *testing.T) {
 	}
 }
 
-func TestReporter_prepareWorkDays(t *testing.T) {
+func TestReportBuilder_prepareWorkDays(t *testing.T) {
 	tests := map[string]struct {
 		givenYear      int
 		givenMonth     int
@@ -229,6 +229,64 @@ func TestReporter_prepareWorkDays(t *testing.T) {
 			for i := range result {
 				assert.Equal(t, tt.expectedDays[i].Date, result[i].Date)
 			}
+		})
+	}
+}
+
+func TestReportBuilder_filterLeavesInTimeRange(t *testing.T) {
+	tests := map[string]struct {
+		givenTimezone  *time.Location
+		givenLeaves    odoo.List[model.Leave]
+		expectedLeaves []model.Leave
+	}{
+		"LeaveWithinSameMonth": {
+			givenTimezone: zurichTZ,
+			givenLeaves: odoo.List[model.Leave]{Items: []model.Leave{
+				{
+					DateFrom: odoo.NewDate(2021, 02, 01, 6, 0, 0, time.UTC),
+					DateTo:   odoo.NewDate(2021, 02, 02, 19, 0, 0, time.UTC),
+				},
+			}},
+			expectedLeaves: []model.Leave{
+				{
+					DateFrom: odoo.NewDate(2021, 02, 01, 0, 0, 0, zurichTZ),
+					DateTo:   odoo.NewDate(2021, 02, 01, 23, 59, 59, zurichTZ),
+				},
+				{
+					DateFrom: odoo.NewDate(2021, 02, 02, 0, 0, 0, zurichTZ),
+					DateTo:   odoo.NewDate(2021, 02, 02, 23, 59, 59, zurichTZ),
+				},
+			},
+		},
+		"LeaveWithinMultipleMonth_ShouldBeFiltered": {
+			givenTimezone: zurichTZ,
+			givenLeaves: odoo.List[model.Leave]{Items: []model.Leave{
+				{
+					DateFrom: odoo.NewDate(2021, 01, 31, 6, 0, 0, time.UTC),
+					DateTo:   odoo.NewDate(2021, 02, 02, 19, 0, 0, time.UTC),
+				},
+			}},
+			expectedLeaves: []model.Leave{
+				{
+					DateFrom: odoo.NewDate(2021, 02, 01, 0, 0, 0, zurichTZ),
+					DateTo:   odoo.NewDate(2021, 02, 01, 23, 59, 59, zurichTZ),
+				},
+				{
+					DateFrom: odoo.NewDate(2021, 02, 02, 0, 0, 0, zurichTZ),
+					DateTo:   odoo.NewDate(2021, 02, 02, 23, 59, 59, zurichTZ),
+				},
+			},
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			b := ReportBuilder{
+				from: time.Date(2021, time.February, 1, 0, 0, 0, 0, tc.givenTimezone),
+				to:   time.Date(2021, time.March, 1, 0, 0, 0, 0, tc.givenTimezone),
+			}
+			b.leaves = tc.givenLeaves
+			result := b.filterLeavesInTimeRange()
+			assert.Equal(t, tc.expectedLeaves, result)
 		})
 	}
 }

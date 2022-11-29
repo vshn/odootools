@@ -87,9 +87,13 @@ func (s OvertimeSummary) WorkingTime() time.Duration {
 	return s.RegularWorkingTime + time.Duration(overtime)
 }
 
-// ExcusedTime returns the sum of AuthoritiesTime, PublicServiceTime and SickLeaveTime.
+// ExcusedTime returns the sum of AuthoritiesTime, PublicServiceTime and SickLeaveTime, but it can't exceed DailyMax.
 func (s OvertimeSummary) ExcusedTime() time.Duration {
-	return s.AuthoritiesTime + s.PublicServiceTime + s.SickLeaveTime
+	sum := s.AuthoritiesTime + s.PublicServiceTime + s.SickLeaveTime
+	if sum >= s.DailyMax {
+		return s.DailyMax
+	}
+	return sum
 }
 
 // calculateDailyMax returns the theoretical amount of hours that an employee should work on this day.
@@ -173,7 +177,7 @@ func (s *DailySummary) IsWeekend() bool {
 
 func findDailySummaryByDate(dailies []*DailySummary, date time.Time) (*DailySummary, bool) {
 	for _, daily := range dailies {
-		if daily.Date.Day() == date.Day() {
+		if daily.Date.Day() == date.Day() && daily.Date.Month() == date.Month() && daily.Date.Year() == date.Year() {
 			return daily, true
 		}
 	}

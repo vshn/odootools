@@ -62,25 +62,24 @@ func (o Odoo) readLeaves(ctx context.Context, domainFilters []odoo.Filter) (odoo
 	return result, err
 }
 
+// SplitByDay splits the Leave into multiple leaves separated by day.
+// The given Leave can span multiple days, but with arbitrary start and end times.
+// This function also normalizes the leaves, so that each Leave spans a full day, from midnight to 23:59:59.
 func (l Leave) SplitByDay() []Leave {
 	arr := make([]Leave, 0)
-	if l.DateFrom.Day() == l.DateTo.Day() {
-		arr = append(arr, l)
-		return arr
-	}
-	totalDuration := l.DateTo.Sub(l.DateFrom.Time)
-	days := totalDuration / (time.Hour * 24)
-	hoursPerDay := days * 8 * time.Hour
-	startDate := l.DateFrom.Time
-	endDate := l.DateTo.Time
+	start := l.DateFrom
+	startDate := time.Date(start.Year(), start.Month(), start.Day(), 0, 0, 0, 0, start.Location())
+	end := l.DateTo
+	endDate := time.Date(end.Year(), end.Month(), end.Day(), 23, 59, 59, 0, end.Location())
 	for currentDate := startDate; currentDate.Before(endDate); currentDate = currentDate.AddDate(0, 0, 1) {
 		from := odoo.Date{Time: currentDate}
-		to := odoo.Date{Time: currentDate.Add(hoursPerDay)}
+		to := odoo.Date{Time: currentDate.AddDate(0, 0, 1).Add(-1 * time.Second)}
 		newLeave := Leave{
 			DateFrom: from,
 			DateTo:   to,
 			Type:     l.Type,
 			State:    l.State,
+			ID:       l.ID, // using the same leave will cause problems when saving, if this is used.
 		}
 		arr = append(arr, newLeave)
 	}
