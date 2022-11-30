@@ -1,9 +1,17 @@
 {{ define "main" }}
 <h1>Attendance for {{ .Username }}<small class="text-muted"> {{ .MonthDisplayName }}, {{ .TimezoneDisplayName }}</small></h1>
-<div class="float"></div>
-{{ with .Error }}
-<div class="alert alert-danger" role="alert">{{ . }}</div>
-{{ end }}
+<div class="float" id="alerts"></div>
+<div >
+    {{ with .Error }}
+    <div class="alert alert-danger" role="alert">{{ . }}</div>
+    {{ end }}
+    {{ with .Warning }}
+    <div class="alert alert-warning alert-dismissible" role="alert">
+        {{ . }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {{ end }}
+</div>
 <p>
     <a href="{{ .Nav.PreviousMonthLink }}" class="btn btn-secondary">Previous</a>
     <a href="{{ .Nav.CurrentMonthLink }}" class="btn btn-primary">Current</a>
@@ -24,7 +32,7 @@
     <tbody>
     {{ range .Attendances }}
     <tr>
-        <td>{{ .Weekday }}</td>
+        <td>{{ .Weekday }}{{ with .ValidationError }}<br>⚠️ {{ . }}{{ end }}</td>
         <td>{{ .Date }}</td>
         <td>{{ .Workload }}%</td>
         <td>{{ .LeaveType }}</td>

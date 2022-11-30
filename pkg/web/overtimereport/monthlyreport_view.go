@@ -16,11 +16,16 @@ type monthlyReportView struct {
 
 func (v *monthlyReportView) GetValuesForMonthlyReport(report timesheet.BalanceReport) controller.Values {
 	formatted := make([]controller.Values, 0)
+	hasInvalidAttendances := ""
 	for _, summary := range report.Report.DailySummaries {
 		if summary.IsWeekend() && summary.CalculateOvertimeSummary().WorkingTime() == 0 {
 			continue
 		}
-		formatted = append(formatted, v.FormatDailySummary(summary))
+		values := v.FormatDailySummary(summary)
+		if values["ValidationError"] != nil {
+			hasInvalidAttendances = "Your timesheet contains errors."
+		}
+		formatted = append(formatted, values)
 	}
 	month, year := report.Report.From.Month(), report.Report.From.Year()
 	nextYear, nextMonth := v.GetNextMonth(year, int(month))
@@ -28,6 +33,7 @@ func (v *monthlyReportView) GetValuesForMonthlyReport(report timesheet.BalanceRe
 	linkFormat := "/report/%d/%d/%02d"
 	return controller.Values{
 		"Attendances": formatted,
+		"Warning":     hasInvalidAttendances,
 		"Summary":     v.formatMonthlySummary(report),
 		"Nav": controller.Values{
 			"LoggedIn":          true,
