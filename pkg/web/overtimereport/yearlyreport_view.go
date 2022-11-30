@@ -41,6 +41,10 @@ func (v *yearlyReportView) formatMonthlySummaryForYearlyReport(s timesheet.Balan
 	if s.DefinitiveBalance != nil {
 		defBalance = v.FormatDurationInHours(*s.DefinitiveBalance)
 	}
+	validationErrorList := &timesheet.ValidationErrorList{}
+	for _, summary := range s.Report.DailySummaries {
+		timesheet.AppendValidationError(validationErrorList, summary.ValidateTimesheetEntries())
+	}
 	val := controller.Values{
 		"OvertimeHours":     v.FormatDurationInHours(s.Report.Summary.TotalOvertime),
 		"LeaveDays":         v.FormatFloat(s.Report.Summary.TotalLeave, 1),
@@ -49,6 +53,7 @@ func (v *yearlyReportView) formatMonthlySummaryForYearlyReport(s timesheet.Balan
 		"DefinitiveBalance": defBalance,
 		"DetailViewLink":    fmt.Sprintf("/report/%d/%d/%d", s.Report.Employee.ID, year, s.Report.From.Month()),
 		"Name":              fmt.Sprintf("%s %d", s.Report.From.Month(), year),
+		"ValidationError":   validationErrorList.Error(),
 	}
 	return val
 }
