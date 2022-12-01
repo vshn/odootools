@@ -29,11 +29,8 @@ const (
 var DefaultTimeZone *time.Location
 
 type AttendanceShift struct {
-	// Start is the localized beginning time of the attendance
-	Start time.Time
-	// End is the localized finish time of the attendance
-	End    time.Time
-	Reason string
+	Start model.Attendance
+	End   model.Attendance
 }
 
 // String implements fmt.Stringer.
@@ -41,7 +38,7 @@ func (s *AttendanceShift) String() string {
 	if s == nil {
 		return ""
 	}
-	return fmt.Sprintf("AttendanceShift[Start: %s, End: %s, Duration, %s, Reason: %s]", s.Start, s.End, s.Duration(), s.Reason)
+	return fmt.Sprintf("AttendanceShift[Start: %s, End: %s, Duration, %s, Reason: %s]", s.Start.DateTime, s.End.DateTime, s.Duration(), s.Start.Reason)
 }
 
 // Duration returns the difference between AttendanceShift.Start and AttendanceShift.End.
@@ -49,7 +46,7 @@ func (s *AttendanceShift) Duration() time.Duration {
 	if s == nil {
 		return 0
 	}
-	return s.End.Sub(s.Start)
+	return s.End.DateTime.Sub(s.Start.DateTime.Time)
 }
 
 type AbsenceBlock struct {
@@ -156,16 +153,16 @@ func (r *ReportBuilder) getTimeZone() *time.Location {
 func (r *ReportBuilder) reduceAttendancesToShifts(attendances model.AttendanceList) []AttendanceShift {
 	attendances.SortByDate()
 	shifts := make([]AttendanceShift, 0)
+	tz := r.getTimeZone()
 	var tmpShift AttendanceShift
 	for _, attendance := range attendances.Items {
 		if attendance.Action == model.ActionSignIn {
-			tmpShift = AttendanceShift{
-				Start:  attendance.DateTime.In(r.getTimeZone()),
-				Reason: attendance.Reason.String(),
-			}
+			attendance.DateTime.Time = attendance.DateTime.In(tz)
+			tmpShift = AttendanceShift{Start: attendance}
 		}
 		if attendance.Action == model.ActionSignOut {
-			tmpShift.End = attendance.DateTime.In(r.getTimeZone())
+			attendance.DateTime.Time = attendance.DateTime.In(tz)
+			tmpShift.End = attendance
 			shifts = append(shifts, tmpShift)
 		}
 	}
@@ -233,7 +230,7 @@ func (r *ReportBuilder) getDateTomorrow() time.Time {
 
 func (r *ReportBuilder) addAttendanceShiftsToDailies(shifts []AttendanceShift, dailySums []*DailySummary) {
 	for _, shift := range shifts {
-		existing, found := findDailySummaryByDate(dailySums, shift.Start)
+		existing, found := findDailySummaryByDate(dailySums, shift.Start.DateTime.Time)
 		if found {
 			existing.addAttendanceShift(shift)
 			continue
