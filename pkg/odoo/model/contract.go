@@ -72,6 +72,22 @@ func (l ContractList) Sort() {
 	})
 }
 
+// GetEarliestStartContractDate gets the date where the first contract is valid from.
+// Returns time.Time{} if no contract has a start date.
+func (l ContractList) GetEarliestStartContractDate() time.Time {
+	now := time.Now()
+	start := now
+	for _, contract := range l.Items {
+		if contract.Start.Before(start) {
+			start = contract.Start.Time
+		}
+	}
+	if start.Equal(now) {
+		return time.Time{}
+	}
+	return start
+}
+
 func (o Odoo) FetchAllContractsOfEmployee(ctx context.Context, employeeID int) (ContractList, error) {
 	return o.readContracts(ctx, []odoo.Filter{
 		[]interface{}{"employee_id", "=", employeeID},

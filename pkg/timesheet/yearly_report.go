@@ -99,17 +99,6 @@ func makeRange(min, max int) []int {
 	return a
 }
 
-func (r *YearlyReportBuilder) getEarliestStartContractDate() (time.Time, bool) {
-	now := r.clock()
-	start := now
-	for _, contract := range r.contracts.Items {
-		if contract.Start.Before(start) {
-			start = contract.Start.Time
-		}
-	}
-	return start, start != now
-}
-
 func (r *YearlyReportBuilder) SetYear(year int) *YearlyReportBuilder {
 	r.year = year
 	return r

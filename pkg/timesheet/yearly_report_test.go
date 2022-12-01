@@ -10,36 +10,6 @@ import (
 	"github.com/vshn/odootools/pkg/odoo/model"
 )
 
-func TestReportBuilder_getEarliestStartContractDate(t *testing.T) {
-	tests := map[string]struct {
-		givenContracts model.ContractList
-		expectedDate   time.Time
-		expectedFound  bool
-	}{
-		"GivenNoContracts_ThenReturnFalse": {
-			givenContracts: model.ContractList{},
-			expectedFound:  false,
-		},
-		"GivenContracts_WhenStartDateExists_ThenReturnTrue": {
-			givenContracts: model.ContractList{Items: []model.Contract{
-				{Start: odoo.MustParseDateTime("2021-02-04 08:00:00")},
-			}},
-			expectedDate:  odoo.MustParseDateTime("2021-02-04 08:00:00").Time,
-			expectedFound: true,
-		},
-	}
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			r := NewYearlyReporter(model.AttendanceList{}, odoo.List[model.Leave]{}, model.Employee{}, tt.givenContracts, model.PayslipList{})
-			resultDate, found := r.getEarliestStartContractDate()
-			assert.Equal(t, tt.expectedFound, found)
-			if tt.expectedFound {
-				assert.Equal(t, tt.expectedDate, resultDate)
-			}
-		})
-	}
-}
-
 func TestYearlyReportBuilder_CalculateYearlyReport(t *testing.T) {
 	t.Skipf("test fails, needs more investigation")
 	DefaultTimeZone = zurichTZ

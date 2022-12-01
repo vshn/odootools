@@ -150,3 +150,34 @@ func TestContractList_Sort(t *testing.T) {
 		})
 	}
 }
+
+func TestReportBuilder_getEarliestStartContractDate(t *testing.T) {
+	tests := map[string]struct {
+		givenContracts ContractList
+		expectedDate   time.Time
+	}{
+		"EmptyList": {
+			givenContracts: ContractList{Items: []Contract{}},
+			expectedDate:   time.Time{},
+		},
+		"SingleContract_ThenReturnStart": {
+			givenContracts: ContractList{Items: []Contract{
+				{Start: odoo.MustParseDateTime("2021-02-04 08:00:00")},
+			}},
+			expectedDate: odoo.MustParseDateTime("2021-02-04 08:00:00").Time,
+		},
+		"MultipleContracts_ThenReturnEarliest": {
+			givenContracts: ContractList{Items: []Contract{
+				{Start: odoo.MustParseDate("2021-03-01")},
+				{Start: odoo.MustParseDate("2021-02-04"), End: odoo.MustParseDate("2021-02-28")},
+			}},
+			expectedDate: odoo.MustParseDate("2021-02-04").Time,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			resultDate := tt.givenContracts.GetEarliestStartContractDate()
+			assert.Equal(t, tt.expectedDate, resultDate)
+		})
+	}
+}
