@@ -204,17 +204,22 @@ func (r *ReportBuilder) prepareDays() ([]*DailySummary, error) {
 	firstDay := r.from
 	lastDay := r.to
 
-	now := r.clock().In(r.getTimeZone())
+	tz := r.getTimeZone()
+	now := r.clock().In(tz)
 	if r.clampToNow && lastDay.After(now) {
 		lastDay = r.getDateTomorrow()
 	}
 
+	contractStartDate := odoo.LocalizeTime(r.contracts.GetEarliestStartContractDate(), tz)
 	for currentDay := firstDay; currentDay.Before(lastDay); currentDay = currentDay.AddDate(0, 0, 1) {
+		if currentDay.Before(contractStartDate) {
+			continue
+		}
 		currentRatio, err := r.contracts.GetFTERatioForDay(currentDay)
 		if err != nil {
 			return days, err
 		}
-		days = append(days, NewDailySummary(currentRatio, currentDay.In(r.getTimeZone())))
+		days = append(days, NewDailySummary(currentRatio, currentDay.In(tz)))
 	}
 
 	return days, nil
