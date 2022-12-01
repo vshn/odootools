@@ -2,6 +2,7 @@ package model
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -17,9 +18,16 @@ func TestLeave_SplitByDay(t *testing.T) {
 			Type:     &LeaveType{ID: 1, Name: "SomeType"},
 			State:    "validated",
 		}
+		expectedLeave := Leave{
+			ID:       1,
+			DateFrom: odoo.NewDate(2021, 02, 03, 0, 0, 0, time.UTC),
+			DateTo:   odoo.NewDate(2021, 02, 03, 23, 59, 59, time.UTC),
+			Type:     &LeaveType{ID: 1, Name: "SomeType"},
+			State:    "validated",
+		}
 		result := givenLeave.SplitByDay()
 		require.Len(t, result, 1)
-		assert.Equal(t, givenLeave, result[0])
+		assert.Equal(t, expectedLeave, result[0])
 	})
 
 	tests := map[string]struct {
@@ -31,8 +39,8 @@ func TestLeave_SplitByDay(t *testing.T) {
 				DateFrom: odoo.MustParseDateTime("2021-02-03 07:00:00"), DateTo: odoo.MustParseDateTime("2021-02-04 19:00:00"),
 			},
 			expectedLeaves: []Leave{
-				{DateFrom: odoo.MustParseDateTime("2021-02-03 07:00:00"), DateTo: odoo.MustParseDateTime("2021-02-03 15:00:00")},
-				{DateFrom: odoo.MustParseDateTime("2021-02-04 07:00:00"), DateTo: odoo.MustParseDateTime("2021-02-04 15:00:00")},
+				{DateFrom: odoo.MustParseDateTime("2021-02-03 00:00:00"), DateTo: odoo.MustParseDateTime("2021-02-03 23:59:59")},
+				{DateFrom: odoo.MustParseDateTime("2021-02-04 00:00:00"), DateTo: odoo.MustParseDateTime("2021-02-04 23:59:59")},
 			},
 		},
 	}

@@ -93,7 +93,7 @@ func (c *MonthlyReportController) getTimeZone() *time.Location {
 
 func (c *MonthlyReportController) fetchPayslips(ctx context.Context) error {
 	lastMonth := c.Input.GetFirstDayOfMonth().AddDate(0, -1, -1)
-	currentMonth := lastMonth.AddDate(0, 2, 1)
+	currentMonth := lastMonth.AddDate(0, 2, 2)
 	payslips, err := c.OdooClient.FetchPayslipBetween(ctx, c.Employee.ID, lastMonth, currentMonth)
 	c.Payslips = payslips
 	return err

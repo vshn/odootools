@@ -12,9 +12,10 @@ func TestDailySummary_CalculateOvertime(t *testing.T) {
 	weekday := "2021-02-03"
 	weekendDay := "2021-02-06"
 	tests := map[string]struct {
-		givenShifts      []AttendanceShift
-		givenDate        time.Time
-		expectedOvertime time.Duration
+		givenShifts         []AttendanceShift
+		givenDate           time.Time
+		expectedOvertime    time.Duration
+		expectedExcusedTime time.Duration
 	}{
 		"GivenSingleShift_WhenMoreThanDailyMax_ThenReturnOvertime": {
 			givenShifts: []AttendanceShift{
@@ -41,28 +42,39 @@ func TestDailySummary_CalculateOvertime(t *testing.T) {
 				{Start: hours(t, weekday, "09:00"), End: hours(t, weekday, "12:00")},
 				{Start: hours(t, weekday, "13:00"), End: hours(t, weekday, "18:00"), Reason: ReasonSickLeave},
 			},
-			expectedOvertime: hoursDuration(t, 0),
+			expectedOvertime:    hoursDuration(t, 0),
+			expectedExcusedTime: hoursDuration(t, 5),
 		},
 		"GivenSickLeaveShifts_WhenSickLeaveIsLessThanDailyMax_ThenReturnUndertime": {
 			givenShifts: []AttendanceShift{
 				{Start: hours(t, weekday, "09:00"), End: hours(t, weekday, "12:00")},
 				{Start: hours(t, weekday, "13:00"), End: hours(t, weekday, "17:00"), Reason: ReasonSickLeave},
 			},
-			expectedOvertime: hoursDuration(t, -1),
+			expectedOvertime:    hoursDuration(t, -1),
+			expectedExcusedTime: hoursDuration(t, 4),
 		},
 		"GivenSickLeaveShifts_WhenCombinedHoursExceedDailyMax_ThenCapOvertime": {
 			givenShifts: []AttendanceShift{
 				{Start: hours(t, weekday, "09:00"), End: hours(t, weekday, "12:00")},
 				{Start: hours(t, weekday, "13:00"), End: hours(t, weekday, "18:30"), Reason: ReasonSickLeave},
 			},
-			expectedOvertime: hoursDuration(t, 0),
+			expectedOvertime:    hoursDuration(t, 0),
+			expectedExcusedTime: hoursDuration(t, 5.5),
+		},
+		"GivenSickLeaveShifts_WhenExcusedHoursExceedDailyMax_ThenCapExcusedTime": {
+			givenShifts: []AttendanceShift{
+				{Start: hours(t, weekday, "09:00"), End: hours(t, weekday, "19:00"), Reason: ReasonSickLeave},
+			},
+			expectedOvertime:    hoursDuration(t, 0),
+			expectedExcusedTime: hoursDuration(t, 8),
 		},
 		"GivenSickLeaveShifts_WhenWorkingHoursIsMoreThanDailyMax_ThenIgnoreSickLeaveCompletely": {
 			givenShifts: []AttendanceShift{
 				{Start: hours(t, weekday, "09:00"), End: hours(t, weekday, "18:00")},
 				{Start: hours(t, weekday, "19:00"), End: hours(t, weekday, "20:00"), Reason: ReasonSickLeave},
 			},
-			expectedOvertime: hoursDuration(t, 1),
+			expectedOvertime:    hoursDuration(t, 1),
+			expectedExcusedTime: hoursDuration(t, 1),
 		},
 		"GivenSickLeaveAndOutsideOfficeHoursShifts_WhenWorkingHoursIsMoreThanDailyMax_ThenIgnoreSickLeaveCompletely": {
 			givenShifts: []AttendanceShift{
@@ -70,7 +82,8 @@ func TestDailySummary_CalculateOvertime(t *testing.T) {
 				{Start: hours(t, weekday, "19:00"), End: hours(t, weekday, "20:00"), Reason: ReasonSickLeave},          // no overtime
 				{Start: hours(t, weekday, "20:00"), End: hours(t, weekday, "22:00"), Reason: ReasonOutsideOfficeHours}, // 3h overtime
 			},
-			expectedOvertime: hoursDuration(t, 4),
+			expectedOvertime:    hoursDuration(t, 4),
+			expectedExcusedTime: hoursDuration(t, 1),
 		},
 		"GivenNoShifts_WhenNoLeavesEither_ThenReturnOneDayUndertime": {
 			givenShifts:      []AttendanceShift{},
@@ -108,8 +121,9 @@ func TestDailySummary_CalculateOvertime(t *testing.T) {
 				Shifts:   tt.givenShifts,
 				FTERatio: 1,
 			}
-			result := s.CalculateOvertimeSummary().Overtime()
-			assert.Equal(t, tt.expectedOvertime, result)
+			result := s.CalculateOvertimeSummary()
+			assert.Equal(t, tt.expectedOvertime, result.Overtime(), "overtime")
+			assert.Equal(t, tt.expectedExcusedTime, result.ExcusedTime(), "excused time")
 		})
 	}
 }
