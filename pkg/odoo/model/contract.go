@@ -3,6 +3,7 @@ package model
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/vshn/odootools/pkg/odoo"
@@ -60,6 +61,15 @@ func (l ContractList) GetFTERatioForDay(date time.Time) (float64, error) {
 		Err:  fmt.Errorf("no contract found that covers date: %s", date),
 		Date: date,
 	}
+}
+
+// Sort sorts the contracts
+func (l ContractList) Sort() {
+	sort.Slice(l.Items, func(i, j int) bool {
+		a := l.Items[i]
+		b := l.Items[j]
+		return a.Start.Before(b.Start.Time)
+	})
 }
 
 func (o Odoo) FetchAllContractsOfEmployee(ctx context.Context, employeeID int) (ContractList, error) {
