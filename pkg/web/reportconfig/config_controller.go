@@ -112,7 +112,6 @@ func (c *ConfigController) fetchAttendanceOfCurrentWeek(ctx context.Context) err
 	if err != nil {
 		return err
 	}
-	attendances.SortByDate()
 	c.Attendances = attendances.
 		FilterAttendanceBetweenDates(c.StartOfWeek, c.EndOfWeek).
 		AddCurrentTimeAsSignOut(c.User.TimeZone.Location)

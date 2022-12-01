@@ -151,7 +151,6 @@ func (r *ReportBuilder) getTimeZone() *time.Location {
 }
 
 func (r *ReportBuilder) reduceAttendancesToShifts(attendances model.AttendanceList) []AttendanceShift {
-	attendances.SortByDate()
 	shifts := make([]AttendanceShift, 0)
 	tz := r.getTimeZone()
 	var tmpShift AttendanceShift

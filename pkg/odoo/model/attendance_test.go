@@ -1,6 +1,7 @@
 package model
 
 import (
+	"math/rand"
 	"testing"
 	"time"
 
@@ -8,7 +9,7 @@ import (
 	"github.com/vshn/odootools/pkg/odoo"
 )
 
-func TestAttendanceList_SortByDate(t *testing.T) {
+func TestAttendanceList_Sort(t *testing.T) {
 	tests := map[string]struct {
 		givenList     AttendanceList
 		expectedOrder []Attendance
@@ -30,11 +31,41 @@ func TestAttendanceList_SortByDate(t *testing.T) {
 				Items: []Attendance{
 					{DateTime: odoo.MustParseDateTime("2022-03-31 15:37:46")},
 					{DateTime: odoo.MustParseDateTime("2022-03-30 15:37:46")},
+					{DateTime: odoo.MustParseDateTime("2022-03-29 15:37:46")},
+					{DateTime: odoo.MustParseDateTime("2022-03-28 15:37:46")},
+					{DateTime: odoo.MustParseDateTime("2022-03-27 15:37:46")},
+					{DateTime: odoo.MustParseDateTime("2022-03-26 15:37:46")},
 				},
 			},
 			expectedOrder: []Attendance{
+				{DateTime: odoo.MustParseDateTime("2022-03-26 15:37:46")},
+				{DateTime: odoo.MustParseDateTime("2022-03-27 15:37:46")},
+				{DateTime: odoo.MustParseDateTime("2022-03-28 15:37:46")},
+				{DateTime: odoo.MustParseDateTime("2022-03-29 15:37:46")},
 				{DateTime: odoo.MustParseDateTime("2022-03-30 15:37:46")},
 				{DateTime: odoo.MustParseDateTime("2022-03-31 15:37:46")},
+			},
+		},
+		"GivenListWithElements_WhenSameDate_ThenSortByReason": {
+			givenList: AttendanceList{
+				Items: []Attendance{
+					{DateTime: odoo.MustParseDateTime("2022-03-31 08:00:00"), Reason: &ActionReason{Name: ""}, Action: ActionSignIn},
+					{DateTime: odoo.MustParseDateTime("2022-03-31 10:00:00"), Reason: &ActionReason{Name: "AReason"}, Action: ActionSignIn},
+					{DateTime: odoo.MustParseDateTime("2022-03-31 11:00:00"), Reason: &ActionReason{Name: "BReason"}, Action: ActionSignIn},
+					{DateTime: odoo.MustParseDateTime("2022-03-31 11:00:00"), Reason: &ActionReason{Name: "AReason"}, Action: ActionSignOut},
+					{DateTime: odoo.MustParseDateTime("2022-03-31 10:00:00"), Reason: &ActionReason{Name: ""}, Action: ActionSignOut},
+					{DateTime: odoo.MustParseDateTime("2022-03-31 12:00:00"), Reason: &ActionReason{Name: ""}, Action: ActionSignIn},
+					{DateTime: odoo.MustParseDateTime("2022-03-31 12:00:00"), Reason: &ActionReason{Name: "BReason"}, Action: ActionSignOut},
+				},
+			},
+			expectedOrder: []Attendance{
+				{DateTime: odoo.MustParseDateTime("2022-03-31 08:00:00"), Reason: &ActionReason{Name: ""}, Action: ActionSignIn},
+				{DateTime: odoo.MustParseDateTime("2022-03-31 10:00:00"), Reason: &ActionReason{Name: ""}, Action: ActionSignOut},
+				{DateTime: odoo.MustParseDateTime("2022-03-31 10:00:00"), Reason: &ActionReason{Name: "AReason"}, Action: ActionSignIn},
+				{DateTime: odoo.MustParseDateTime("2022-03-31 11:00:00"), Reason: &ActionReason{Name: "AReason"}, Action: ActionSignOut},
+				{DateTime: odoo.MustParseDateTime("2022-03-31 11:00:00"), Reason: &ActionReason{Name: "BReason"}, Action: ActionSignIn},
+				{DateTime: odoo.MustParseDateTime("2022-03-31 12:00:00"), Reason: &ActionReason{Name: "BReason"}, Action: ActionSignOut},
+				{DateTime: odoo.MustParseDateTime("2022-03-31 12:00:00"), Reason: &ActionReason{Name: ""}, Action: ActionSignIn},
 			},
 		},
 		"GivenNilList_ThenDoNothing": {
@@ -52,8 +83,16 @@ func TestAttendanceList_SortByDate(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			tc.givenList.SortByDate()
-			assert.Equal(t, tc.expectedOrder, tc.givenList.Items)
+			// randomize each list a few times, should always return same stable order.
+			for i := 0; i < 5; i++ {
+				rand.Seed(time.Now().UnixNano())
+				rand.Shuffle(len(tc.givenList.Items), func(i, j int) {
+					tc.givenList.Items[i], tc.givenList.Items[j] = tc.givenList.Items[j], tc.givenList.Items[i]
+				})
+
+				tc.givenList.Sort()
+				assert.Equalf(t, tc.expectedOrder, tc.givenList.Items, "attempt %d", i)
+			}
 		})
 	}
 }
