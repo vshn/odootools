@@ -1,6 +1,7 @@
 package timesheet
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/vshn/odootools/pkg/odoo"
@@ -50,8 +51,14 @@ func (r *YearlyReportBuilder) CalculateYearlyReport() (YearlyReport, error) {
 		max = int(now.Month())
 	}
 	min := 1
-	if startDate, found := r.getEarliestStartContractDate(); found && startDate.Year() == r.year {
-		min = int(startDate.Month())
+	contractStartDate := r.contracts.GetEarliestStartContractDate()
+	if !contractStartDate.IsZero() {
+		if contractStartDate.Year() == r.year {
+			min = int(contractStartDate.Month())
+		}
+		if r.year < contractStartDate.Year() {
+			return YearlyReport{}, fmt.Errorf("%s did not start working in %d", r.employee.Name, r.year)
+		}
 	}
 
 	for _, month := range makeRange(min, max) {
@@ -60,11 +67,15 @@ func (r *YearlyReportBuilder) CalculateYearlyReport() (YearlyReport, error) {
 		if payslip != nil {
 			tz = payslip.TimeZone.LocationOrDefault(tz)
 		}
-		start := time.Date(r.year, time.Month(month), 1, 0, 0, 0, 0, tz)
-		end := start.AddDate(0, 1, 0)
+		firstDayOfMonth := time.Date(r.year, time.Month(month), 1, 0, 0, 0, 0, tz)
+		lastDayOfMonth := firstDayOfMonth.AddDate(0, 1, 0)
+		start := firstDayOfMonth
+		if firstDayOfMonth.Before(contractStartDate) {
+			start = contractStartDate
+		}
 		monthlyReportBuilder := NewReporter(r.attendances, r.leaves, r.employee, r.contracts)
 		monthlyReportBuilder.clock = r.clock
-		monthlyReport, err := monthlyReportBuilder.CalculateReport(start, end)
+		monthlyReport, err := monthlyReportBuilder.CalculateReport(start, lastDayOfMonth)
 		if err != nil {
 			return YearlyReport{}, err
 		}
