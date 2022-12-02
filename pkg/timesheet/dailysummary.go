@@ -37,16 +37,6 @@ func NewDailySummary(fteRatio float64, date time.Time) *DailySummary {
 	}
 }
 
-// addAttendanceShift adds the given shift to the existing shifts.
-// If the shift is not starting in the same day as DailySummary.Date, it will be silently ignored.
-func (s *DailySummary) addAttendanceShift(shift AttendanceShift) {
-	if shift.Start.DateTime.Day() != s.Date.Day() {
-		// Shift is not on the same day
-		return
-	}
-	s.Shifts = append(s.Shifts, shift)
-}
-
 // addAbsenceBlock adds the given block to the existing absences.
 func (s *DailySummary) addAbsenceBlock(block AbsenceBlock) {
 	// At VSHN, currently only full-day absences are possible, so no need to check for starting and ending time.
@@ -68,6 +58,16 @@ func (s *DailySummary) CalculateOvertimeSummary() OvertimeSummary {
 	os.DailyMax = dailyMax
 	s.calculateWorkingTime(&os)
 	s.calculateExcusedTime(&os)
+	excused := os.ExcusedTime()
+	worked := os.WorkingTime()
+	if excused < 0 || worked < 0 || excused >= 24*time.Hour || worked >= 36*time.Hour { // attendances are incorrect
+		os.PublicServiceTime = 0
+		os.AuthoritiesTime = 0
+		os.SickLeaveTime = 0
+		os.OutOfOfficeTime = 0
+		os.RegularWorkingTime = 0
+	}
+
 	return os
 }
 
@@ -113,17 +113,17 @@ func (s *DailySummary) ValidateTimesheetEntries() error {
 	for _, shift := range s.Shifts {
 		shiftDuration := shift.Duration()
 		if shiftDuration == 0 {
-			return NewValidationError(s.Date, fmt.Errorf("shift start and end times cannot be the same for %s: %s", day, shift.Start.DateTime))
+			return NewValidationError(s.Date, fmt.Errorf("shift start and end times cannot be the same for %s: %s", day, shift.Start.DateTime.Format(odoo.TimeFormat)))
 		}
 		if !shift.Start.DateTime.IsZero() && shift.End.DateTime.IsZero() {
-			return NewValidationError(s.Date, fmt.Errorf("no %s detected for %s after %s", model.ActionSignOut, day, shift.Start.DateTime))
+			return NewValidationError(s.Date, fmt.Errorf("no %s detected for %s after %s", model.ActionSignOut, day, shift.Start.DateTime.Format(odoo.TimeFormat)))
 		}
 		if !shift.End.DateTime.IsZero() && shift.Start.DateTime.IsZero() {
-			return NewValidationError(s.Date, fmt.Errorf("no %s detected for %s after %s", model.ActionSignIn, day, shift.End.DateTime))
+			return NewValidationError(s.Date, fmt.Errorf("no %s detected for %s before %s", model.ActionSignIn, day, shift.End.DateTime.Format(odoo.TimeFormat)))
 		}
 		if shift.Start.Reason.String() != shift.End.Reason.String() {
-			return NewValidationError(s.Date, fmt.Errorf("the reasons for shift %s and %s have to be equal: start %s (%s), end %s (%s)",
-				model.ActionSignIn, model.ActionSignOut, shift.Start.DateTime, shift.Start.Reason, shift.End.DateTime, shift.End.Reason))
+			return NewValidationError(s.Date, fmt.Errorf("the reasons for shift %s and %s should be equal: start %s (%s), end %s (%s)",
+				model.ActionSignIn, model.ActionSignOut, shift.Start.DateTime.Format(odoo.TimeFormat), shift.Start.Reason, shift.End.DateTime.Format(odoo.TimeFormat), shift.End.Reason))
 		}
 		totalDuration += shiftDuration
 	}
@@ -152,6 +152,9 @@ func (s *DailySummary) calculateDailyMax() time.Duration {
 // calculateWorkingTime accumulates all working hours from that day.
 func (s *DailySummary) calculateWorkingTime(o *OvertimeSummary) {
 	for _, shift := range s.Shifts {
+		if isInvalidShift(shift) {
+			continue // invalid attendances for this shift, ignore
+		}
 		diff := shift.End.DateTime.Sub(shift.Start.DateTime.Time)
 		switch shift.Start.Reason.String() {
 		case "":
@@ -165,6 +168,9 @@ func (s *DailySummary) calculateWorkingTime(o *OvertimeSummary) {
 // calculateExcusedTime accumulates all hours that are excused in some way (sick leave etc) from that day.
 func (s *DailySummary) calculateExcusedTime(o *OvertimeSummary) {
 	for _, shift := range s.Shifts {
+		if isInvalidShift(shift) {
+			continue // invalid attendances for this shift, ignore
+		}
 		diff := shift.End.DateTime.Sub(shift.Start.DateTime.Time)
 		switch shift.Start.Reason.String() {
 		case ReasonSickLeave:
@@ -220,4 +226,8 @@ func findDailySummaryByDate(dailies []*DailySummary, date time.Time) (*DailySumm
 		}
 	}
 	return nil, false
+}
+
+func isInvalidShift(shift AttendanceShift) bool {
+	return shift.Start.DateTime.IsZero() || shift.End.DateTime.IsZero()
 }

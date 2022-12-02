@@ -51,11 +51,15 @@ func TestAttendanceList_Sort(t *testing.T) {
 				Items: []Attendance{
 					{DateTime: odoo.MustParseDateTime("2022-03-31 08:00:00"), Reason: &ActionReason{Name: ""}, Action: ActionSignIn},
 					{DateTime: odoo.MustParseDateTime("2022-03-31 10:00:00"), Reason: &ActionReason{Name: "AReason"}, Action: ActionSignIn},
+					{DateTime: odoo.MustParseDateTime("2022-03-31 16:00:00"), Reason: &ActionReason{Name: ""}, Action: ActionSignIn},
 					{DateTime: odoo.MustParseDateTime("2022-03-31 11:00:00"), Reason: &ActionReason{Name: "BReason"}, Action: ActionSignIn},
 					{DateTime: odoo.MustParseDateTime("2022-03-31 11:00:00"), Reason: &ActionReason{Name: "AReason"}, Action: ActionSignOut},
 					{DateTime: odoo.MustParseDateTime("2022-03-31 10:00:00"), Reason: &ActionReason{Name: ""}, Action: ActionSignOut},
 					{DateTime: odoo.MustParseDateTime("2022-03-31 12:00:00"), Reason: &ActionReason{Name: ""}, Action: ActionSignIn},
+					{DateTime: odoo.MustParseDateTime("2022-03-31 14:00:00"), Reason: &ActionReason{Name: ""}, Action: ActionSignIn},
 					{DateTime: odoo.MustParseDateTime("2022-03-31 12:00:00"), Reason: &ActionReason{Name: "BReason"}, Action: ActionSignOut},
+					{DateTime: odoo.MustParseDateTime("2022-04-01 00:00:00"), Reason: &ActionReason{Name: ""}, Action: ActionSignIn},
+					{DateTime: odoo.MustParseDateTime("2022-04-01 00:00:00"), Reason: &ActionReason{Name: ""}, Action: ActionSignOut},
 				},
 			},
 			expectedOrder: []Attendance{
@@ -66,6 +70,10 @@ func TestAttendanceList_Sort(t *testing.T) {
 				{DateTime: odoo.MustParseDateTime("2022-03-31 11:00:00"), Reason: &ActionReason{Name: "BReason"}, Action: ActionSignIn},
 				{DateTime: odoo.MustParseDateTime("2022-03-31 12:00:00"), Reason: &ActionReason{Name: "BReason"}, Action: ActionSignOut},
 				{DateTime: odoo.MustParseDateTime("2022-03-31 12:00:00"), Reason: &ActionReason{Name: ""}, Action: ActionSignIn},
+				{DateTime: odoo.MustParseDateTime("2022-03-31 14:00:00"), Reason: &ActionReason{Name: ""}, Action: ActionSignIn},
+				{DateTime: odoo.MustParseDateTime("2022-03-31 16:00:00"), Reason: &ActionReason{Name: ""}, Action: ActionSignIn},
+				{DateTime: odoo.MustParseDateTime("2022-04-01 00:00:00"), Reason: &ActionReason{Name: ""}, Action: ActionSignOut},
+				{DateTime: odoo.MustParseDateTime("2022-04-01 00:00:00"), Reason: &ActionReason{Name: ""}, Action: ActionSignIn},
 			},
 		},
 		"GivenNilList_ThenDoNothing": {

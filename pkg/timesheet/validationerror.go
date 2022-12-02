@@ -1,6 +1,7 @@
 package timesheet
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -34,20 +35,24 @@ func (e *ValidationError) Unwrap() error {
 
 // Error returns a comma-separated list of dates that have a validation error.
 func (l *ValidationErrorList) Error() string {
+	if l == nil || len(l.Errors) == 0 {
+		return ""
+	}
 	dateList := make([]string, len(l.Errors))
 	for i, err := range l.Errors {
 		dateList[i] = err.Date.Format(odoo.DateFormat)
 	}
 	joinedList := strings.Join(dateList, ", ")
-	return fmt.Sprintf("validation invalid for date(s): [%s]", joinedList)
+	return fmt.Sprintf("Report invalid for date(s): [%s]", joinedList)
 }
 
-func AppendValidationError(list *ValidationErrorList, err *ValidationError) {
+// AppendValidationError appends an err to the given list, if err is of type ValidationError.
+func AppendValidationError(list *ValidationErrorList, err error) {
 	if list == nil && err == nil {
 		return
 	}
-	if list == nil {
-		*list = ValidationErrorList{}
+	var validationError *ValidationError
+	if errors.As(err, &validationError) {
+		list.Errors = append(list.Errors, validationError)
 	}
-	list.Errors = append(list.Errors, err)
 }

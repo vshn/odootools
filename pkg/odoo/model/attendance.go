@@ -92,7 +92,7 @@ func (l AttendanceList) FilterAttendanceBetweenDates(from, to time.Time) Attenda
 }
 
 // AddCurrentTimeAsSignOut adds an Attendance with timesheet.ActionSignOut reason and with the current time.
-// An attendance is only added if the last Attendance in the list is timesheet.ActionSignIn.
+// An attendance is only added if the last Attendance in the list is ActionSignIn.
 func (l AttendanceList) AddCurrentTimeAsSignOut(tz *time.Location) AttendanceList {
 	if len(l.Items) == 0 {
 		return l
