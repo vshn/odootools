@@ -109,8 +109,7 @@ func (r *ReportBuilder) SkipClampingToNow(skip bool) *ReportBuilder {
 func (r *ReportBuilder) CalculateReport(from time.Time, to time.Time) (Report, error) {
 	r.from = from
 	r.to = to
-	filteredAttendances := r.attendances.FilterAttendanceBetweenDates(r.from, r.to)
-	shifts := r.reduceAttendancesToShifts(filteredAttendances)
+	filteredAttendances := r.attendances.FilterAttendanceBetweenDates(r.from, r.to.Add(-1*time.Second))
 	filteredLeaves := r.filterLeavesInTimeRange()
 	absences := r.reduceLeavesToBlocks(filteredLeaves)
 	dailySummaries, err := r.prepareDays()
@@ -122,7 +121,7 @@ func (r *ReportBuilder) CalculateReport(from time.Time, to time.Time) (Report, e
 		}, err
 	}
 
-	r.addAttendanceShiftsToDailies(shifts, dailySummaries)
+	r.addAttendancesToDailyShifts(filteredAttendances, dailySummaries)
 	r.addAbsencesToDailies(absences, dailySummaries)
 
 	summary := Summary{}
@@ -150,22 +149,48 @@ func (r *ReportBuilder) getTimeZone() *time.Location {
 	return r.from.Location()
 }
 
-func (r *ReportBuilder) reduceAttendancesToShifts(attendances model.AttendanceList) []AttendanceShift {
-	shifts := make([]AttendanceShift, 0)
+func (r *ReportBuilder) addAttendancesToDailyShifts(attendances model.AttendanceList, dailies []*DailySummary) {
 	tz := r.getTimeZone()
-	var tmpShift AttendanceShift
+	dailyMap := make(map[string]*DailySummary, len(dailies))
+	for _, dailySummary := range dailies {
+		dailyMap[dailySummary.Date.Format(odoo.DateFormat)] = dailySummary
+	}
+
 	for _, attendance := range attendances.Items {
-		if attendance.Action == model.ActionSignIn {
-			attendance.DateTime.Time = attendance.DateTime.In(tz)
-			tmpShift = AttendanceShift{Start: attendance}
+		date := attendance.DateTime.In(tz)
+		daily, exists := dailyMap[date.Format(odoo.DateFormat)]
+		if !exists {
+			continue // irrelevant attendance
 		}
-		if attendance.Action == model.ActionSignOut {
-			attendance.DateTime.Time = attendance.DateTime.In(tz)
-			tmpShift.End = attendance
-			shifts = append(shifts, tmpShift)
+		var shift AttendanceShift
+		shiftCount := len(daily.Shifts)
+		newShift := false
+		if shiftCount == 0 {
+			shift = AttendanceShift{}
+			newShift = true
+		} else {
+			shift = daily.Shifts[shiftCount-1]
+		}
+		//startDate := shift.Start.DateTime.Time
+		endDate := shift.End.DateTime.Time
+		if !endDate.IsZero() && (date.Equal(endDate) || date.After(endDate)) {
+			// new shift
+			shift = AttendanceShift{}
+			newShift = true
+		}
+		attendance.DateTime.Time = date // correct timezone
+		switch attendance.Action {
+		case model.ActionSignIn:
+			shift.Start = attendance
+		case model.ActionSignOut:
+			shift.End = attendance
+		}
+		if newShift {
+			daily.Shifts = append(daily.Shifts, shift)
+		} else {
+			daily.Shifts[shiftCount-1] = shift
 		}
 	}
-	return shifts
 }
 
 func (r *ReportBuilder) calculateAverageWorkload(dailies []*DailySummary) float64 {
@@ -225,16 +250,6 @@ func (r *ReportBuilder) getDateTomorrow() time.Time {
 	tz := r.getTimeZone()
 	now := r.clock().In(tz)
 	return time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, tz)
-}
-
-func (r *ReportBuilder) addAttendanceShiftsToDailies(shifts []AttendanceShift, dailySums []*DailySummary) {
-	for _, shift := range shifts {
-		existing, found := findDailySummaryByDate(dailySums, shift.Start.DateTime.Time)
-		if found {
-			existing.addAttendanceShift(shift)
-			continue
-		}
-	}
 }
 
 func (r *ReportBuilder) addAbsencesToDailies(absences []AbsenceBlock, summaries []*DailySummary) {
