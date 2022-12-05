@@ -29,10 +29,10 @@ func init() {
 	vancouverTZ = van
 }
 
-func hours(t *testing.T, date, hours string) time.Time {
+func hours(t *testing.T, date, hours string) odoo.Date {
 	tm, err := time.Parse(odoo.DateTimeFormat, fmt.Sprintf("%s %s:00", date, hours))
 	require.NoError(t, err)
-	return tm
+	return odoo.Date{Time: tm}
 }
 
 func hoursDuration(t *testing.T, hours float64) time.Duration {
@@ -41,90 +41,117 @@ func hoursDuration(t *testing.T, hours float64) time.Duration {
 	return dur
 }
 
-func TestReporter_AddAttendanceShiftsToDailies(t *testing.T) {
+func TestReporter_addAbsencesToDailies(t *testing.T) {
 	tests := map[string]struct {
-		givenDailySummaries    []*DailySummary
-		givenShifts            []AttendanceShift
-		expectedDailySummaries []*DailySummary
+		givenAttendances    []model.Attendance
+		givenDailySummaries []*DailySummary
+		givenTimeZone       *time.Location
+		expectedDailies     []*DailySummary
 	}{
-		"GivenShiftsWithDifferentDates_ThenSeparateDaily": {
+		"InZurich_WhenReducing_ThenApplyLocalZone": {
+			givenTimeZone: zurichTZ,
+			givenAttendances: []model.Attendance{
+				// these times are UTC
+				{DateTime: odoo.MustParseDateTime("2021-02-03 19:00:00"), Action: model.ActionSignIn, Reason: &model.ActionReason{}},
+				{DateTime: odoo.MustParseDateTime("2021-02-03 22:59:00"), Action: model.ActionSignOut, Reason: &model.ActionReason{}},
+			},
 			givenDailySummaries: []*DailySummary{
-				{Date: odoo.MustParseDate("2021-02-03").Time},
-				{Date: odoo.MustParseDate("2021-02-04").Time},
+				{Date: time.Date(2021, 02, 03, 0, 0, 0, 0, zurichTZ)},
 			},
-			givenShifts: []AttendanceShift{
-				{Start: odoo.MustParseDateTime("2021-02-03 09:00:00").Time, End: odoo.MustParseDateTime("2021-02-03 18:00:00").Time},
-				{Start: odoo.MustParseDateTime("2021-02-04 09:00:00").Time, End: odoo.MustParseDateTime("2021-02-04 12:00:00").Time},
-				{Start: odoo.MustParseDateTime("2021-02-04 13:00:00").Time, End: odoo.MustParseDateTime("2021-02-04 19:00:00").Time},
-			},
-			expectedDailySummaries: []*DailySummary{
+			expectedDailies: []*DailySummary{
 				{
-					Date: odoo.MustParseDate("2021-02-03").Time,
+					Date: time.Date(2021, 02, 03, 0, 0, 0, 0, zurichTZ),
 					Shifts: []AttendanceShift{
-						{Start: odoo.MustParseDateTime("2021-02-03 09:00:00").Time, End: odoo.MustParseDateTime("2021-02-03 18:00:00").Time},
-					},
-				},
-				{
-					Date: odoo.MustParseDate("2021-02-04").Time,
-					Shifts: []AttendanceShift{
-						{Start: odoo.MustParseDateTime("2021-02-04 09:00:00").Time, End: odoo.MustParseDateTime("2021-02-04 12:00:00").Time},
-						{Start: odoo.MustParseDateTime("2021-02-04 13:00:00").Time, End: odoo.MustParseDateTime("2021-02-04 19:00:00").Time},
+						newAttendanceShift(odoo.NewDate(2021, 02, 03, 20, 0, 0, zurichTZ), odoo.NewDate(2021, 02, 03, 23, 59, 0, zurichTZ), ""),
 					},
 				},
 			},
 		},
-	}
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			start := time.Date(2021, time.February, 1, 0, 0, 0, 0, zurichTZ)
-			end := start.AddDate(0, 1, 0)
-			r := ReportBuilder{
-				from: start,
-				to:   end,
-			}
-			r.addAttendanceShiftsToDailies(tt.givenShifts, tt.givenDailySummaries)
-
-			assert.Equal(t, tt.expectedDailySummaries, tt.givenDailySummaries)
-		})
-	}
-}
-
-func TestReporter_ReduceAttendancesToShifts(t *testing.T) {
-	tests := map[string]struct {
-		givenAttendances []model.Attendance
-		givenTimeZone    *time.Location
-		expectedShifts   []AttendanceShift
-	}{
-		"GivenAttendancesInZurich_WhenReducing_ThenApplyLocalZone": {
+		"InZurich_WhenSplitOverMidnight_ThenSplitInTwoDays": {
 			givenTimeZone: zurichTZ,
 			givenAttendances: []model.Attendance{
 				// these times are UTC
-				{DateTime: odoo.MustParseDateTime("2021-02-03 19:00:00"), Action: model.ActionSignIn},
-				{DateTime: odoo.MustParseDateTime("2021-02-03 22:59:00"), Action: model.ActionSignOut},
+				{DateTime: odoo.MustParseDateTime("2021-02-03 19:00:00"), Action: model.ActionSignIn, Reason: &model.ActionReason{}},
+				{DateTime: odoo.MustParseDateTime("2021-02-03 22:59:00"), Action: model.ActionSignOut, Reason: &model.ActionReason{}},
+				{DateTime: odoo.MustParseDateTime("2021-02-03 23:00:00"), Action: model.ActionSignIn, Reason: &model.ActionReason{}},
+				{DateTime: odoo.MustParseDateTime("2021-02-04 00:00:00"), Action: model.ActionSignOut, Reason: &model.ActionReason{}},
 			},
-			expectedShifts: []AttendanceShift{
-				{Start: odoo.MustParseDateTime("2021-02-03 19:00:00").In(zurichTZ),
-					End: odoo.MustParseDateTime("2021-02-03 22:59:00").In(zurichTZ),
+			givenDailySummaries: []*DailySummary{
+				{Date: time.Date(2021, 02, 03, 0, 0, 0, 0, zurichTZ)},
+				{Date: time.Date(2021, 02, 04, 0, 0, 0, 0, zurichTZ)},
+			},
+			expectedDailies: []*DailySummary{
+				{
+					Date: time.Date(2021, 02, 03, 0, 0, 0, 0, zurichTZ),
+					Shifts: []AttendanceShift{
+						newAttendanceShift(odoo.NewDate(2021, 02, 03, 20, 0, 0, zurichTZ), odoo.NewDate(2021, 02, 03, 23, 59, 0, zurichTZ), ""),
+					},
+				},
+				{
+					Date: time.Date(2021, 02, 04, 0, 0, 0, 0, zurichTZ),
+					Shifts: []AttendanceShift{
+						newAttendanceShift(odoo.NewDate(2021, 02, 04, 0, 0, 0, zurichTZ), odoo.NewDate(2021, 02, 04, 1, 0, 0, zurichTZ), ""),
+					},
 				},
 			},
 		},
-		"GivenAttendancesInZurich_WhenSplitOverMidnight_ThenSplitInTwoDays": {
+		"WhenSignOutMissing_ThenAddShiftWithZeroEndDate": {
 			givenTimeZone: zurichTZ,
 			givenAttendances: []model.Attendance{
-				// these times are UTC
-				{DateTime: odoo.MustParseDateTime("2021-02-03 19:00:00"), Action: model.ActionSignIn},
-				{DateTime: odoo.MustParseDateTime("2021-02-03 22:59:00"), Action: model.ActionSignOut},
-				{DateTime: odoo.MustParseDateTime("2021-02-03 23:00:00"), Action: model.ActionSignIn},
-				{DateTime: odoo.MustParseDateTime("2021-02-04 00:00:00"), Action: model.ActionSignOut},
+				{DateTime: odoo.MustParseDateTime("2021-02-03 19:00:00"), Action: model.ActionSignIn, Reason: &model.ActionReason{}},
+				{DateTime: odoo.MustParseDateTime("2021-02-03 23:00:00"), Action: model.ActionSignIn, Reason: &model.ActionReason{}},
+				{DateTime: odoo.MustParseDateTime("2021-02-04 00:00:00"), Action: model.ActionSignOut, Reason: &model.ActionReason{}},
 			},
-			expectedShifts: []AttendanceShift{
+			givenDailySummaries: []*DailySummary{
+				{Date: time.Date(2021, 02, 03, 0, 0, 0, 0, zurichTZ)},
+				{Date: time.Date(2021, 02, 04, 0, 0, 0, 0, zurichTZ)},
+			},
+			expectedDailies: []*DailySummary{
 				{
-					Start: odoo.MustParseDateTime("2021-02-03 19:00:00").In(zurichTZ),
-					End:   odoo.MustParseDateTime("2021-02-03 22:59:00").In(zurichTZ),
+					Date: time.Date(2021, 02, 03, 0, 0, 0, 0, zurichTZ),
+					Shifts: []AttendanceShift{
+						{
+							Start: model.Attendance{
+								DateTime: odoo.NewDate(2021, 02, 03, 20, 0, 0, zurichTZ),
+								Action:   model.ActionSignIn,
+								Reason:   &model.ActionReason{},
+							},
+							End: model.Attendance{},
+						},
+					},
 				},
 				{
-					Start: odoo.MustParseDateTime("2021-02-03 23:00:00").In(zurichTZ),
-					End:   odoo.MustParseDateTime("2021-02-04 00:00:00").In(zurichTZ),
+					Date: time.Date(2021, 02, 04, 0, 0, 0, 0, zurichTZ),
+					Shifts: []AttendanceShift{
+						newAttendanceShift(odoo.NewDate(2021, 02, 04, 0, 0, 0, zurichTZ), odoo.NewDate(2021, 02, 04, 1, 0, 0, zurichTZ), ""),
+					},
+				},
+			},
+		},
+		"WhenSignInMissing_ThenAddShiftWithZeroStartDate": {
+			givenTimeZone: zurichTZ,
+			givenAttendances: []model.Attendance{
+				{DateTime: odoo.MustParseDateTime("2021-02-04 12:00:00"), Action: model.ActionSignOut, Reason: &model.ActionReason{}},
+				{DateTime: odoo.MustParseDateTime("2021-02-04 13:00:00"), Action: model.ActionSignIn, Reason: &model.ActionReason{}},
+				{DateTime: odoo.MustParseDateTime("2021-02-04 15:00:00"), Action: model.ActionSignOut, Reason: &model.ActionReason{}},
+			},
+			givenDailySummaries: []*DailySummary{
+				{Date: time.Date(2021, 02, 04, 0, 0, 0, 0, zurichTZ)},
+			},
+			expectedDailies: []*DailySummary{
+				{
+					Date: time.Date(2021, 02, 04, 0, 0, 0, 0, zurichTZ),
+					Shifts: []AttendanceShift{
+						{
+							Start: model.Attendance{},
+							End: model.Attendance{
+								DateTime: odoo.NewDate(2021, 02, 04, 13, 0, 0, zurichTZ),
+								Action:   model.ActionSignOut,
+								Reason:   &model.ActionReason{},
+							},
+						},
+						newAttendanceShift(odoo.NewDate(2021, 02, 04, 14, 0, 0, zurichTZ), odoo.NewDate(2021, 02, 04, 16, 0, 0, zurichTZ), ""),
+					},
 				},
 			},
 		},
@@ -132,19 +159,21 @@ func TestReporter_ReduceAttendancesToShifts(t *testing.T) {
 			givenTimeZone: vancouverTZ,
 			givenAttendances: []model.Attendance{
 				// these times are UTC
-				{DateTime: odoo.MustParseDateTime("2021-02-03 15:00:00"), Action: model.ActionSignIn},
-				{DateTime: odoo.MustParseDateTime("2021-02-03 19:00:00"), Action: model.ActionSignOut},
-				{DateTime: odoo.MustParseDateTime("2021-02-03 20:00:00"), Action: model.ActionSignIn},
-				{DateTime: odoo.MustParseDateTime("2021-02-04 01:00:00"), Action: model.ActionSignOut},
+				{DateTime: odoo.MustParseDateTime("2021-02-03 15:00:00"), Action: model.ActionSignIn, Reason: &model.ActionReason{}},
+				{DateTime: odoo.MustParseDateTime("2021-02-03 19:00:00"), Action: model.ActionSignOut, Reason: &model.ActionReason{}},
+				{DateTime: odoo.MustParseDateTime("2021-02-03 20:00:00"), Action: model.ActionSignIn, Reason: &model.ActionReason{}},
+				{DateTime: odoo.MustParseDateTime("2021-02-04 01:00:00"), Action: model.ActionSignOut, Reason: &model.ActionReason{}},
 			},
-			expectedShifts: []AttendanceShift{
+			givenDailySummaries: []*DailySummary{
+				{Date: time.Date(2021, 02, 03, 0, 0, 0, 0, vancouverTZ)},
+			},
+			expectedDailies: []*DailySummary{
 				{
-					Start: odoo.MustParseDateTime("2021-02-03 15:00:00").In(vancouverTZ), // 2021-02-03 07:00:00 -0800 PST
-					End:   odoo.MustParseDateTime("2021-02-03 19:00:00").In(vancouverTZ), // 2021-02-03 11:00:00 -0800 PST
-				},
-				{
-					Start: odoo.MustParseDateTime("2021-02-03 20:00:00").In(vancouverTZ), // 2021-02-03 12:00:00 -0800 PST
-					End:   odoo.MustParseDateTime("2021-02-04 01:00:00").In(vancouverTZ), // 2021-02-03 17:00:00 -0800 PST
+					Date: time.Date(2021, 02, 03, 0, 0, 0, 0, vancouverTZ),
+					Shifts: []AttendanceShift{
+						newAttendanceShift(odoo.NewDate(2021, 02, 03, 7, 0, 0, vancouverTZ), odoo.NewDate(2021, 02, 03, 11, 0, 0, vancouverTZ), ""),
+						newAttendanceShift(odoo.NewDate(2021, 02, 03, 12, 0, 0, vancouverTZ), odoo.NewDate(2021, 02, 03, 17, 0, 0, vancouverTZ), ""),
+					},
 				},
 			},
 		},
@@ -158,12 +187,14 @@ func TestReporter_ReduceAttendancesToShifts(t *testing.T) {
 				to:   end,
 			}
 			list := model.AttendanceList{Items: tt.givenAttendances}
-			result := r.reduceAttendancesToShifts(list)
-			for _, shift := range result {
-				t.Logf("shift start: %s, end: %s", shift.Start, shift.End)
+			r.addAttendancesToDailyShifts(list, tt.givenDailySummaries)
+			for _, daily := range tt.givenDailySummaries {
+				for _, shift := range daily.Shifts {
+					t.Logf("daily start: %s, end: %s", shift.Start.DateTime, shift.End.DateTime)
+				}
 			}
 
-			assert.Equal(t, tt.expectedShifts, result)
+			assert.Equal(t, tt.expectedDailies, tt.givenDailySummaries)
 		})
 	}
 }

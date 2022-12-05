@@ -73,7 +73,7 @@ func (r *YearlyReportBuilder) CalculateYearlyReport() (YearlyReport, error) {
 		if firstDayOfMonth.Before(contractStartDate) {
 			start = contractStartDate
 		}
-		monthlyReportBuilder := NewReporter(r.attendances, r.leaves, r.employee, r.contracts)
+		monthlyReportBuilder := NewReporter(r.attendances.AddCurrentTimeAsSignOut(tz), r.leaves, r.employee, r.contracts)
 		monthlyReportBuilder.clock = r.clock
 		monthlyReport, err := monthlyReportBuilder.CalculateReport(start, lastDayOfMonth)
 		if err != nil {

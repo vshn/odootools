@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/vshn/odootools/pkg/odoo"
+	"github.com/vshn/odootools/pkg/odoo/model"
 )
 
 func TestDailySummary_CalculateOvertime(t *testing.T) {
@@ -19,95 +20,103 @@ func TestDailySummary_CalculateOvertime(t *testing.T) {
 	}{
 		"GivenSingleShift_WhenMoreThanDailyMax_ThenReturnOvertime": {
 			givenShifts: []AttendanceShift{
-				{Start: hours(t, weekday, "09:00"), End: hours(t, weekday, "18:00")},
+				newAttendanceShift(hours(t, weekday, "09:00"), hours(t, weekday, "18:00"), ""),
 			},
-			expectedOvertime: hoursDuration(t, 1),
+			expectedOvertime: 1 * time.Hour,
 		},
 		"GivenMultipleShifts_WhenMoreThanDailyMax_ThenReturnOvertime": {
 			givenShifts: []AttendanceShift{
-				{Start: hours(t, weekday, "09:00"), End: hours(t, weekday, "12:00")},
-				{Start: hours(t, weekday, "13:00"), End: hours(t, weekday, "19:00")},
+				newAttendanceShift(hours(t, weekday, "09:00"), hours(t, weekday, "12:00"), ""),
+				newAttendanceShift(hours(t, weekday, "13:00"), hours(t, weekday, "19:00"), ""),
 			},
-			expectedOvertime: hoursDuration(t, 1),
+			expectedOvertime: 1 * time.Hour,
 		},
 		"GivenMultipleShifts_WhenLessThanDailyMax_ThenReturnUndertime": {
 			givenShifts: []AttendanceShift{
-				{Start: hours(t, weekday, "09:00"), End: hours(t, weekday, "12:00")},
-				{Start: hours(t, weekday, "13:00"), End: hours(t, weekday, "17:00")},
+				newAttendanceShift(hours(t, weekday, "09:00"), hours(t, weekday, "12:00"), ""),
+				newAttendanceShift(hours(t, weekday, "13:00"), hours(t, weekday, "17:00"), ""),
 			},
-			expectedOvertime: hoursDuration(t, -1),
+			expectedOvertime: -1 * time.Hour,
 		},
 		"GivenSickLeaveShifts_WhenSickLeaveIsFilling_ThenReturnZero": {
 			givenShifts: []AttendanceShift{
-				{Start: hours(t, weekday, "09:00"), End: hours(t, weekday, "12:00")},
-				{Start: hours(t, weekday, "13:00"), End: hours(t, weekday, "18:00"), Reason: ReasonSickLeave},
+				newAttendanceShift(hours(t, weekday, "09:00"), hours(t, weekday, "12:00"), ""),
+				newAttendanceShift(hours(t, weekday, "13:00"), hours(t, weekday, "18:00"), ReasonSickLeave),
 			},
-			expectedOvertime:    hoursDuration(t, 0),
-			expectedExcusedTime: hoursDuration(t, 5),
+			expectedOvertime:    0,
+			expectedExcusedTime: 5 * time.Hour,
 		},
 		"GivenSickLeaveShifts_WhenSickLeaveIsLessThanDailyMax_ThenReturnUndertime": {
 			givenShifts: []AttendanceShift{
-				{Start: hours(t, weekday, "09:00"), End: hours(t, weekday, "12:00")},
-				{Start: hours(t, weekday, "13:00"), End: hours(t, weekday, "17:00"), Reason: ReasonSickLeave},
+				newAttendanceShift(hours(t, weekday, "09:00"), hours(t, weekday, "12:00"), ""),
+				newAttendanceShift(hours(t, weekday, "13:00"), hours(t, weekday, "17:00"), ReasonSickLeave),
 			},
-			expectedOvertime:    hoursDuration(t, -1),
-			expectedExcusedTime: hoursDuration(t, 4),
+			expectedOvertime:    -1 * time.Hour,
+			expectedExcusedTime: 4 * time.Hour,
 		},
 		"GivenSickLeaveShifts_WhenCombinedHoursExceedDailyMax_ThenCapOvertime": {
 			givenShifts: []AttendanceShift{
-				{Start: hours(t, weekday, "09:00"), End: hours(t, weekday, "12:00")},
-				{Start: hours(t, weekday, "13:00"), End: hours(t, weekday, "18:30"), Reason: ReasonSickLeave},
+				newAttendanceShift(hours(t, weekday, "09:00"), hours(t, weekday, "12:00"), ""),
+				newAttendanceShift(hours(t, weekday, "13:00"), hours(t, weekday, "19:00"), ReasonSickLeave),
 			},
-			expectedOvertime:    hoursDuration(t, 0),
-			expectedExcusedTime: hoursDuration(t, 5.5),
+			expectedOvertime:    0,
+			expectedExcusedTime: 6 * time.Hour,
 		},
 		"GivenSickLeaveShifts_WhenExcusedHoursExceedDailyMax_ThenCapExcusedTime": {
 			givenShifts: []AttendanceShift{
-				{Start: hours(t, weekday, "09:00"), End: hours(t, weekday, "19:00"), Reason: ReasonSickLeave},
+				newAttendanceShift(hours(t, weekday, "09:00"), hours(t, weekday, "19:00"), ReasonSickLeave),
 			},
-			expectedOvertime:    hoursDuration(t, 0),
-			expectedExcusedTime: hoursDuration(t, 8),
+			expectedOvertime:    0,
+			expectedExcusedTime: 8 * time.Hour,
 		},
 		"GivenSickLeaveShifts_WhenWorkingHoursIsMoreThanDailyMax_ThenIgnoreSickLeaveCompletely": {
 			givenShifts: []AttendanceShift{
-				{Start: hours(t, weekday, "09:00"), End: hours(t, weekday, "18:00")},
-				{Start: hours(t, weekday, "19:00"), End: hours(t, weekday, "20:00"), Reason: ReasonSickLeave},
+				newAttendanceShift(hours(t, weekday, "09:00"), hours(t, weekday, "18:00"), ""),
+				newAttendanceShift(hours(t, weekday, "19:00"), hours(t, weekday, "20:00"), ReasonSickLeave),
 			},
-			expectedOvertime:    hoursDuration(t, 1),
-			expectedExcusedTime: hoursDuration(t, 1),
+			expectedOvertime:    1 * time.Hour,
+			expectedExcusedTime: 1 * time.Hour,
 		},
 		"GivenSickLeaveAndOutsideOfficeHoursShifts_WhenWorkingHoursIsMoreThanDailyMax_ThenIgnoreSickLeaveCompletely": {
 			givenShifts: []AttendanceShift{
-				{Start: hours(t, weekday, "09:00"), End: hours(t, weekday, "18:00")},                                   // 1h overtime
-				{Start: hours(t, weekday, "19:00"), End: hours(t, weekday, "20:00"), Reason: ReasonSickLeave},          // no overtime
-				{Start: hours(t, weekday, "20:00"), End: hours(t, weekday, "22:00"), Reason: ReasonOutsideOfficeHours}, // 3h overtime
+				newAttendanceShift(hours(t, weekday, "09:00"), hours(t, weekday, "18:00"), ""),                       // 1h overtime
+				newAttendanceShift(hours(t, weekday, "19:00"), hours(t, weekday, "20:00"), ReasonSickLeave),          // no overtime
+				newAttendanceShift(hours(t, weekday, "20:00"), hours(t, weekday, "22:00"), ReasonOutsideOfficeHours), // 3h overtime
 			},
-			expectedOvertime:    hoursDuration(t, 4),
-			expectedExcusedTime: hoursDuration(t, 1),
+			expectedOvertime:    4 * time.Hour,
+			expectedExcusedTime: 1 * time.Hour,
 		},
 		"GivenNoShifts_WhenNoLeavesEither_ThenReturnOneDayUndertime": {
 			givenShifts:      []AttendanceShift{},
-			expectedOvertime: hoursDuration(t, -8),
+			expectedOvertime: -8 * time.Hour,
 		},
 		"GivenDateInWeekend_WhenNoWorkingHours_ThenReturnNoOvertime": {
 			givenShifts:      []AttendanceShift{},
 			givenDate:        odoo.MustParseDate(weekendDay).Time,
-			expectedOvertime: hoursDuration(t, 0),
+			expectedOvertime: 0,
 		},
 		"GivenDateInWeekend_WhenWorkingHoursLogged_ThenReturnOvertime": {
 			givenShifts: []AttendanceShift{
-				{Start: hours(t, weekday, "09:00"), End: hours(t, weekday, "10:00")}, // 1h overtime
+				newAttendanceShift(hours(t, weekday, "09:00"), hours(t, weekday, "10:00"), ""), // 1h overtime
 			},
 			givenDate:        odoo.MustParseDate(weekendDay).Time,
-			expectedOvertime: hoursDuration(t, 1),
+			expectedOvertime: 1 * time.Hour,
 		},
 		"GivenDateInWeekend_WhenExcusedHoursLogged_ThenIgnoreExcusedHours": {
 			givenShifts: []AttendanceShift{
-				{Start: hours(t, weekendDay, "09:00"), End: hours(t, weekendDay, "10:00")},                              // 1h overtime
-				{Start: hours(t, weekendDay, "09:00"), End: hours(t, weekendDay, "10:00"), Reason: ReasonPublicService}, // no overtime
+				newAttendanceShift(hours(t, weekendDay, "09:00"), hours(t, weekendDay, "10:00"), ""),                  // 1h overtime
+				newAttendanceShift(hours(t, weekendDay, "09:00"), hours(t, weekendDay, "10:00"), ReasonPublicService), // no overtime
 			},
 			givenDate:        odoo.MustParseDate(weekendDay).Time,
-			expectedOvertime: hoursDuration(t, 1),
+			expectedOvertime: 1 * time.Hour,
+		},
+		"GivenInvalidShift_ThenIgnoreShift": {
+			givenShifts: []AttendanceShift{
+				newAttendanceShift(hours(t, weekday, "09:00"), hours(t, weekday, "16:00"), ""),
+				newAttendanceShift(hours(t, weekday, "16:00"), odoo.Date{}, ReasonSickLeave),
+			},
+			expectedOvertime:    -1 * time.Hour,
+			expectedExcusedTime: 0,
 		},
 	}
 	for name, tt := range tests {
@@ -276,5 +285,88 @@ func TestDailySummary_IsHoliday(t *testing.T) {
 			result := tt.givenDay.IsHoliday()
 			assert.Equal(t, tt.expectedHoliday, result)
 		})
+	}
+}
+
+func TestDailySummary_ValidateTimesheetEntries(t *testing.T) {
+	tests := map[string]struct {
+		givenShifts   []AttendanceShift
+		expectedError string
+	}{
+		"EmptyList": {givenShifts: []AttendanceShift{}, expectedError: ""},
+		"NilList":   {givenShifts: nil, expectedError: ""},
+		"Single_SignIn_Error": {
+			givenShifts: []AttendanceShift{
+				{Start: model.Attendance{DateTime: odoo.NewDate(2021, 01, 02, 8, 0, 0, time.UTC), Action: model.ActionSignIn}},
+			},
+			expectedError: "no sign_out detected for 2021-01-02 after 08:00:00",
+		},
+		"Single_SignOut_Error": {
+			givenShifts: []AttendanceShift{
+				{End: model.Attendance{DateTime: odoo.NewDate(2021, 01, 02, 8, 0, 0, time.UTC), Action: model.ActionSignOut}},
+			},
+			expectedError: "no sign_in detected for 2021-01-02 before 08:00:00",
+		},
+		"SameStartAndEnd_Error": {
+			givenShifts: []AttendanceShift{
+				{
+					Start: model.Attendance{DateTime: odoo.NewDate(2021, 01, 02, 8, 0, 0, time.UTC), Action: model.ActionSignIn},
+					End:   model.Attendance{DateTime: odoo.NewDate(2021, 01, 02, 8, 0, 0, time.UTC), Action: model.ActionSignOut},
+				},
+			},
+			expectedError: "shift start and end times cannot be the same for 2021-01-02: 08:00:00",
+		},
+		"Multiple_SignOutMissing_Error": {
+			givenShifts: []AttendanceShift{
+				{
+					Start: model.Attendance{DateTime: odoo.NewDate(2021, 01, 02, 8, 0, 0, time.UTC), Action: model.ActionSignIn},
+					End:   model.Attendance{DateTime: odoo.NewDate(2021, 01, 02, 10, 0, 0, time.UTC), Action: model.ActionSignOut},
+				},
+				{
+					Start: model.Attendance{DateTime: odoo.NewDate(2021, 01, 02, 11, 0, 0, time.UTC), Action: model.ActionSignIn},
+				},
+			},
+			expectedError: "no sign_out detected for 2021-01-02 after 11:00:00",
+		},
+		"Multiple_TotalDurationExceeds24h": {
+			givenShifts: []AttendanceShift{
+				{
+					Start: model.Attendance{DateTime: odoo.NewDate(2021, 01, 02, 0, 0, 0, zurichTZ), Action: model.ActionSignIn},
+					End:   model.Attendance{DateTime: odoo.NewDate(2021, 01, 02, 12, 0, 0, zurichTZ), Action: model.ActionSignOut},
+				},
+				{
+					Start: model.Attendance{DateTime: odoo.NewDate(2021, 01, 02, 12, 0, 0, zurichTZ), Action: model.ActionSignIn},
+					End:   model.Attendance{DateTime: odoo.NewDate(2021, 01, 03, 0, 0, 1, zurichTZ), Action: model.ActionSignOut},
+				},
+			},
+			expectedError: "duration of all shifts for 2021-01-02 cannot exceed 24h: 24h0m1s",
+		},
+		"DifferentReasonsInShift": {
+			givenShifts: []AttendanceShift{
+				{
+					Start: model.Attendance{DateTime: odoo.NewDate(2021, 01, 02, 8, 0, 0, time.UTC), Action: model.ActionSignIn},
+					End:   model.Attendance{DateTime: odoo.NewDate(2021, 01, 02, 10, 0, 0, time.UTC), Action: model.ActionSignOut, Reason: &model.ActionReason{Name: ReasonSickLeave}},
+				},
+			},
+			expectedError: "the reasons for shift sign_in and sign_out should be equal: start 08:00:00 (), end 10:00:00 (Sick / Medical Consultation)",
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			s := &DailySummary{Shifts: tc.givenShifts, Date: time.Date(2021, 01, 02, 0, 0, 0, 0, time.UTC)}
+			err := s.ValidateTimesheetEntries()
+			if tc.expectedError != "" {
+				assert.EqualError(t, err, tc.expectedError)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func newAttendanceShift(start, end odoo.Date, reason string) AttendanceShift {
+	return AttendanceShift{
+		Start: model.Attendance{DateTime: start, Action: model.ActionSignIn, Reason: &model.ActionReason{Name: reason}},
+		End:   model.Attendance{DateTime: end, Action: model.ActionSignOut, Reason: &model.ActionReason{Name: reason}},
 	}
 }

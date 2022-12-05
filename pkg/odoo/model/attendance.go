@@ -2,6 +2,7 @@ package model
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"time"
 
@@ -27,6 +28,11 @@ type Attendance struct {
 
 type AttendanceList odoo.List[Attendance]
 
+// String implements fmt.Stringer.
+func (a Attendance) String() string {
+	return fmt.Sprintf("Attendance ID:%d, DateTime:%q, Action:%s, Reason:%q", a.ID, a.DateTime, a.Action, a.Reason)
+}
+
 // FetchAttendancesBetweenDates retrieves all attendances associated with the given employee between 2 dates (inclusive each).
 func (o Odoo) FetchAttendancesBetweenDates(ctx context.Context, employeeID int, begin, end time.Time) (AttendanceList, error) {
 	return o.fetchAttendances(ctx, []odoo.Filter{
@@ -45,15 +51,27 @@ func (o Odoo) fetchAttendances(ctx context.Context, domainFilters []odoo.Filter)
 		Limit:  0,
 		Offset: 0,
 	}, &result)
-	result.SortByDate()
+	result.Sort()
 	return result, err
 }
 
-// SortByDate sorts the attendances by date ascending (oldest first).
-func (l AttendanceList) SortByDate() {
-	items := l.Items
+// Sort sorts the attendances by date ascending (oldest first).
+// Dates are compared by Unix time (ignoring nanoseconds).
+// If two attendances have the same date then they're sorted by Attendance.Action.
+func (l AttendanceList) Sort() {
 	sort.Slice(l.Items, func(i, j int) bool {
-		return items[i].DateTime.Unix() < items[j].DateTime.Unix()
+		a := l.Items[i]
+		b := l.Items[j]
+		if a.DateTime.Unix() != b.DateTime.Unix() {
+			// normal case with different dates
+			return a.DateTime.Unix() < b.DateTime.Unix()
+		}
+		if a.Action == b.Action {
+			// should normally not occur, it would be a duplicate signing in/out at the same time.
+			return a.Reason.String() < b.Reason.String()
+		}
+		// if at the same time, we sign_out first, then sign_in.
+		return a.Action == ActionSignOut && b.Action == ActionSignIn
 	})
 }
 
@@ -74,7 +92,7 @@ func (l AttendanceList) FilterAttendanceBetweenDates(from, to time.Time) Attenda
 }
 
 // AddCurrentTimeAsSignOut adds an Attendance with timesheet.ActionSignOut reason and with the current time.
-// An attendance is only added if the last Attendance in the list is timesheet.ActionSignIn.
+// An attendance is only added if the last Attendance in the list is ActionSignIn.
 func (l AttendanceList) AddCurrentTimeAsSignOut(tz *time.Location) AttendanceList {
 	if len(l.Items) == 0 {
 		return l

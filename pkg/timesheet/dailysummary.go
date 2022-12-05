@@ -1,7 +1,11 @@
 package timesheet
 
 import (
+	"fmt"
 	"time"
+
+	"github.com/vshn/odootools/pkg/odoo"
+	"github.com/vshn/odootools/pkg/odoo/model"
 )
 
 type DailySummary struct {
@@ -33,16 +37,6 @@ func NewDailySummary(fteRatio float64, date time.Time) *DailySummary {
 	}
 }
 
-// addAttendanceShift adds the given shift to the existing shifts.
-// If the shift is not starting in the same day as DailySummary.Date, it will be silently ignored.
-func (s *DailySummary) addAttendanceShift(shift AttendanceShift) {
-	if shift.Start.Day() != s.Date.Day() {
-		// Shift is not on the same day
-		return
-	}
-	s.Shifts = append(s.Shifts, shift)
-}
-
 // addAbsenceBlock adds the given block to the existing absences.
 func (s *DailySummary) addAbsenceBlock(block AbsenceBlock) {
 	// At VSHN, currently only full-day absences are possible, so no need to check for starting and ending time.
@@ -64,6 +58,16 @@ func (s *DailySummary) CalculateOvertimeSummary() OvertimeSummary {
 	os.DailyMax = dailyMax
 	s.calculateWorkingTime(&os)
 	s.calculateExcusedTime(&os)
+	excused := os.ExcusedTime()
+	worked := os.WorkingTime()
+	if excused < 0 || worked < 0 || excused >= 24*time.Hour || worked >= 36*time.Hour { // attendances are incorrect
+		os.PublicServiceTime = 0
+		os.AuthoritiesTime = 0
+		os.SickLeaveTime = 0
+		os.OutOfOfficeTime = 0
+		os.RegularWorkingTime = 0
+	}
+
 	return os
 }
 
@@ -96,6 +100,40 @@ func (s OvertimeSummary) ExcusedTime() time.Duration {
 	return sum
 }
 
+// ValidateTimesheetEntries checks if the DailySummary has invalid or incomplete shifts.
+// A shift is invalid in the following conditions:
+//   - There is no sign_in action before any sign_out
+//   - There is no sign_out action after any sign_in
+//   - Start and end of a shift are the same time (duration = 0s)
+//   - Reasons of start and end of a shift are different
+//   - Duration of all shifts exceeds 24h (it should be split over multiple days)
+func (s *DailySummary) ValidateTimesheetEntries() error {
+	day := s.Date.Format(odoo.DateFormat)
+	totalDuration := time.Duration(0)
+	for _, shift := range s.Shifts {
+		shiftDuration := shift.Duration()
+		if shiftDuration == 0 {
+			return NewValidationError(s.Date, fmt.Errorf("shift start and end times cannot be the same for %s: %s", day, shift.Start.DateTime.Format(odoo.TimeFormat)))
+		}
+		if !shift.Start.DateTime.IsZero() && shift.End.DateTime.IsZero() {
+			return NewValidationError(s.Date, fmt.Errorf("no %s detected for %s after %s", model.ActionSignOut, day, shift.Start.DateTime.Format(odoo.TimeFormat)))
+		}
+		if !shift.End.DateTime.IsZero() && shift.Start.DateTime.IsZero() {
+			return NewValidationError(s.Date, fmt.Errorf("no %s detected for %s before %s", model.ActionSignIn, day, shift.End.DateTime.Format(odoo.TimeFormat)))
+		}
+		if shift.Start.Reason.String() != shift.End.Reason.String() {
+			return NewValidationError(s.Date, fmt.Errorf("the reasons for shift %s and %s should be equal: start %s (%s), end %s (%s)",
+				model.ActionSignIn, model.ActionSignOut, shift.Start.DateTime.Format(odoo.TimeFormat), shift.Start.Reason, shift.End.DateTime.Format(odoo.TimeFormat), shift.End.Reason))
+		}
+		totalDuration += shiftDuration
+	}
+	if totalDuration > 24*time.Hour {
+		// this shouldn't be possible in theory, but maybe someone forgot to sign out.
+		return NewValidationError(s.Date, fmt.Errorf("duration of all shifts for %s cannot exceed 24h: %s", day, totalDuration))
+	}
+	return nil
+}
+
 // calculateDailyMax returns the theoretical amount of hours that an employee should work on this day.
 //   - It returns 0 for weekend days.
 //   - It returns 8.5 hours multiplied by FTE ratio for days in 2020 and earlier.
@@ -114,8 +152,11 @@ func (s *DailySummary) calculateDailyMax() time.Duration {
 // calculateWorkingTime accumulates all working hours from that day.
 func (s *DailySummary) calculateWorkingTime(o *OvertimeSummary) {
 	for _, shift := range s.Shifts {
-		diff := shift.End.Sub(shift.Start)
-		switch shift.Reason {
+		if isInvalidShift(shift) {
+			continue // invalid attendances for this shift, ignore
+		}
+		diff := shift.End.DateTime.Sub(shift.Start.DateTime.Time)
+		switch shift.Start.Reason.String() {
 		case "":
 			o.RegularWorkingTime += diff
 		case ReasonOutsideOfficeHours:
@@ -127,8 +168,11 @@ func (s *DailySummary) calculateWorkingTime(o *OvertimeSummary) {
 // calculateExcusedTime accumulates all hours that are excused in some way (sick leave etc) from that day.
 func (s *DailySummary) calculateExcusedTime(o *OvertimeSummary) {
 	for _, shift := range s.Shifts {
-		diff := shift.End.Sub(shift.Start)
-		switch shift.Reason {
+		if isInvalidShift(shift) {
+			continue // invalid attendances for this shift, ignore
+		}
+		diff := shift.End.DateTime.Sub(shift.Start.DateTime.Time)
+		switch shift.Start.Reason.String() {
 		case ReasonSickLeave:
 			o.SickLeaveTime += diff
 		case ReasonAuthorities:
@@ -182,4 +226,8 @@ func findDailySummaryByDate(dailies []*DailySummary, date time.Time) (*DailySumm
 		}
 	}
 	return nil, false
+}
+
+func isInvalidShift(shift AttendanceShift) bool {
+	return shift.Start.DateTime.IsZero() || shift.End.DateTime.IsZero()
 }

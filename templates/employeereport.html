@@ -86,7 +86,10 @@
     <tbody>
     {{ range .Reports }}
     <tr>
-        <td><a href="{{ .ReportDirectLink }}">{{ .Name }}</a><br>Workload: {{ .Workload }}%<br>Location: {{ .Timezone }}</td>
+        <td>
+            <a href="{{ .ReportDirectLink }}">{{ .Name }}</a><br>Workload: {{ .Workload }}%<br>Location: {{ .Timezone }}
+            {{- with .ValidationError }}<br>⚠️ {{ . }}{{ end -}}
+        </td>
         <td>{{ .Leaves }}d</td>
         <td>{{ .ExcusedHours }}</td>
         <td>{{ .WorkedHours }}</td>

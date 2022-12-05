@@ -48,6 +48,10 @@ func (v *reportView) getValuesForReport(report timesheet.Report, previousPayslip
 	proposedBalanceCellText, proposedBalance := v.getProposedBalance(previousBalance, report.Summary.TotalOvertime)
 	nextBalanceCellText, nextBalance := v.getNextBalance(proposedBalance, nextPayslip)
 	overtimeBalanceEditPreview := v.getOvertimeBalanceEditPreview(nextPayslip, nextBalance)
+	validationErrorList := &timesheet.ValidationErrorList{}
+	for _, summary := range report.DailySummaries {
+		timesheet.AppendValidationError(validationErrorList, summary.ValidateTimesheetEntries())
+	}
 	return controller.Values{
 		"Name":                            report.Employee.Name,
 		"EmployeeID":                      report.Employee.ID,
@@ -65,6 +69,7 @@ func (v *reportView) getValuesForReport(report timesheet.Report, previousPayslip
 		"ProposedBalance":                 proposedBalanceCellText,
 		"OvertimeBalanceEditEnabled":      nextPayslip != nil,
 		"OvertimeBalanceEditPreviewValue": overtimeBalanceEditPreview,
+		"ValidationError":                 validationErrorList.Error(),
 	}
 }
 
