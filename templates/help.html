@@ -16,7 +16,7 @@
         Days without any attendance or leaves simply count towards undertime.
     </p>
     <p>
-        <i>Note</i>: Attendances with "Action" being "Outside office hours" are multiplied with <i>1.5</i>.
+        ℹ️ Attendances with "Action" being "Outside office hours" are multiplied with <i>1.5</i>.
     </p>
     <p>
         <u>Excused time</u> is the sum of the time when you are considered absent with approval.
@@ -28,7 +28,7 @@
         <li>Requested Public Service</li>
     </ul>
     <p>
-        <i>Note</i>: The excused time is capped at the daily maximum since this time is a "Goodie" from VSHN that you can use to avoid making undertime.
+        ℹ️ The excused time is capped at the daily maximum since this time is a "Goodie" from VSHN that you can use to avoid making undertime.
         For example, if your daily maximum is 8h (working schedule 100%), you have worked 8h, but also you log 1h of sick leave (total logged time 9h), then the sick leave is ignored and your overtime is 0 minutes.
         However, if you have worked 7.5h and recorded 1h sick leave (total logged time 8.5h), then your overtime is also 0 minutes as the sick leave is effectively worth 30m in this case.
         Conversely, if you are sick the whole day, be sure to log at least 8h (or your equivalent of your schedule) of sick leave for the day.
@@ -38,11 +38,14 @@
         For example, for a 100% contract this is equal to 8h, for an 80% contract it's 6h24m, for a 60% contract it's 4h48m etc.
     </p>
     <p>
-        <i>Note</i>: Before the introduction of the 40h-week in January 2021, the base daily max was 8h30m.
+        💡 See how to record attendances in the <a href="https://handbook.vshn.ch/timetracking.html" target="_blank">Handbook</a>!
+    </p>
+    <p>
+        ℹ️ Before the introduction of the 40h-week in January 2021, the base daily max was 8h30m.
         The calculator should reflect this correctly.
     </p>
     <p>
-        <i>Note</i>: All leaves (except "Unpaid") and days on weekends reduce the daily maximum by the contract-adjusted time.
+        ℹ️ All leaves (except "Unpaid") and days on weekends reduce the daily maximum by the contract-adjusted time.
         For example, a public holiday for an 80% working schedule equals to 6h24m.
     </p>
 </div>
@@ -53,6 +56,68 @@
         The "Total Overtime" in the monthly or yearly reports is only indicating a difference towards the theoretical target work time after deducting all applicable absences.
         It is <strong>not</strong> indicating your current balance, but rather just showing whether you've worked more or less towards the contracted working schedule.
     </p>
+</div>
+
+<div>
+    <h3>Timesheet Validation</h3>
+    <p>
+        Odootools detects wrongly recorded attendances.
+        Invalid attendances may cause the overtime calculation to be wrong.
+    </p>
+    <p>
+        Rules are fairly simple: Each day (timezone adjusted), where an attendance is recorded, has attendance "shifts".
+        Each shift has a timestamp for a start <strong>and</strong> the end.
+        Each shift has an attendance "reason": Empty reason is a normal working shift, but there is also "Sick Leave"
+        and others.
+    </p>
+    <p>
+        Examples with <strong>valid</strong> attendance:
+    </p>
+    <ul>
+        <li>
+            <code>
+                Monday,&nbsp;08.00 Sign In,&nbsp;&nbsp;empty reason<br>
+                Monday,&nbsp;12.00 Sign Out,&nbsp;empty reason<br>
+            </code>
+            This is a shift that starts at 8, ends at 12.
+            Its duration is 4h.
+        </li>
+        <li>
+            <code>
+                Monday,&nbsp;13.00 Sign In,&nbsp;&nbsp;Sick Leave<br>
+                Monday,&nbsp;17.00 Sign Out,&nbsp;Sick Leave<br>
+            </code>
+            This is a shift that starts at 1 in the afternoon, ends at 5.
+            Its duration is also 4h, both attendances have the same "reason" logged.
+        </li>
+    </ul>
+
+    <p>
+        Examples with <strong>invalid</strong> attendances:
+    </p>
+    <ul>
+        <li>
+
+            <code>
+                Monday,&nbsp;&nbsp;08.00 Sign In,&nbsp;&nbsp;Sick Leave<br>
+                Tuesday,&nbsp;17.00 Sign Out,&nbsp;Sick Leave<br>
+            </code>
+
+            The shift on Monday is invalid because it has no end, and the shift on Tuesday has no start.<br>
+            Clearly the intention is to log 2 days of Sick Leave, but to do that, you also need to add a "Sign Out" on Monday evening and a "Sign In" on Tuesday morning.
+        </li>
+        <li>
+
+            <code>
+                Monday,&nbsp;08.00 Sign In,&nbsp;&nbsp;empty reason<br>
+                Monday,&nbsp;14.00 Sign Out,&nbsp;Sick Leave<br>
+            </code>
+            The shift starting at 8 is invalid because it has no end with the same empty reason.
+            The intention is to log out and fill the rest of the day with Sick Leave in case an employee doesn't feel well.<br>
+            To fix this case, a "Sign Out" with empty reason must be added at 14.00 and a "Sign Out" with SickLeave at 16.00, this will result in 6h working time and 2h Sick Leave (2 shifts on that day).
+        </li>
+    </ul>
+
 </div>
 
 <div>
@@ -73,7 +138,7 @@
 
 <div>
     <h3>Overtime balance and Payslip</h3>
-     <p>
+    <p>
         The overtime balance is calculated with following formula:
         <mark>new overtime balance = overtime balance from last month's payslip + overtime delta</mark>
     </p>
@@ -86,7 +151,9 @@
         For this reason, the overtime balance is stored in your payslip associated with the corresponding month.
         This is done by PeopleOps.
         That means the displayed overtime balance in "Calculated balance" in the reports is merely a <strong>non-guaranteed calculation</strong> that is calculated from the last month's payslip with the overtime delta.
-        The value in the <i>payslip</i> is ultimately <i>authoritative</i> of your overtime balance and displayed in <mark>"Definitive Balance"</mark> field.
+        The value in the <i>payslip</i> is ultimately <i>authoritative</i> of your overtime balance and displayed in
+        <mark>"Definitive Balance"</mark>
+        field.
         This field is only available after PeopleOps has created the payslip for the according month.
     </p>
 </div>
@@ -114,13 +181,6 @@
         While Odoo saves timestamps in UTC, the calculator uses <i>Europe/Zurich</i> as its timezone to calculate the overtime.
         This should automatically reflect daylight saving time, but it doesn't calculate the overtime correctly for people working outside this timezone.
         This issue needs to be addressed for VSHN Canada, but it depends if and how Odoo is used in such cases.
-    </p>
-</div>
-
-<div>
-    <h3>New VSHNeers</h3>
-    <p>
-        New VSHNeers starting a few days later than first day of a month will have the first days undertime (as if they weren't present).
     </p>
 </div>
 
