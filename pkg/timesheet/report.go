@@ -171,10 +171,16 @@ func (r *ReportBuilder) addAttendancesToDailyShifts(attendances model.Attendance
 		} else {
 			shift = daily.Shifts[shiftCount-1]
 		}
-		//startDate := shift.Start.DateTime.Time
+		startDate := shift.Start.DateTime.Time
 		endDate := shift.End.DateTime.Time
 		if !endDate.IsZero() && (date.Equal(endDate) || date.After(endDate)) {
 			// new shift
+			shift = AttendanceShift{}
+			newShift = true
+		}
+		if !startDate.IsZero() && (attendance.Action == model.ActionSignIn) {
+			// start of shift already defined, which means we have 2 consecutive sign_ins.
+			// This is semantically invalid.
 			shift = AttendanceShift{}
 			newShift = true
 		}

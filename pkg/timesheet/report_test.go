@@ -98,7 +98,9 @@ func TestReporter_addAbsencesToDailies(t *testing.T) {
 		"WhenSignOutMissing_ThenAddShiftWithZeroEndDate": {
 			givenTimeZone: zurichTZ,
 			givenAttendances: []model.Attendance{
-				{DateTime: odoo.MustParseDateTime("2021-02-03 19:00:00"), Action: model.ActionSignIn, Reason: &model.ActionReason{}},
+				{DateTime: odoo.MustParseDateTime("2021-02-03 08:00:00"), Action: model.ActionSignIn, Reason: &model.ActionReason{}},
+				{DateTime: odoo.MustParseDateTime("2021-02-03 10:00:00"), Action: model.ActionSignIn, Reason: &model.ActionReason{}},
+				{DateTime: odoo.MustParseDateTime("2021-02-03 16:00:00"), Action: model.ActionSignOut, Reason: &model.ActionReason{}},
 				{DateTime: odoo.MustParseDateTime("2021-02-03 23:00:00"), Action: model.ActionSignIn, Reason: &model.ActionReason{}},
 				{DateTime: odoo.MustParseDateTime("2021-02-04 00:00:00"), Action: model.ActionSignOut, Reason: &model.ActionReason{}},
 			},
@@ -112,11 +114,23 @@ func TestReporter_addAbsencesToDailies(t *testing.T) {
 					Shifts: []AttendanceShift{
 						{
 							Start: model.Attendance{
-								DateTime: odoo.NewDate(2021, 02, 03, 20, 0, 0, zurichTZ),
+								DateTime: odoo.NewDate(2021, 02, 03, 9, 0, 0, zurichTZ),
 								Action:   model.ActionSignIn,
 								Reason:   &model.ActionReason{},
 							},
 							End: model.Attendance{},
+						},
+						{
+							Start: model.Attendance{
+								DateTime: odoo.NewDate(2021, 02, 03, 11, 0, 0, zurichTZ),
+								Action:   model.ActionSignIn,
+								Reason:   &model.ActionReason{},
+							},
+							End: model.Attendance{
+								DateTime: odoo.NewDate(2021, 02, 03, 17, 0, 0, zurichTZ),
+								Action:   model.ActionSignOut,
+								Reason:   &model.ActionReason{},
+							},
 						},
 					},
 				},
