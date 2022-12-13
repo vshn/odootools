@@ -163,7 +163,7 @@ func (c *ConfigController) displayWarning(_ context.Context, err error) error {
 // getStartOfWeek returns the previously occurred Monday at midnight.
 // If t is already a Monday, it will be truncated to midnight the same day.
 func getStartOfWeek(t time.Time) time.Time {
-	t = t.Truncate(24 * time.Hour)
+	t = time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
 	if t.Weekday() == time.Sunday { // go treats Sunday as the first day of the week
 		return t.AddDate(0, 0, -6)
 	}
