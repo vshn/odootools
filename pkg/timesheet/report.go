@@ -218,7 +218,7 @@ func (r *ReportBuilder) reduceLeavesToBlocks(leaves []model.Leave) []AbsenceBloc
 			from := leave.DateFrom
 			blocks = append(blocks, AbsenceBlock{
 				Reason: leave.Type.String(),
-				Date:   time.Date(from.Year(), from.Month(), from.Day(), 0, 0, 0, 0, from.Location()),
+				Date:   odoo.Midnight(from.Time),
 			})
 		}
 	}
@@ -275,7 +275,7 @@ func (r *ReportBuilder) filterLeavesInTimeRange() []model.Leave {
 		for _, split := range splits {
 			tz := r.getTimeZone()
 			from := split.DateFrom
-			date := time.Date(from.Year(), from.Month(), from.Day(), 0, 0, 0, 0, tz)
+			date := odoo.Midnight(from.In(tz))
 			if odoo.IsWithinTimeRange(date, r.from, r.to) && date.Weekday() != time.Sunday && date.Weekday() != time.Saturday {
 				split.DateFrom.Time = odoo.LocalizeTime(split.DateFrom.Time, tz)
 				split.DateTo.Time = odoo.LocalizeTime(split.DateTo.Time, tz)

@@ -128,8 +128,8 @@ func (c *ConfigController) fetchUser(ctx context.Context) error {
 	}
 	tz := user.TimeZone.LocationOrDefault(timesheet.DefaultTimeZone)
 	c.User = user
-	c.StartOfWeek = c.StartOfWeek.In(tz)
-	c.EndOfWeek = c.EndOfWeek.In(tz)
+	c.StartOfWeek = odoo.Midnight(c.StartOfWeek.In(tz))
+	c.EndOfWeek = odoo.Midnight(c.EndOfWeek.In(tz))
 	return nil
 }
 
@@ -163,7 +163,7 @@ func (c *ConfigController) displayWarning(_ context.Context, err error) error {
 // getStartOfWeek returns the previously occurred Monday at midnight.
 // If t is already a Monday, it will be truncated to midnight the same day.
 func getStartOfWeek(t time.Time) time.Time {
-	t = time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
+	t = odoo.Midnight(t)
 	if t.Weekday() == time.Sunday { // go treats Sunday as the first day of the week
 		return t.AddDate(0, 0, -6)
 	}
