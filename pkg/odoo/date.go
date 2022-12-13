@@ -67,6 +67,11 @@ func LocalizeTime(tm time.Time, loc *time.Location) time.Time {
 	return time.Date(tm.Year(), tm.Month(), tm.Day(), tm.Hour(), tm.Minute(), tm.Second(), tm.Nanosecond(), loc)
 }
 
+// Midnight returns a new time object in midnight (most recently past).
+func Midnight(tm time.Time) time.Time {
+	return time.Date(tm.Year(), tm.Month(), tm.Day(), 0, 0, 0, 0, tm.Location())
+}
+
 // MustParseDateTime parses the given value in DateTimeFormat or panics if it fails.
 func MustParseDateTime(value string) Date {
 	tm, err := ParseDateTime(value)
