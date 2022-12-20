@@ -276,7 +276,7 @@ func (r *ReportBuilder) filterLeavesInTimeRange() []model.Leave {
 			tz := r.getTimeZone()
 			from := split.DateFrom
 			date := odoo.Midnight(from.In(tz))
-			if odoo.IsWithinTimeRange(date, r.from, r.to) && date.Weekday() != time.Sunday && date.Weekday() != time.Saturday {
+			if odoo.IsWithinTimeRange(date, r.from, r.to) {
 				split.DateFrom.Time = odoo.LocalizeTime(split.DateFrom.Time, tz)
 				split.DateTo.Time = odoo.LocalizeTime(split.DateTo.Time, tz)
 				filteredLeaves = append(filteredLeaves, split)
