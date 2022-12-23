@@ -1,4 +1,4 @@
-[![Build](https://img.shields.io/github/workflow/status/vshn/odootools/Test)][build]
+[![Build](https://img.shields.io/github/actions/workflow/status/vshn/odootools/.github/workflows/test.yaml?branch=master)][build]
 ![Go version](https://img.shields.io/github/go-mod/go-version/vshn/odootools)
 [![Version](https://img.shields.io/github/v/release/vshn/odootools)][releases]
 [![GitHub downloads](https://img.shields.io/github/downloads/vshn/odootools/total)][releases]
