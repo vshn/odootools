@@ -125,6 +125,11 @@ func (s *DailySummary) ValidateTimesheetEntries() error {
 			return NewValidationError(s.Date, fmt.Errorf("the reasons for shift %s and %s should be equal: start %s (%s), end %s (%s)",
 				model.ActionSignIn, model.ActionSignOut, shift.Start.DateTime.Format(odoo.TimeFormat), shift.Start.Reason, shift.End.DateTime.Format(odoo.TimeFormat), shift.End.Reason))
 		}
+		if !shift.Start.Timezone.IsEqualTo(shift.End.Timezone) {
+			return NewValidationError(s.Date, fmt.Errorf("if given, explicit timezones for attendances in a shift must be equal: start %s (%s), end: %s (%s)",
+				shift.Start.DateTime.Format(odoo.TimeFormat), shift.Start.Timezone, shift.End.DateTime.Format(odoo.TimeFormat), shift.End.Timezone,
+			))
+		}
 		totalDuration += shiftDuration
 	}
 	if totalDuration > 24*time.Hour {
