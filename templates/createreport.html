@@ -75,21 +75,9 @@
         <input type="number" class="form-control" name="month" id="month" min="1" max="12" value="1">
     </div>
     {{- if .Roles.HRManager }}
-    <div class="mb-3 form-check">
-        <input class="form-check-input" type="radio" id="userselfradio" name="userscope" value="user-self-radio"
-               checked>
-        <label class="form-check-label" for="userselfradio">
-            For myself
-        </label>
-    </div>
-    <div class="mb-3 form-check form-check-inline">
-        <input class="form-check-input" type="radio" id="userforeignradio" name="userscope" value="user-foreign-radio">
-        <label class="form-check-label" for="userforeignradio">
-            For someone else
-        </label>
-        <span>
-            <input class="form-control" type="text" name="username" id="username" placeholder="Search Username">
-        </span>
+    <div class="mb-3">
+        <label for="username" class="form-label">For someone else</label>
+        <input type="text" class="form-control" name="username" id="username" placeholder="Search Username">
     </div>
     {{- end }}
     <div class="mb-3">
