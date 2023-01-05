@@ -36,9 +36,9 @@ func (i *ReportRequest) FromRequest(e echo.Context) error {
 	if err := e.Bind(i); err != nil {
 		return err
 	}
-	i.SearchUserEnabled = e.FormValue("userscope") == "user-foreign-radio"
 	i.EmployeeReportEnabled = e.FormValue("employeeReport") == "true"
 	i.SearchUser = html.EscapeString(i.SearchUser)
+	i.SearchUserEnabled = i.SearchUser != ""
 
 	if i.Month == 0 && i.Year == 0 {
 		// this is kinda invalid input. Maybe created via curl or so.
