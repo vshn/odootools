@@ -13,14 +13,23 @@
 </div>
 {{ end }}
 <h1>This week at a glance</h1>
+<style>
+    .column {
+       font-family: monospace;
+       text-align: right;
+   }
+   .Headline {
+       text-align: right;
+   }
+</style>
 <table class="table table-hover table-sm">
     <thead>
     <tr>
         <th scope="col">Weekday</th>
         <th scope="col">Leaves</th>
-        <th scope="col">Excused hours</th>
-        <th scope="col">Worked hours</th>
-        <th scope="col">Overtime hours</th>
+        <th scope="col" class="Headline">Excused hours</th>
+        <th scope="col" class="Headline">Worked hours</th>
+        <th scope="col" class="Headline">Overtime hours</th>
     </tr>
     </thead>
     <tbody>
@@ -28,9 +37,9 @@
     <tr>
         <td>{{ .Weekday }}</td>
         <td>{{ .LeaveType }}</td>
-        <td>{{ .ExcusedHours }}</td>
-        <td>{{ .WorkedHours }}</td>
-        <td>{{ .OvertimeHours }}</td>
+        <td class="column">{{ .ExcusedHours }}</td>
+        <td class="column">{{ .WorkedHours }}</td>
+        <td class="column">{{ .OvertimeHours }}</td>
     </tr>
     {{ end }}
     </tbody>
@@ -39,15 +48,15 @@
         <th scope="col"></th>
         <th scope="col"></th>
         <th scope="col"></th>
-        <th scope="col">Total Worked</th>
-        <th scope="col">This week's Overtime</th>
+        <th scope="col" class="Headline">Total Worked</th>
+        <th scope="col" class="Headline">This week's Overtime</th>
     </tr>
     <tr>
         <td></td>
         <td></td>
         <td></td>
-        <td>{{ .Summary.TotalWorked }}</td>
-        <td>{{ .Summary.TotalOvertime }}</td>
+        <td class="column">{{ .Summary.TotalWorked }}</td>
+        <td class="column">{{ .Summary.TotalOvertime }}</td>
     </tr>
     {{ if .IsSignedIn }}
     <tr>
