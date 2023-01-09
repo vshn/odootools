@@ -14,6 +14,12 @@
 {{ end }}
 <h1>This week at a glance</h1>
 <style>
+    .Overtime {
+        color:#005AB5;
+    }
+    .Undertime {
+        color: #DC3220;
+    }
 </style>
 <table class="table table-hover table-sm">
     <thead>
@@ -32,7 +38,7 @@
         <td>{{ .LeaveType }}</td>
         <td class="text-end font-monospace">{{ .ExcusedHours }}</td>
         <td class="text-end font-monospace">{{ .WorkedHours }}</td>
-        <td class="text-end font-monospace">{{ .OvertimeHours }}</td>
+        <td class="text-end font-monospace {{ .OvertimeClassname }}">{{ .OvertimeHours }}</td>
     </tr>
     {{ end }}
     </tbody>
@@ -49,7 +55,7 @@
         <td></td>
         <td></td>
         <td class="text-end font-monospace">{{ .Summary.TotalWorked }}</td>
-        <td class="text-end font-monospace">{{ .Summary.TotalOvertime }}</td>
+        <td class="text-end font-monospace {{ .OvertimeClassname }}">{{ .Summary.TotalOvertime }}</td>
     </tr>
     {{ if .IsSignedIn }}
     <tr>

@@ -51,10 +51,13 @@ func (v *monthlyReportView) GetValuesForMonthlyReport(report timesheet.BalanceRe
 func (v *monthlyReportView) formatMonthlySummary(report timesheet.BalanceReport) controller.Values {
 	s := report.Report.Summary
 	val := controller.Values{
-		"TotalOvertime": v.FormatDurationInHours(s.TotalOvertime),
-		"TotalLeaves":   fmt.Sprintf("%sd", v.FormatFloat(s.TotalLeave, 1)),
-		"TotalWorked":   v.FormatDurationInHours(s.TotalWorkedTime),
-		"TotalExcused":  v.FormatDurationInHours(s.TotalExcusedTime),
+		"TotalOvertime":            v.FormatDurationInHours(s.TotalOvertime),
+		"TotalLeaves":              fmt.Sprintf("%sd", v.FormatFloat(s.TotalLeave, 1)),
+		"TotalWorked":              v.FormatDurationInHours(s.TotalWorkedTime),
+		"TotalExcused":             v.FormatDurationInHours(s.TotalExcusedTime),
+		"OvertimeClassname":        v.OvertimeClassname(s.TotalOvertime),
+		"PreviousBalanceClassname": v.OvertimeClassname(report.PreviousBalance),
+		"NewBalanceClassname":      v.OvertimeClassname(report.CalculatedBalance),
 	}
 	val["PreviousBalance"] = v.FormatDurationInHours(report.PreviousBalance)
 	val["NewOvertimeBalance"] = v.FormatDurationInHours(report.CalculatedBalance)

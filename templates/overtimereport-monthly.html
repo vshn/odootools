@@ -46,7 +46,7 @@
         <td>{{ .LeaveType }}</td>
         <td class="text-end font-monospace">{{ .ExcusedHours }}</td>
         <td class="text-end font-monospace">{{ .WorkedHours }}</td>
-        <td class="text-end font-monospace">{{ .OvertimeHours }}</td>
+        <td class="text-end font-monospace {{ .OvertimeClassname }}">{{ .OvertimeHours }}</td>
     </tr>
     {{ end }}
     </tbody>
@@ -67,7 +67,7 @@
         <td>{{ .Summary.TotalLeaves }}</td>
         <td class="text-end font-monospace">{{ .Summary.TotalExcused }}</td>
         <td class="text-end font-monospace">{{ .Summary.TotalWorked }}</td>
-        <td class="text-end font-monospace">{{ .Summary.TotalOvertime }}</td>
+        <td class="text-end font-monospace {{ .Summary.OvertimeClassname }}">{{ .Summary.TotalOvertime }}</td>
     </tr>
     <tr>
         <th scope="col"></th>
@@ -83,8 +83,8 @@
         <td></td>
         <td></td>
         <td></td>
-        <td class="text-end font-monospace">{{ .Summary.PreviousBalance }}</td>
-        <td class="text-end font-monospace">{{ .Summary.NewOvertimeBalance }}</td>
+        <td class="text-end font-monospace {{ .Summary.PreviousBalanceClassname }}">{{ .Summary.PreviousBalance }}</td>
+        <td class="text-end font-monospace {{ .Summary.NewBalanceClassname }}">{{ .Summary.NewOvertimeBalance }}</td>
         <td class="text-end font-monospace">{{ .Summary.CurrentPayslipBalance }}</td>
     </tr>
     </tfoot>
