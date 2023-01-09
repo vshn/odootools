@@ -8,15 +8,17 @@
     <a href="{{ .Nav.CurrentYearLink }}" class="btn btn-primary">Current</a>
     <a href="{{ .Nav.NextYearLink }}" class="btn btn-secondary">Next</a>
 </p>
+<style>
+</style>
 <table class="table table-hover table-sm">
     <thead>
     <tr>
         <th scope="col">Month</th>
         <th scope="col">Leaves</th>
-        <th scope="col">Excused hours</th>
-        <th scope="col">Worked hours</th>
-        <th scope="col">Overtime hours</th>
-        <th scope="col">Definitive balance</th>
+        <th scope="col" class="text-end">Excused hours</th>
+        <th scope="col" class="text-end">Worked hours</th>
+        <th scope="col" class="text-end">Overtime hours</th>
+        <th scope="col" class="text-end">Definitive balance</th>
     </tr>
     </thead>
     <tbody>
@@ -24,10 +26,10 @@
     <tr>
         <td><a href="{{ .DetailViewLink }}">{{ .Name }}</a>{{- with .ValidationError }} ⚠️{{- end }}</td>
         <td>{{ .LeaveDays }}d</td>
-        <td>{{ .ExcusedHours }}</td>
-        <td>{{ .WorkedHours }}</td>
-        <td>{{ .OvertimeHours }}</td>
-        <td>{{ .DefinitiveBalance }}</td>
+        <td class="text-end font-monospace">{{ .ExcusedHours }}</td>
+        <td class="text-end font-monospace" >{{ .WorkedHours }}</td>
+        <td class="text-end font-monospace">{{ .OvertimeHours }}</td>
+        <td class="text-end font-monospace">{{ .DefinitiveBalance }}</td>
     </tr>
     {{ end }}
     </tbody>
@@ -35,18 +37,18 @@
     <tr>
         <th scope="col"></th>
         <th scope="col">Total Leaves</th>
-        <th scope="col">Total Excused</th>
-        <th scope="col">Total Worked</th>
-        <th scope="col">Total Overtime</th>
-        <th scope="col"></th>
+        <th scope="col" class="text-end">Total Excused</th>
+        <th scope="col" class="text-end">Total Worked</th>
+        <th scope="col" class="text-end">Total Overtime</th>
+        <th scope="col" class="text-end"></th>
     </tr>
     <tr>
         <td></td>
         <td>{{ .Summary.TotalLeaves }}d</td>
-        <td>{{ .Summary.TotalExcused }}</td>
-        <td>{{ .Summary.TotalWorked }}</td>
-        <td>{{ .Summary.TotalOvertime }}</td>
-        <td></td>
+        <td class="text-end font-monospace">{{ .Summary.TotalExcused }}</td>
+        <td class="text-end font-monospace">{{ .Summary.TotalWorked }}</td>
+        <td class="text-end font-monospace">{{ .Summary.TotalOvertime }}</td>
+        <td class="text-end font-monospace"></td>
     </tr>
     </tfoot>
 </table>
