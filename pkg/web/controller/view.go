@@ -77,10 +77,10 @@ func (v BaseView) FormatDailySummary(daily *timesheet.DailySummary) Values {
 
 func (v BaseView) OvertimeClassname(duration time.Duration) string {
 	overtimeClassname := ""
-	if duration > 0 {
+	if duration.Minutes() > 15 {
 		overtimeClassname = "Overtime"
 	}
-	if duration < 0 {
+	if duration.Minutes() < -15 {
 		overtimeClassname = "Undertime"
 	}
 	return overtimeClassname
