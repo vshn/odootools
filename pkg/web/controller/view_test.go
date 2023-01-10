@@ -133,3 +133,45 @@ func TestBaseView_GetPreviousMonth(t *testing.T) {
 		})
 	}
 }
+
+func TestBaseView_OvertimeClassnameThreshold(t *testing.T) {
+	overtimeClassName := "Overtime"
+	undertimeClassName := "Undertime"
+	tests := map[string]struct {
+		givenDuration   time.Duration
+		givenDailyMax   time.Duration
+		expectedOutcome string
+	}{
+		"MyFirstTestCase": {
+			givenDuration:   parseDuration(t, "0h"),
+			givenDailyMax:   parseDuration(t, "8h"),
+			expectedOutcome: "",
+		},
+		"3PercentUndertime": {
+			givenDuration:   parseDuration(t, "-15m"),
+			givenDailyMax:   parseDuration(t, "8h"),
+			expectedOutcome: undertimeClassName,
+		},
+		"3PercentOvertime": {
+			givenDuration:   parseDuration(t, "15m"),
+			givenDailyMax:   parseDuration(t, "8h"),
+			expectedOutcome: overtimeClassName,
+		},
+		"14MinOvertime": {
+			givenDuration:   parseDuration(t, "14m"),
+			givenDailyMax:   parseDuration(t, "8h"),
+			expectedOutcome: "",
+		},
+		"14MinUndertime": {
+			givenDuration:   parseDuration(t, "-14m"),
+			givenDailyMax:   parseDuration(t, "8h"),
+			expectedOutcome: "",
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			actual := BaseView{}.OvertimeClassnameThreshold(tc.givenDuration, tc.givenDailyMax)
+			assert.Equal(t, tc.expectedOutcome, actual)
+		})
+	}
+}
