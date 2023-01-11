@@ -24,9 +24,6 @@
     .Undertime {
         color: #DC3220;
     }
-    .bold {
-        font-weight: bold
-    }
     
 
 </style>
@@ -49,9 +46,9 @@
         <td>{{ .Date }}</td>
         <td>{{ .Workload }}%</td>
         <td>{{ .LeaveType }}</td>
-        <td class="text-end font-monospace bold">{{ .ExcusedHours }}</td>
-        <td class="text-end font-monospace bold" >{{ .WorkedHours }}</td>
-        <td class="text-end font-monospace bold {{ .OvertimeClassname }}" >{{ .OvertimeHours }}</td>
+        <td class="text-end font-monospace">{{ .ExcusedHours }}</td>
+        <td class="text-end font-monospace" >{{ .WorkedHours }}</td>
+        <td class="text-end font-monospace fw-bold {{ .OvertimeClassname }}" >{{ .OvertimeHours }}</td>
     </tr>
     {{ end }}
     </tbody>
@@ -70,9 +67,9 @@
         <td></td>
         <td></td>
         <td>{{ .Summary.TotalLeaves }}</td>
-        <td class="text-end font-monospace bold">{{ .Summary.TotalExcused }}</td>
-        <td class="text-end font-monospace bold">{{ .Summary.TotalWorked }}</td>
-        <td class="text-end font-monospace bold {{ .Summary.OvertimeClassname }}">{{ .Summary.TotalOvertime }}</td>
+        <td class="text-end font-monospace">{{ .Summary.TotalExcused }}</td>
+        <td class="text-end font-monospace">{{ .Summary.TotalWorked }}</td>
+        <td class="text-end font-monospace fw-bold {{ .Summary.OvertimeClassname }}">{{ .Summary.TotalOvertime }}</td>
     </tr>
     <tr>
         <th scope="col"></th>
@@ -88,9 +85,9 @@
         <td></td>
         <td></td>
         <td></td>
-        <td class="text-end font-monospace bold {{ .Summary.PreviousBalanceClassname }}">{{ .Summary.PreviousBalance }}</td>
-        <td class="text-end font-monospace bold {{ .Summary.NewBalanceClassname }}">{{ .Summary.NewOvertimeBalance }}</td>
-        <td class="text-end font-monospace bold">{{ .Summary.CurrentPayslipBalance }}</td>
+        <td class="text-end font-monospace fw-bold {{ .Summary.PreviousBalanceClassname }}">{{ .Summary.PreviousBalance }}</td>
+        <td class="text-end font-monospace fw-bold {{ .Summary.NewBalanceClassname }}">{{ .Summary.NewOvertimeBalance }}</td>
+        <td class="text-end font-monospace ">{{ .Summary.CurrentPayslipBalance }}</td>
     </tr>
     </tfoot>
 </table>

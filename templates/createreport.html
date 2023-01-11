@@ -20,9 +20,6 @@
     .Undertime {
         color: #DC3220;
     }
-    .bold {
-        font-weight: bold
-    }
 </style>
 <table class="table table-hover table-sm">
     <thead>
@@ -39,9 +36,9 @@
     <tr>
         <td>{{ .Weekday }}</td>
         <td>{{ .LeaveType }}</td>
-        <td class="text-end font-monospace bold">{{ .ExcusedHours }}</td>
-        <td class="text-end font-monospace bold">{{ .WorkedHours }}</td>
-        <td class="text-end font-monospace bold {{ .OvertimeClassname }}">{{ .OvertimeHours }}</td>
+        <td class="text-end font-monospace ">{{ .ExcusedHours }}</td>
+        <td class="text-end font-monospace ">{{ .WorkedHours }}</td>
+        <td class="text-end font-monospace fw-bold {{ .OvertimeClassname }}">{{ .OvertimeHours }}</td>
     </tr>
     {{ end }}
     </tbody>
@@ -57,8 +54,8 @@
         <td></td>
         <td></td>
         <td></td>
-        <td class="text-end font-monospace bold">{{ .Summary.TotalWorked }}</td>
-        <td class="text-end font-monospace bold {{ .Summary.OvertimeClassname }}">{{ .Summary.TotalOvertime }}</td>
+        <td class="text-end font-monospace ">{{ .Summary.TotalWorked }}</td>
+        <td class="text-end font-monospace fw-bold {{ .Summary.OvertimeClassname }}">{{ .Summary.TotalOvertime }}</td>
     </tr>
     {{ if .IsSignedIn }}
     <tr>

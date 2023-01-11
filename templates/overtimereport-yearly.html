@@ -15,9 +15,6 @@
     .Undertime {
         color: #DC3220;
     }
-    .bold {
-        font-weight: bold
-    }
 </style>
 <table class="table table-hover table-sm">
     <thead>
@@ -35,10 +32,10 @@
     <tr>
         <td><a href="{{ .DetailViewLink }}">{{ .Name }}</a>{{- with .ValidationError }} ⚠️{{- end }}</td>
         <td>{{ .LeaveDays }}d</td>
-        <td class="text-end font-monospace bold">{{ .ExcusedHours }}</td>
-        <td class="text-end font-monospace bold" >{{ .WorkedHours }}</td>
-        <td class="text-end font-monospace bold {{ .OvertimeClassname }} ">{{ .OvertimeHours }}</td>
-        <td class="text-end font-monospace bold">{{ .DefinitiveBalance }}</td>
+        <td class="text-end font-monospace ">{{ .ExcusedHours }}</td>
+        <td class="text-end font-monospace " >{{ .WorkedHours }}</td>
+        <td class="text-end font-monospace  {{ .OvertimeClassname }} ">{{ .OvertimeHours }}</td>
+        <td class="text-end font-monospace ">{{ .DefinitiveBalance }}</td>
     </tr>
     {{ end }}
     </tbody>
@@ -54,10 +51,10 @@
     <tr>
         <td></td>
         <td>{{ .Summary.TotalLeaves }}d</td>
-        <td class="text-end font-monospace bold">{{ .Summary.TotalExcused }}</td>
-        <td class="text-end font-monospace bold">{{ .Summary.TotalWorked }}</td>
-        <td class="text-end font-monospace bold {{ .Summary.OvertimeClassname }}">{{ .Summary.TotalOvertime }}</td>
-        <td class="text-end font-monospace bold"></td>
+        <td class="text-end font-monospace ">{{ .Summary.TotalExcused }}</td>
+        <td class="text-end font-monospace ">{{ .Summary.TotalWorked }}</td>
+        <td class="text-end font-monospace  {{ .Summary.OvertimeClassname }}">{{ .Summary.TotalOvertime }}</td>
+        <td class="text-end font-monospace "></td>
     </tr>
     </tfoot>
 </table>
