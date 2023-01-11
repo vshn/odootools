@@ -54,15 +54,18 @@ func (v *yearlyReportView) formatMonthlySummaryForYearlyReport(s timesheet.Balan
 		"DetailViewLink":    fmt.Sprintf("/report/%d/%d/%d", s.Report.Employee.ID, year, s.Report.From.Month()),
 		"Name":              fmt.Sprintf("%s %d", s.Report.From.Month(), year),
 		"ValidationError":   validationErrorList.Error(),
+		"OvertimeClassname": v.OvertimeClassname(s.Report.Summary.TotalOvertime),
 	}
 	return val
 }
 
 func (v *yearlyReportView) formatYearlySummary(summary timesheet.YearlySummary) controller.Values {
-	return controller.Values{
-		"TotalExcused":  v.FormatDurationInHours(summary.TotalExcused),
-		"TotalWorked":   v.FormatDurationInHours(summary.TotalWorked),
-		"TotalOvertime": v.FormatDurationInHours(summary.TotalOvertime),
-		"TotalLeaves":   v.FormatFloat(summary.TotalLeaves, 1),
+	val := controller.Values{
+		"TotalExcused":      v.FormatDurationInHours(summary.TotalExcused),
+		"TotalWorked":       v.FormatDurationInHours(summary.TotalWorked),
+		"TotalOvertime":     v.FormatDurationInHours(summary.TotalOvertime),
+		"TotalLeaves":       v.FormatFloat(summary.TotalLeaves, 1),
+		"OvertimeClassname": v.OvertimeClassname(summary.TotalOvertime),
 	}
+	return val
 }

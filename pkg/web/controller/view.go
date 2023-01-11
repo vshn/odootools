@@ -58,17 +58,41 @@ func (v BaseView) GetPreviousMonth(year, month int) (int, int) {
 func (v BaseView) FormatDailySummary(daily *timesheet.DailySummary) Values {
 	overtimeSummary := daily.CalculateOvertimeSummary()
 	basic := Values{
-		"Weekday":         daily.Date.Weekday(),
-		"Date":            daily.Date.Format(odoo.DateFormat),
-		"Workload":        daily.FTERatio * 100,
-		"ExcusedHours":    v.FormatDurationInHours(overtimeSummary.ExcusedTime()),
-		"WorkedHours":     v.FormatDurationInHours(overtimeSummary.WorkingTime()),
-		"OvertimeHours":   v.FormatDurationInHours(overtimeSummary.Overtime()),
-		"LeaveType":       "",
-		"ValidationError": daily.ValidateTimesheetEntries(),
+		"Weekday":           daily.Date.Weekday(),
+		"Date":              daily.Date.Format(odoo.DateFormat),
+		"Workload":          daily.FTERatio * 100,
+		"ExcusedHours":      v.FormatDurationInHours(overtimeSummary.ExcusedTime()),
+		"WorkedHours":       v.FormatDurationInHours(overtimeSummary.WorkingTime()),
+		"OvertimeHours":     v.FormatDurationInHours(overtimeSummary.Overtime()),
+		"OvertimeClassname": v.OvertimeClassnameThreshold(overtimeSummary.Overtime(), overtimeSummary.DailyMax),
+		"LeaveType":         "",
+		"ValidationError":   daily.ValidateTimesheetEntries(),
 	}
 	if daily.HasAbsences() {
 		basic["LeaveType"] = daily.Absences[0].Reason
 	}
 	return basic
+}
+
+func (v BaseView) OvertimeClassname(duration time.Duration) string {
+	overtimeClassname := ""
+	if duration.Minutes() > 15 {
+		overtimeClassname = "Overtime"
+	}
+	if duration.Minutes() < 15 {
+		overtimeClassname = "Undertime"
+	}
+	return overtimeClassname
+}
+
+func (v BaseView) OvertimeClassnameThreshold(duration time.Duration, dailyMax time.Duration) string {
+	overtimeClassname := ""
+	threshold := dailyMax.Seconds() + duration.Seconds()
+	if threshold > dailyMax.Seconds()*1.03 {
+		overtimeClassname = "Overtime"
+	}
+	if threshold < dailyMax.Seconds()*0.97 {
+		overtimeClassname = "Undertime"
+	}
+	return overtimeClassname
 }

@@ -9,6 +9,12 @@
     <a href="{{ .Nav.NextYearLink }}" class="btn btn-secondary">Next</a>
 </p>
 <style>
+     .Overtime {
+        color:#005AB5;
+    }
+    .Undertime {
+        color: #DC3220;
+    }
 </style>
 <table class="table table-hover table-sm">
     <thead>
@@ -28,7 +34,7 @@
         <td>{{ .LeaveDays }}d</td>
         <td class="text-end font-monospace">{{ .ExcusedHours }}</td>
         <td class="text-end font-monospace" >{{ .WorkedHours }}</td>
-        <td class="text-end font-monospace">{{ .OvertimeHours }}</td>
+        <td class="text-end font-monospace {{ .OvertimeClassname }} ">{{ .OvertimeHours }}</td>
         <td class="text-end font-monospace">{{ .DefinitiveBalance }}</td>
     </tr>
     {{ end }}
@@ -47,7 +53,7 @@
         <td>{{ .Summary.TotalLeaves }}d</td>
         <td class="text-end font-monospace">{{ .Summary.TotalExcused }}</td>
         <td class="text-end font-monospace">{{ .Summary.TotalWorked }}</td>
-        <td class="text-end font-monospace">{{ .Summary.TotalOvertime }}</td>
+        <td class="text-end font-monospace {{ .Summary.OvertimeClassname }}">{{ .Summary.TotalOvertime }}</td>
         <td class="text-end font-monospace"></td>
     </tr>
     </tfoot>
