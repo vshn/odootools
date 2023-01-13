@@ -1,7 +1,7 @@
 {{ define "main" }}
 <h1>Attendance for {{ .Username }}<small class="text-muted"> {{ .MonthDisplayName }}, {{ .TimezoneDisplayName }}</small></h1>
 <div class="float" id="alerts"></div>
-<div >
+<div>
     {{ with .Error }}
     <div class="alert alert-danger" role="alert">{{ . }}</div>
     {{ end }}
@@ -19,13 +19,12 @@
 </p>
 <style>
     .Overtime {
-        color:#005AB5;
+        color: #005AB5;
     }
+
     .Undertime {
         color: #DC3220;
     }
-    
-
 </style>
 <table class="table table-hover table-sm" style="">
     <thead>
@@ -47,8 +46,8 @@
         <td>{{ .Workload }}%</td>
         <td>{{ .LeaveType }}</td>
         <td class="text-end font-monospace">{{ .ExcusedHours }}</td>
-        <td class="text-end font-monospace" >{{ .WorkedHours }}</td>
-        <td class="text-end font-monospace fw-bold {{ .OvertimeClassname }}" >{{ .OvertimeHours }}</td>
+        <td class="text-end font-monospace">{{ .WorkedHours }}</td>
+        <td class="text-end font-monospace fw-bold {{ .OvertimeClassname }}">{{ .OvertimeHours }}</td>
     </tr>
     {{ end }}
     </tbody>

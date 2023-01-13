@@ -9,9 +9,10 @@
     <a href="{{ .Nav.NextYearLink }}" class="btn btn-secondary">Next</a>
 </p>
 <style>
-     .Overtime {
-        color:#005AB5;
+    .Overtime {
+        color: #005AB5;
     }
+
     .Undertime {
         color: #DC3220;
     }
@@ -32,10 +33,10 @@
     <tr>
         <td><a href="{{ .DetailViewLink }}">{{ .Name }}</a>{{- with .ValidationError }} ⚠️{{- end }}</td>
         <td>{{ .LeaveDays }}d</td>
-        <td class="text-end font-monospace ">{{ .ExcusedHours }}</td>
-        <td class="text-end font-monospace " >{{ .WorkedHours }}</td>
-        <td class="text-end font-monospace  {{ .OvertimeClassname }} ">{{ .OvertimeHours }}</td>
-        <td class="text-end font-monospace ">{{ .DefinitiveBalance }}</td>
+        <td class="text-end font-monospace">{{ .ExcusedHours }}</td>
+        <td class="text-end font-monospace">{{ .WorkedHours }}</td>
+        <td class="text-end font-monospace {{ .OvertimeClassname }}">{{ .OvertimeHours }}</td>
+        <td class="text-end font-monospace">{{ .DefinitiveBalance }}</td>
     </tr>
     {{ end }}
     </tbody>
@@ -51,10 +52,10 @@
     <tr>
         <td></td>
         <td>{{ .Summary.TotalLeaves }}d</td>
-        <td class="text-end font-monospace ">{{ .Summary.TotalExcused }}</td>
-        <td class="text-end font-monospace ">{{ .Summary.TotalWorked }}</td>
-        <td class="text-end font-monospace  {{ .Summary.OvertimeClassname }}">{{ .Summary.TotalOvertime }}</td>
-        <td class="text-end font-monospace "></td>
+        <td class="text-end font-monospace">{{ .Summary.TotalExcused }}</td>
+        <td class="text-end font-monospace">{{ .Summary.TotalWorked }}</td>
+        <td class="text-end font-monospace {{ .Summary.OvertimeClassname }}">{{ .Summary.TotalOvertime }}</td>
+        <td class="text-end font-monospace"></td>
     </tr>
     </tfoot>
 </table>

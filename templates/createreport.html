@@ -15,8 +15,9 @@
 <h1>This week at a glance</h1>
 <style>
     .Overtime {
-        color:#005AB5;
+        color: #005AB5;
     }
+
     .Undertime {
         color: #DC3220;
     }
@@ -36,8 +37,8 @@
     <tr>
         <td>{{ .Weekday }}</td>
         <td>{{ .LeaveType }}</td>
-        <td class="text-end font-monospace ">{{ .ExcusedHours }}</td>
-        <td class="text-end font-monospace ">{{ .WorkedHours }}</td>
+        <td class="text-end font-monospace">{{ .ExcusedHours }}</td>
+        <td class="text-end font-monospace">{{ .WorkedHours }}</td>
         <td class="text-end font-monospace fw-bold {{ .OvertimeClassname }}">{{ .OvertimeHours }}</td>
     </tr>
     {{ end }}
@@ -54,7 +55,7 @@
         <td></td>
         <td></td>
         <td></td>
-        <td class="text-end font-monospace ">{{ .Summary.TotalWorked }}</td>
+        <td class="text-end font-monospace">{{ .Summary.TotalWorked }}</td>
         <td class="text-end font-monospace fw-bold {{ .Summary.OvertimeClassname }}">{{ .Summary.TotalOvertime }}</td>
     </tr>
     {{ if .IsSignedIn }}
