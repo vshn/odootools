@@ -112,7 +112,7 @@
         <td class="text-end font-monospace">{{ .OutOfOfficeHours }}</td>
         <td class="text-end font-monospace">{{ .PreviousBalance }}</td>
         <td class="text-end font-monospace {{ .OvertimeClassName }}">{{ .OvertimeHours }}</td>
-        <td class="text-end font-monospace {{ .ProposedBalanceClassName }}">{{ .ProposedBalance }}</td>
+        <td class="text-end font-monospace {{ .ProposedBalanceClassName }}">{{ if .ProposedBalanceExceedsThreshold }}⚠️ {{ end }}{{ .ProposedBalance }}</td>
         <td class="text-end font-monospace {{ .NextBalanceClassName }}" id="td-nextbalance-{{ .EmployeeID }}">{{ .NextBalance }}</td>
         <td>
             {{- if .OvertimeBalanceEditEnabled }}

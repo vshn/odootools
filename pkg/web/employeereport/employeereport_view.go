@@ -70,6 +70,7 @@ func (v *reportView) getValuesForReport(report timesheet.Report, previousPayslip
 		"NextBalanceClassName":            v.OvertimeClassname(nextBalance),
 		"ProposedBalance":                 proposedBalanceCellText,
 		"ProposedBalanceClassName":        v.OvertimeClassname(proposedBalance),
+		"ProposedBalanceExceedsThreshold": proposedBalance.Hours() > 75 || proposedBalance.Hours() < -75,
 		"OvertimeBalanceEditEnabled":      nextPayslip != nil,
 		"OvertimeBalanceEditPreviewValue": overtimeBalanceEditPreview,
 		"ValidationError":                 validationErrorList.Error(),
