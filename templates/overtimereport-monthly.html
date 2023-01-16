@@ -86,7 +86,7 @@
         <td></td>
         <td class="text-end font-monospace fw-bold {{ .Summary.PreviousBalanceClassname }}">{{ .Summary.PreviousBalance }}</td>
         <td class="text-end font-monospace fw-bold {{ .Summary.NewBalanceClassname }}">{{ .Summary.NewOvertimeBalance }}</td>
-        <td class="text-end font-monospace ">{{ .Summary.CurrentPayslipBalance }}</td>
+        <td class="text-end font-monospace fw-bold {{ .Summary.CurrentPayslipBalanceClassName }}">{{ .Summary.CurrentPayslipBalance }}</td>
     </tr>
     </tfoot>
 </table>

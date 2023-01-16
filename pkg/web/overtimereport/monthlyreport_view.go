@@ -64,6 +64,7 @@ func (v *monthlyReportView) formatMonthlySummary(report timesheet.BalanceReport)
 	val["CurrentPayslipBalance"] = ""
 	if report.DefinitiveBalance != nil {
 		val["CurrentPayslipBalance"] = v.FormatDurationInHours(*report.DefinitiveBalance)
+		val["CurrentPayslipBalanceClassName"] = v.OvertimeClassname(*report.DefinitiveBalance)
 	}
 	return val
 }
