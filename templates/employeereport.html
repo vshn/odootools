@@ -50,6 +50,22 @@
         top: 0;
         z-index: 1;
     }
+
+    .Overtime {
+        color: #005AB5;
+    }
+
+    .Undertime {
+        color: #DC3220;
+    }
+    @media (min-width: 2000px) {
+        .container {
+            max-width: 2000px;
+        }
+        .table {
+            table-layout: fixed;
+        }
+    }
 </style>
 <h1>Attendances for {{ .Month }} {{ .Year }}</h1>
 <div id="alerts">
@@ -73,13 +89,13 @@
     <tr class="table-secondary">
         <th scope="col">Name</th>
         <th scope="col">Leaves</th>
-        <th scope="col">Excused hours</th>
-        <th scope="col">Worked hours</th>
-        <th scope="col">(Out of office hours, real)</th>
-        <th scope="col">{{ .LastMonth }} Payslip</th>
-        <th scope="col">Overtime delta</th>
-        <th scope="col">Proposed balance</th>
-        <th scope="col">{{ .Month }} Payslip</th>
+        <th scope="col" class="text-end">Excused hours</th>
+        <th scope="col" class="text-end">Worked hours</th>
+        <th scope="col" class="text-end">(Out of office hours, real)</th>
+        <th scope="col" class="text-end">{{ .LastMonth }} Payslip</th>
+        <th scope="col" class="text-end">Overtime delta</th>
+        <th scope="col" class="text-end">Proposed balance</th>
+        <th scope="col" class="text-end">{{ .Month }} Payslip</th>
         <th scope="col">Save in {{ .Month }} Payslip</th>
     </tr>
     </thead>
@@ -91,13 +107,13 @@
             {{- with .ValidationError }}<br>⚠️ {{ . }}{{ end -}}
         </td>
         <td>{{ .Leaves }}d</td>
-        <td>{{ .ExcusedHours }}</td>
-        <td>{{ .WorkedHours }}</td>
-        <td>{{ .OutOfOfficeHours }}</td>
-        <td>{{ .PreviousBalance }}</td>
-        <td>{{ .OvertimeHours }}</td>
-        <td>{{ .ProposedBalance }}</td>
-        <td id="td-nextbalance-{{ .EmployeeID }}">{{ .NextBalance }}</td>
+        <td class="text-end font-monospace">{{ .ExcusedHours }}</td>
+        <td class="text-end font-monospace">{{ .WorkedHours }}</td>
+        <td class="text-end font-monospace">{{ .OutOfOfficeHours }}</td>
+        <td class="text-end font-monospace">{{ .PreviousBalance }}</td>
+        <td class="text-end font-monospace {{ .OvertimeClassName }}">{{ .OvertimeHours }}</td>
+        <td class="text-end font-monospace {{ .ProposedBalanceClassName }}">{{ .ProposedBalance }}</td>
+        <td class="text-end font-monospace {{ .NextBalanceClassName }}" id="td-nextbalance-{{ .EmployeeID }}">{{ .NextBalance }}</td>
         <td>
             {{- if .OvertimeBalanceEditEnabled }}
             <div class="mb-3">
