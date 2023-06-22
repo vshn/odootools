@@ -1,8 +1,10 @@
 {
   "extends": [
     "config:base",
-    ":gitSignOff",
-    ":disableDependencyDashboard"
+    ":automergeDigest",
+    ":automergePatch",
+    ":disableDependencyDashboard",
+    ":gitSignOff"
   ],
   "labels": [
     "dependency"
