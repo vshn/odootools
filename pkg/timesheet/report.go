@@ -150,18 +150,20 @@ func (r *ReportBuilder) getTimeZone() *time.Location {
 }
 
 func (r *ReportBuilder) addAttendancesToDailyShifts(attendances model.AttendanceList, dailies []*DailySummary) {
-	tz := r.getTimeZone()
+	monthTz := r.getTimeZone()
 	dailyMap := make(map[string]*DailySummary, len(dailies))
 	for _, dailySummary := range dailies {
 		dailyMap[dailySummary.Date.Format(odoo.DateFormat)] = dailySummary
 	}
 
 	for _, attendance := range attendances.Items {
+		tz := attendance.Timezone.LocationOrDefault(monthTz)
 		date := attendance.DateTime.In(tz)
 		daily, exists := dailyMap[date.Format(odoo.DateFormat)]
 		if !exists {
 			continue // irrelevant attendance
 		}
+		daily.Date = daily.Date.In(tz) // Update the timezone of the day
 		var shift AttendanceShift
 		shiftCount := len(daily.Shifts)
 		newShift := false

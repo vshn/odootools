@@ -55,7 +55,7 @@ func (v BaseView) GetPreviousMonth(year, month int) (int, int) {
 }
 
 // FormatDailySummary returns Values with sensible format.
-func (v BaseView) FormatDailySummary(daily *timesheet.DailySummary) Values {
+func (v BaseView) FormatDailySummary(report timesheet.Report, daily *timesheet.DailySummary) Values {
 	overtimeSummary := daily.CalculateOvertimeSummary()
 	basic := Values{
 		"Weekday":           daily.Date.Weekday(),
@@ -70,6 +70,9 @@ func (v BaseView) FormatDailySummary(daily *timesheet.DailySummary) Values {
 	}
 	if daily.HasAbsences() {
 		basic["LeaveType"] = daily.Absences[0].Reason
+	}
+	if report.From.Location() != daily.Date.Location() {
+		basic["Timezone"] = daily.Date.Location().String()
 	}
 	return basic
 }

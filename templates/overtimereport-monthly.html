@@ -42,7 +42,7 @@
     {{ range .Attendances }}
     <tr>
         <td>{{ .Weekday }}{{ with .ValidationError }}<br>⚠️ {{ . }}{{ end }}</td>
-        <td>{{ .Date }}</td>
+        <td>{{ .Date }}{{ if .Timezone }} <small class="text-muted">{{ .Timezone }}</small>{{ end }}</td>
         <td>{{ .Workload }}%</td>
         <td>{{ .LeaveType }}</td>
         <td class="text-end font-monospace">{{ .ExcusedHours }}</td>

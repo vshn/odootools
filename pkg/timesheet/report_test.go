@@ -442,8 +442,11 @@ func TestReportBuilder_CalculateReport(t *testing.T) {
 		{DateTime: odoo.NewDate(2021, 1, 5, 10, 0, 0, zurichTZ), Action: model.ActionSignIn},
 		{DateTime: odoo.NewDate(2021, 1, 5, 17, 0, 0, zurichTZ), Action: model.ActionSignOut}, // 7h worked
 
-		{DateTime: odoo.NewDate(2021, 1, 7, 8, 0, 0, zurichTZ), Action: model.ActionSignIn},
-		{DateTime: odoo.NewDate(2021, 1, 7, 17, 5, 0, zurichTZ), Action: model.ActionSignOut}, // faked signed out, still working though
+		{DateTime: odoo.NewDate(2021, 1, 7, 10, 0, 0, vancouverTZ), Action: model.ActionSignIn, Timezone: odoo.NewTimeZone(vancouverTZ)},
+		{DateTime: odoo.NewDate(2021, 1, 7, 18, 0, 0, vancouverTZ), Action: model.ActionSignIn, Timezone: odoo.NewTimeZone(vancouverTZ)}, // 8h worked
+
+		{DateTime: odoo.NewDate(2021, 1, 8, 8, 0, 0, zurichTZ), Action: model.ActionSignIn},
+		{DateTime: odoo.NewDate(2021, 1, 8, 17, 5, 0, zurichTZ), Action: model.ActionSignOut}, // faked signed out, still working though
 	}}
 	givenLeaves := odoo.List[model.Leave]{Items: []model.Leave{
 		{DateFrom: odoo.NewDate(2021, 01, 06, 0, 0, 0, zurichTZ), DateTo: odoo.NewDate(2021, 01, 06, 23, 59, 0, zurichTZ), Type: &model.LeaveType{Name: TypeLegalLeavesPrefix}, State: StateApproved},
@@ -463,7 +466,7 @@ func TestReportBuilder_CalculateReport(t *testing.T) {
 	report, err := b.CalculateReport(start, end)
 	assert.NoError(t, err)
 	assert.Equal(t, report.Employee.Name, givenEmployee.Name, "employee name")
-	assert.Equal(t, ((9+3+7+9)*time.Hour)+(5*time.Minute), report.Summary.TotalWorkedTime, "total worked time")
+	assert.Equal(t, ((9+3+7+9+8)*time.Hour)+(5*time.Minute), report.Summary.TotalWorkedTime, "total worked time")
 	assert.Equal(t, ((1+3+1)*time.Hour)+(5*time.Minute), report.Summary.TotalOvertime, "total over time")
 	assert.Equal(t, 1.0, report.Summary.TotalLeave, "total leave")
 	assert.Equal(t, (8+2)*time.Hour, report.Summary.TotalExcusedTime, "total excused time")

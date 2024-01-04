@@ -20,7 +20,7 @@ func (v *ConfigView) GetConfigurationValues(report timesheet.Report) controller.
 		if summary.IsWeekend() && summary.CalculateOvertimeSummary().WorkingTime() == 0 {
 			continue
 		}
-		formatted = append(formatted, v.FormatDailySummary(summary))
+		formatted = append(formatted, v.FormatDailySummary(report, summary))
 	}
 	summary := controller.Values{
 		"TotalOvertime": v.FormatDurationInHours(report.Summary.TotalOvertime),

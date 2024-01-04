@@ -54,3 +54,18 @@ func (tz *TimeZone) IsEmpty() bool {
 	}
 	return false
 }
+
+// String returns the location name.
+// Returns empty string if nil.
+func (tz *TimeZone) String() string {
+	if tz == nil || tz.Location == nil {
+		return ""
+	}
+	return tz.Location.String()
+}
+
+// IsEqualTo returns true if the given TimeZone is equal to other.
+// If both are nil, it returns true.
+func (tz *TimeZone) IsEqualTo(other *TimeZone) bool {
+	return tz.String() == other.String()
+}
