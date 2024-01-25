@@ -76,7 +76,7 @@ jobs:
         echo "ROUTE_HOST=$(oc -n ${{ env.NAMESPACE }} get route ${{ env.HELM_RELEASE_NAME }} -o jsonpath='{.spec.host}')" >> $GITHUB_ENV
 
     - name: Make comment in PR
-      uses: peter-evans/create-or-update-comment@v3
+      uses: peter-evans/create-or-update-comment@v4
       with:
         issue-number: ${{ github.event.number }}
         body: |
