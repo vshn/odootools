@@ -30,7 +30,7 @@ jobs:
       run: make lint
 
     - name: golangci-lint
-      uses: golangci/golangci-lint-action@v3
+      uses: golangci/golangci-lint-action@v4
       with:
         version: latest
         args: --timeout 5m --out-${NO_FUTURE}format colored-line-number
