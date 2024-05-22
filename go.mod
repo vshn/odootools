@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/ccremer/go-command-pipeline v0.20.0
-	github.com/go-logr/logr v1.3.0
+	github.com/go-logr/logr v1.4.2
 	github.com/go-logr/zapr v1.3.0
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.4.0
