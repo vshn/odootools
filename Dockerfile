@@ -1,4 +1,4 @@
-FROM docker.io/library/alpine:3.18
+FROM docker.io/library/alpine:3.20
 
 ENTRYPOINT ["odootools"]
 
