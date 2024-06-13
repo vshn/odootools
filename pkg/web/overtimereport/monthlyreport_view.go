@@ -21,7 +21,7 @@ func (v *monthlyReportView) GetValuesForMonthlyReport(report timesheet.BalanceRe
 		if summary.IsWeekend() && summary.CalculateOvertimeSummary().WorkingTime() == 0 {
 			continue
 		}
-		values := v.FormatDailySummary(summary)
+		values := v.FormatDailySummary(report.Report, summary)
 		if values["ValidationError"] != nil {
 			hasInvalidAttendances = "Your timesheet contains errors."
 		}

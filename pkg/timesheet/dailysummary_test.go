@@ -350,6 +350,15 @@ func TestDailySummary_ValidateTimesheetEntries(t *testing.T) {
 			},
 			expectedError: "the reasons for shift sign_in and sign_out should be equal: start 08:00:00 (), end 10:00:00 (Sick / Medical Consultation)",
 		},
+		"ExplicitTimezoneDifferent": {
+			givenShifts: []AttendanceShift{
+				{
+					Start: model.Attendance{DateTime: odoo.NewDate(2021, 01, 02, 8, 0, 0, time.UTC), Action: model.ActionSignIn},
+					End:   model.Attendance{DateTime: odoo.NewDate(2021, 01, 02, 18, 0, 0, time.UTC), Action: model.ActionSignIn, Timezone: odoo.NewTimeZone(vancouverTZ)},
+				},
+			},
+			expectedError: "if given, explicit timezones for attendances in a shift must be equal: start 08:00:00 (), end: 18:00:00 (America/Vancouver)",
+		},
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {

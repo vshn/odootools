@@ -24,6 +24,10 @@ type Attendance struct {
 	// Reason describes the "action reason" from Odoo.
 	// NOTE: This field has special meaning when calculating the overtime.
 	Reason *ActionReason `json:"action_desc,omitempty"`
+
+	// Timezone is the custom Time location in Odoo.
+	// This is an extra, custom field since Odoo saves the time in UTC only, leaving out the time zone information.
+	Timezone *odoo.TimeZone `json:"x_timezone,omitempty"`
 }
 
 type AttendanceList odoo.List[Attendance]
@@ -47,7 +51,7 @@ func (o Odoo) fetchAttendances(ctx context.Context, domainFilters []odoo.Filter)
 	err := o.querier.SearchGenericModel(ctx, odoo.SearchReadModel{
 		Model:  "hr.attendance",
 		Domain: domainFilters,
-		Fields: []string{"employee_id", "name", "action", "action_desc"},
+		Fields: []string{"employee_id", "name", "action", "action_desc", "x_timezone"},
 		Limit:  0,
 		Offset: 0,
 	}, &result)

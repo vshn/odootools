@@ -8,6 +8,24 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var (
+	zurichTZ    *time.Location
+	vancouverTZ *time.Location
+)
+
+func init() {
+	zue, err := time.LoadLocation("Europe/Zurich")
+	if err != nil {
+		panic(err)
+	}
+	zurichTZ = zue
+	van, err := time.LoadLocation("America/Vancouver")
+	if err != nil {
+		panic(err)
+	}
+	vancouverTZ = van
+}
+
 func TestTimeZone_UnmarshalJSON(t *testing.T) {
 	tests := map[string]struct {
 		givenInput       string
@@ -55,6 +73,50 @@ func TestTimeZone_MarshalJSON(t *testing.T) {
 			} else {
 				assert.Equal(t, tt.expectedOutput, result)
 			}
+		})
+	}
+}
+
+func TestTimeZone_IsEqualTo(t *testing.T) {
+	tests := map[string]struct {
+		givenTimeZoneA *TimeZone
+		givenTimeZoneB *TimeZone
+		expectedResult bool
+	}{
+		"BothNil": {
+			givenTimeZoneA: nil, givenTimeZoneB: nil,
+			expectedResult: true,
+		},
+		"BothNilNested": {
+			givenTimeZoneA: NewTimeZone(nil),
+			givenTimeZoneB: NewTimeZone(nil),
+			expectedResult: true,
+		},
+		"A_IsNil": {
+			givenTimeZoneA: nil,
+			givenTimeZoneB: NewTimeZone(vancouverTZ),
+			expectedResult: false,
+		},
+		"B_IsNil": {
+			givenTimeZoneA: NewTimeZone(vancouverTZ),
+			givenTimeZoneB: nil,
+			expectedResult: false,
+		},
+		"BothSame": {
+			givenTimeZoneA: NewTimeZone(zurichTZ),
+			givenTimeZoneB: NewTimeZone(zurichTZ),
+			expectedResult: true,
+		},
+		"A_NestedNil": {
+			givenTimeZoneA: NewTimeZone(nil),
+			givenTimeZoneB: NewTimeZone(zurichTZ),
+			expectedResult: false,
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			actual := tc.givenTimeZoneA.IsEqualTo(tc.givenTimeZoneB)
+			assert.Equal(t, tc.expectedResult, actual, "zone not equal: zone A: %s, zone B: %s", tc.givenTimeZoneA, tc.givenTimeZoneB)
 		})
 	}
 }
