@@ -1,6 +1,8 @@
 module github.com/vshn/odootools
 
-go 1.19
+go 1.23
+
+toolchain go1.24.1
 
 require (
 	github.com/ccremer/go-command-pipeline v0.20.0
@@ -8,7 +10,7 @@ require (
 	github.com/go-logr/zapr v1.3.0
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.4.0
-	github.com/gorilla/sessions v1.2.2
+	github.com/gorilla/sessions v1.4.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/labstack/echo-contrib v0.15.0
 	github.com/labstack/echo/v4 v4.11.4
